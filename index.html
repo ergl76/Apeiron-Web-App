@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apeiron - Der Turm der Elemente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #1a202c; color: #e2e8f0; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .hidden { display: none; }
+        .btn-custom { transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.2); border-radius: 0.5rem; font-weight: bold; padding: 0.75rem 1.5rem; }
+        .btn-custom:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 10px rgba(0,0,0,0.3); }
+        .btn-custom:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-green { background-color: #2f855a; border-bottom: 4px solid #276749; color: white; }
+        .btn-green:hover:not(:disabled) { background-color: #38a169; }
+        .btn-orange { background-color: #dd6b20; border-bottom: 4px solid #c05621; color: white; }
+        .btn-orange:hover:not(:disabled) { background-color: #ed8936; }
+        .btn-gold { background-color: #d69e2e; border-bottom: 4px solid #b7791f; color: white; }
+        .btn-gold:hover:not(:disabled) { background-color: #ecc94b; }
+        .btn-purple { background-color: #805ad5; border-bottom: 4px solid #6b46c1; color: white; }
+        .btn-purple:hover:not(:disabled) { background-color: #9f7aea; }
+        .player-count-btn, .difficulty-btn { border: 2px solid #4a5568; }
+        .player-count-btn.selected, .difficulty-btn.selected { background-color: #4299e1; border-color: #63b3ed; }
+        .character-card { border: 4px solid transparent; transition: all 0.3s ease; cursor: pointer; }
+        .character-card.selected { border-color: #63b3ed; transform: scale(1.05); box-shadow: 0 0 20px rgba(99, 179, 237, 0.5); }
+        .character-card.disabled { filter: grayscale(80%); opacity: 0.6; cursor: not-allowed; }
+        .hero-display.active { border: 2px solid #f7b733; box-shadow: 0 0 15px rgba(247, 183, 51, 0.6); }
+        .toast { visibility: hidden; opacity: 0; transition: opacity 0.5s, visibility 0.5s; }
+        .toast.show { visibility: visible; opacity: 1; }
+        .blocked-skill::after { content: 'X'; position: absolute; top: 0; right: 0; color: red; font-weight: bold; font-size: 24px; line-height: 24px; text-shadow: 0 0 3px black; transform: rotate(15deg); }
+        .effect-active { border: 2px solid #ef4444; }
+        @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); } 50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.9); } }
+        .skipping-turn { border: 3px solid #ef4444; animation: pulse-red 2s infinite; }
+
+        /* Game Board Styles */
+        #board-container { display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); width: 90vmin; height: 90vmin; max-width: 800px; max-height: 800px; margin: auto; background-color: #111827; border: 2px solid #4a5568; border-radius: 1rem; overflow: hidden; }
+        .tile { position: relative; border: 1px solid #2d3748; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; font-size: 10px; line-height: 1.2; padding: 2px; }
+        .tile.discoverable { background-color: #374151; cursor: pointer; transition: background-color 0.2s; }
+        .tile.discoverable:hover { background-color: #4b5563; }
+        .tile.movable { cursor: pointer; outline: 2px solid #34d399; outline-offset: -2px; }
+        .tile.movable:hover { background-color: rgba(52, 211, 153, 0.3); }
+        .tile.scoutable { cursor: pointer; outline: 2px solid #805ad5; outline-offset: -2px; }
+        .tile.scoutable:hover { background-color: rgba(128, 90, 213, 0.3); }
+        .tile.scout-selected { outline: 3px solid #facc15; background-color: rgba(128, 90, 213, 0.5); }
+        .tile.tile-gate-of-wisdom { background-color: #ffffff; color: #1a202c; font-weight: bold; }
+        .inventory-slot, .skill-slot { width: 24px; height: 24px; background-color: #4a5568; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 14px; position: relative; }
+        .inventory-slot.can-drop { cursor: pointer; }
+        .inventory-slot.selected-for-drop { outline: 2px solid #63b3ed; }
+        .skill-slot { background-color: #374151; }
+        .foundation-slot, .element-slot { background-color: #1f2937; border: 2px dashed #4b5563; transition: all 0.3s ease; }
+        .foundation-slot.built { background-color: #ca8a04; border-style: solid; border-color: #facc15; }
+        .element-slot.activated { border-style: solid; }
+        #element-erde.activated { background-color: #166534; border-color: #4ade80; }
+        #element-wasser.activated { background-color: #0e7490; border-color: #38bdf8; }
+        #element-feuer.activated { background-color: #991b1b; border-color: #ef4444; }
+        #element-luft.activated { background-color: #5b21b6; border-color: #a78bfa; }
+        .modal { background-color: rgba(0, 0, 0, 0.75); }
+        .modal-content { background-color: #2d3748; }
+        .hero-token { font-weight: bold; color: white; text-shadow: 1px 1px 2px black; font-size: 1.2rem; }
+        .hero-token.active-hero { box-shadow: 0 0 10px 3px #facc15; }
+        
+        .hero-container-2 { display: flex; justify-content: space-around; align-items: center; width: 100%; height: 100%; }
+        .hero-container-3 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0; place-items: center; width: 100%; height: 100%; }
+        .hero-container-4 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0; place-items: center; width: 100%; height: 100%; }
+        .hero-container-4 .hero-token:nth-child(1) { grid-row: 1; grid-column: 1; }
+        .hero-container-4 .hero-token:nth-child(2) { grid-row: 1; grid-column: 2; }
+        .hero-container-4 .hero-token:nth-child(3) { grid-row: 2; grid-column: 1; }
+        .hero-container-4 .hero-token:nth-child(4) { grid-row: 2; grid-column: 2; }
+
+        .tile-obstacle { opacity: 0.5; filter: grayscale(100%); cursor: not-allowed !important; }
+        .tile-geroell::after { content: '🪨'; font-size: 2rem; position: absolute; }
+        .tile-dornenwald::after { content: '🌿'; font-size: 2rem; position: absolute; }
+        .tile-ueberflutung::after { content: '🌊'; font-size: 2rem; position: absolute; }
+        .tile-finsternis::after { content: '🖤'; font-size: 2rem; position: absolute; }
+
+        .game-summary {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 50;
+            background-color: #2d3748;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease-in-out;
+            padding: 1rem;
+        }
+
+        .game-summary.minimized {
+            width: 50px;
+            height: 50px;
+            overflow: hidden;
+            padding: 0.5rem;
+            cursor: pointer;
+        }
+        .game-summary.minimized .summary-content { display: none; }
+        .game-summary.minimized .minimize-icon { display: block; }
+
+        .minimize-icon {
+            display: none;
+            text-align: center;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div id="setup-screen">
+        <header class="text-center py-8"><h1 class="text-4xl sm:text-5xl font-cinzel font-bold text-yellow-400 tracking-wider">Apeiron</h1><p class="text-xl sm:text-2xl font-cinzel text-gray-400">Spiel einrichten</p></header>
+        <main class="container mx-auto p-4 max-w-4xl">
+            <section class="mb-8"><h2 class="text-2xl font-cinzel text-center mb-4">1. Wählt die Anzahl der Helden</h2><div id="player-count-selector" class="flex justify-center gap-4"><button data-count="2" class="player-count-btn btn-custom">2 Spieler</button><button data-count="3" class="player-count-btn btn-custom">3 Spieler</button><button data-count="4" class="player-count-btn btn-custom selected">4 Spieler</button></div></section>
+            <section class="mb-8"><h2 class="text-2xl font-cinzel text-center mb-4">2. Wählt die Schwierigkeit</h2><div id="difficulty-selector" class="flex justify-center gap-4"><button data-difficulty="leicht" class="difficulty-btn btn-custom">Leicht</button><button data-difficulty="normal" class="difficulty-btn btn-custom selected">Normal</button><button data-difficulty="schwer" class="difficulty-btn btn-custom">Schwer</button></div></section>
+            <section class="mb-8"><h2 class="text-2xl font-cinzel text-center mb-4">3. Wählt eure Helden</h2><div id="character-selector" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div></section>
+            <section class="text-center"><button id="start-game-btn" class="btn-custom btn-green text-2xl px-10 py-4">Abenteuer beginnen</button></section>
+        </main>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <header class="text-center pt-4 pb-2"><h1 class="text-3xl font-cinzel font-bold text-yellow-400 tracking-wider">Apeiron</h1><button id="new-game-btn" class="btn-custom btn-orange text-xs">Neues Spiel einrichten</button></header>
+        <div id="game-summary" class="game-summary">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xl font-cinzel font-bold text-yellow-300">Übersicht</h3>
+                <button id="minimize-summary-btn" class="text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <div class="minimize-icon text-white text-lg">...</div>
+            </div>
+            <div class="summary-content space-y-4">
+                <section class="container mx-auto max-w-4xl my-4 p-4 bg-gray-800 rounded-lg shadow-lg">
+                    <h2 id="round-tracker" class="text-2xl font-cinzel text-center mb-4 text-gray-400">Runde 1</h2>
+                    <div class="w-full bg-black rounded-full h-4 border-2 border-gray-600">
+                        <div id="sphere-bar-inner" class="bg-gray-300 h-full rounded-full text-right pr-1 flex items-center justify-end">
+                            <span id="sphere-value" class="font-bold text-gray-800 text-xs">20</span>
+                        </div>
+                    </div>
+                </section>
+                <div>
+                    <h4 class="text-base font-bold">Spieler & Effekte</h4>
+                    <ul id="summary-player-list" class="mt-1 space-y-2 text-sm"></ul>
+                </div>
+            </div>
+        </div>
+        <section id="player-info-bar" class="container mx-auto max-w-5xl my-4 p-2 grid grid-cols-2 lg:grid-cols-4 gap-4"></section>
+        <main id="main-game-view">
+            <div class="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mt-4">
+                <section id="board-section" class="flex flex-col items-center p-4"><div id="board-container"></div></section>
+                <section id="actions-section" class="flex flex-col items-center p-4">
+                     <div id="tower-display" class="mb-8 w-full max-w-lg">
+                         <h2 id="phase-title" class="text-3xl font-cinzel mb-4 text-blue-300 text-center">Phase 1: Die Suche</h2>
+                         <div class="flex flex-col items-center p-4 bg-gray-800 rounded-lg space-y-2">
+                             <div class="grid grid-cols-4 gap-4 w-full">
+                                 <div id="element-erde" class="element-slot h-16 flex justify-center items-center text-4xl" title="Element: Erde"></div>
+                                 <div id="element-wasser" class="element-slot h-16 flex justify-center items-center text-4xl" title="Element: Wasser"></div>
+                                 <div id="element-feuer" class="element-slot h-16 flex justify-center items-center text-4xl" title="Element: Feuer"></div>
+                                 <div id="element-luft" class="element-slot h-16 flex justify-center items-center text-4xl" title="Element: Luft"></div>
+                             </div>
+                             <div class="grid grid-cols-4 gap-4 w-full">
+                                 <div id="foundation-erde" class="foundation-slot h-16 flex justify-center items-center text-4xl" title="Fundament: Erde"></div>
+                                 <div id="foundation-wasser" class="foundation-slot h-16 flex justify-center items-center text-4xl" title="Fundament: Wasser"></div>
+                                 <div id="foundation-feuer" class="foundation-slot h-16 flex justify-center items-center text-4xl" title="Fundament: Feuer"></div>
+                                 <div id="foundation-luft" class="foundation-slot h-16 flex justify-center items-center text-4xl" title="Fundament: Luft"></div>
+                             </div>
+                         </div>
+                     </div>
+                     <h2 class="text-3xl font-cinzel mb-6 text-yellow-400">Aktionen</h2>
+                     <div id="action-buttons-container" class="w-full max-w-lg grid grid-cols-2 sm:grid-cols-3 gap-2">
+                         
+
+</div>
+                     <div class="w-full max-w-lg mt-4">
+                        <button id="end-turn-btn" class="btn-custom btn-orange w-full">Zug beenden</button>
+                     </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <div id="sphere-phase-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-40"><div class="modal-content max-w-lg mx-auto text-center p-8 rounded-lg shadow-2xl"><h2 id="sphere-phase-title" class="text-4xl font-cinzel font-bold mb-6 text-red-300">Phase der Dunkelheit</h2><div id="sphere-event-card" class="bg-gray-800 border-2 border-gray-700 rounded-xl p-6 min-h-[150px] flex flex-col justify-center items-center text-center shadow-lg mb-6"></div><div id="event-impact" class="mt-4 text-left"></div><button id="next-round-btn" class="btn-custom btn-orange">Nächste Runde beginnen</button></div></div>
+    <div id="turn-over-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-50"><div class="modal-content max-w-sm mx-auto text-center p-8 rounded-lg shadow-2xl"><h3 class="text-2xl font-cinzel font-bold mb-4">Zug beendet</h3><p id="turn-over-message" class="text-gray-400 mb-6"></p><button id="turn-over-continue-btn" class="btn-custom btn-orange">Weiter</button></div></div>
+    <div id="skip-turn-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-50"><div class="modal-content max-w-sm mx-auto text-center p-8 rounded-lg shadow-2xl"><h3 class="text-2xl font-cinzel font-bold mb-4 text-yellow-300">Zug aussetzen</h3><p id="skip-turn-message" class="text-gray-400 mb-6"></p><button id="skip-turn-continue-btn" class="btn-custom btn-orange">Weiter</button></div></div>
+    <div id="game-over-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-50"><div class="modal-content max-w-sm mx-auto text-center p-8 rounded-lg shadow-2xl"><h3 class="text-2xl font-cinzel font-bold mb-4 text-red-400">Die Finsternis hat gesiegt</h3><p class="text-gray-400 mb-6">Das Licht ist erloschen.</p><button id="game-over-reset-btn" class="btn-custom btn-orange">Neues Spiel</button></div></div>
+    <div id="win-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-50"><div class="modal-content max-w-sm mx-auto text-center p-8 rounded-lg shadow-2xl"><h3 class="text-2xl font-cinzel font-bold mb-4 text-yellow-300">Sieg!</h3><p class="text-gray-300 mb-6">Ihr habt den Turm der Elemente errichtet!</p><button id="win-reset-btn" class="btn-custom btn-green">Neues Abenteuer</button></div></div>
+    <div id="item-pickup-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-50"><div class="modal-content max-w-sm mx-auto text-center p-8 rounded-lg shadow-2xl"><h3 class="text-2xl font-cinzel font-bold mb-4">Item auswählen</h3><div id="item-selection-container" class="space-y-2"></div><button id="cancel-pickup-btn" class="btn-custom btn-orange mt-4">Abbrechen</button></div></div>
+    <div id="learn-skill-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-50"><div class="modal-content max-w-sm mx-auto text-center p-8 rounded-lg shadow-2xl"><h3 class="text-2xl font-cinzel font-bold mb-4">Fähigkeit lernen</h3><div id="learn-selection-container" class="space-y-2"></div><button id="cancel-learn-btn" class="btn-custom btn-orange mt-4">Abbrechen</button></div></div>
+    <div id="teach-skill-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-50"><div class="modal-content max-w-sm mx-auto text-center p-8 rounded-lg shadow-2xl"><h3 class="text-2xl font-cinzel font-bold mb-4">Fähigkeit lehren</h3><div id="skill-selection-container" class="space-y-2"></div><button id="cancel-teach-btn" class="btn-custom btn-orange mt-4">Abbrechen</button></div></div>
+    <div id="info-modal" class="modal fixed inset-0 w-full h-full flex items-center justify-center hidden z-50"><div class="modal-content max-w-sm mx-auto text-center p-8 rounded-lg shadow-2xl"><h3 id="info-modal-title" class="text-2xl font-cinzel font-bold mb-2"></h3><div class="text-5xl mb-2" id="info-modal-symbol"></div><p id="info-modal-text" class="text-gray-400 mb-6"></p><button id="info-modal-close-btn" class="btn-custom btn-orange">Verstanden</button></div></div>
+    <div id="toast" class="toast fixed bottom-5 right-5 bg-indigo-600 text-white py-3 px-5 rounded-lg shadow-lg z-50"><p id="toast-message"></p></div>
+    
+    <script>
+    // --- CONFIG & DATA ---
+    const GAME_CONFIG = {
+        licht_maximalwert: 20,
+        inventar_vorratsplaetze: 2,
+        aktionspunkte_pro_zug: 3,
+        lichtverlust_pro_runde: {
+            phase_1: { spieler_2: -1, spieler_3: -2, spieler_4: -3 },
+            phase_2: { spieler_2: -2, spieler_3: -3, spieler_4: -4 }
+        },
+        landschaftsplaettchen: {
+            phase_1: {
+                wiese_kristall: 5,
+                hoehle_kristall: 5,
+                fluss: 5,
+                gebirge: 5,
+                wald: 5,
+                huegel: 5,
+                bauplan_erde: 1,
+                bauplan_wasser: 1,
+                bauplan_feuer: 1,
+                bauplan_luft: 1,
+                herz_finster: 1
+            },
+            phase_2: {
+                wald: 4,
+                huegel: 4,
+                fluss: 4,
+                gebirge: 4,
+                wiese_kristall: 3,
+                hoehle_kristall: 3,
+                element_fragment_erde: 1,
+                element_fragment_wasser: 1,
+                element_fragment_feuer: 1,
+                element_fragment_luft: 1
+            }
+        },
+        erscheinen_tor_der_weisheit: {
+            spieler_2: 4,
+            spieler_3: 3,
+            spieler_4: 2
+        }
+    };
+    const ELEMENT_BONUS_CONFIG = {
+        segen_des_lichts: {
+            name: "Segen des Lichts",
+            symbol: "✨",
+            type: 'licht',
+            triggered_by_elements: ['feuer', 'wasser'],
+            bonus_value_by_player_count: { 2: 2, 3: 3, 4: 4 }
+        },
+        elementare_kraft: {
+            name: "Elementare Kraft",
+            symbol: "💪",
+            type: 'ap',
+            triggered_by_elements: ['luft', 'erde'],
+            bonus_value_by_player_count: { 2: 1, 3: 1, 4: 1 }
+        }
+    };
+    const HERO_DATA = {
+        terra: { id: 'terra', name: 'Terra', innate_skills: ['grundstein_legen', 'geroell_beseitigen'], img: 'https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/8410058b-302a-4384-93f0-5847b85e05d0.jpg' },
+        ignis: { id: 'ignis', name: 'Ignis', innate_skills: ['element_aktivieren', 'dornen_entfernen'], img: 'https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/05b13824-2c6f-443b-87b6-14fdd1f9d45e.jpg' },
+        lyra: { id: 'lyra', name: 'Lyra', innate_skills: ['reinigen', 'fluss_freimachen'], img: 'https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/e7e9549f-b983-4a60-b6a2-632b71900a68.jpg' },
+        corvus: { id: 'corvus', name: 'Corvus', innate_skills: ['spaehen', 'schnell_bewegen'], img: 'https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/b0559c5d-24e5-4f7f-a63e-a74092d63428.jpg' }
+    };
+    const SKILL_DATA = {
+        'grundstein_legen': { name: 'Grundstein legen', symbol: '🧱', desc: "Ermöglicht das Bauen von Fundamenten am Krater." },  
+        'geroell_beseitigen': { name: 'Geröll beseitigen', symbol: '💥', desc: "Entfernt Geröll-Hindernisse von einem Feld." },  
+        'element_aktivieren': { name: 'Element aktivieren', symbol: '🔥', desc: "Aktiviert Element-Fragmente am Turm." },  
+        'dornen_entfernen': { name: 'Dornen entfernen', symbol: '🌿', desc: "Entfernt Dornen-Hindernisse von einem Feld." },  
+        'reinigen': { name: 'Reinigen', symbol: '💧', desc: "Dreht ein dunkles Feld wieder auf die helle Seite." },  
+        'fluss_freimachen': { name: 'Fluss freimachen', symbol: '🌊', desc: "Macht einen blockierten Fluss wieder passierbar." },  
+        'spaehen': { name: 'Spähen', symbol: '👁️', desc: "Deckt 2 angrenzende Felder für 1 AP auf." },  
+        'schnell_bewegen': { name: 'Schnell bewegen', symbol: '💨', desc: "Ermöglicht die Bewegung von bis zu 2 Feldern für 1 AP." },  
+        'kenntnis_bauplan_erde': { name: 'Bauplan: Erde', symbol: '📜', desc: "Du kennst den Bauplan für das Erd-Fundament." },  
+        'kenntnis_bauplan_wasser': { name: 'Bauplan: Wasser', symbol: '📜', desc: "Du kennst den Bauplan für das Wasser-Fundament." },  
+        'kenntnis_bauplan_feuer': { name: 'Bauplan: Feuer', symbol: '📜', desc: "Du kennst den Bauplan für das Feuer-Fundament." },  
+        'kenntnis_bauplan_luft': { name: 'Bauplan: Luft', symbol: '📜', desc: "Du kennst den Bauplan für das Luft-Fundament." },
+        'aufdecken': { name: 'Aufdecken', symbol: '🗺️', desc: "Deckt ein angrenzendes Feld für 1 AP auf."}
+    };
+    const LEARNABLE_ITEMS = {
+        'artefakt_terra': ['grundstein_legen', 'geroell_beseitigen'],  
+        'artefakt_ignis': ['element_aktivieren', 'dornen_entfernen'],  
+        'artefakt_lyra': ['reinigen', 'fluss_freimachen'],  
+        'artefakt_corvus': ['spaehen', 'schnell_bewegen'],
+        'bauplan_erde': 'kenntnis_bauplan_erde',  
+        'bauplan_wasser': 'kenntnis_bauplan_wasser',  
+        'bauplan_feuer': 'kenntnis_bauplan_feuer',  
+        'bauplan_luft': 'kenntnis_bauplan_luft'
+    };
+    const FOUNDATION_REQUIREMENTS = { 'erde': 'kenntnis_bauplan_erde', 'wasser': 'kenntnis_bauplan_wasser', 'feuer': 'kenntnis_bauplan_feuer', 'luft': 'kenntnis_bauplan_luft' };
+    const FOUNDATION_SYMBOLS = { 'erde': '⛰️', 'wasser': '💧', 'feuer': '🔥', 'luft': '💨' };
+    const TILE_DATA = {
+        'krater': { name: 'Krater', type: 'start', color: '#a3a3a3' },
+        'tor_der_weisheit': { name: 'Tor der Weisheit', type: 'special', color: '#ffffff', symbol: '⛩️' },
+        'wiese_kristall': { name: 'Kristallwiese', type: 'resource', color: '#4ade80', symbol: '💎', resource: 'kristall' },
+        'hoehle_kristall': { name: 'Kristallhöhle', type: 'resource', color: '#6b7280', symbol: '💎', resource: 'kristall' },
+        'bauplan_erde': { name: 'Bauplan: Erde', type: 'quest', color: '#ca8a04', symbol: '📜', resource: 'bauplan_erde' },
+        'bauplan_wasser': { name: 'Bauplan: Wasser', type: 'quest', color: '#3b82f6', symbol: '📜', resource: 'bauplan_wasser' },
+        'bauplan_feuer': { name: 'Bauplan: Feuer', type: 'quest', color: '#ef4444', symbol: '📜', resource: 'bauplan_feuer' },
+        'bauplan_luft': { name: 'Bauplan: Luft', type: 'quest', color: '#a78bfa', symbol: '📜', resource: 'bauplan_luft' },
+        'element_fragment_erde': { name: 'Herz der Erde', type: 'quest', color: '#166534', symbol: '💚', resource: 'element_fragment_erde' },
+        'element_fragment_wasser': { name: 'Perle des Wassers', type: 'quest', color: '#0ea5e9', symbol: '💙', resource: 'element_fragment_wasser' },
+        'element_fragment_feuer': { name: 'Stein des Feuers', type: 'quest', color: '#dc2626', symbol: '❤️', resource: 'element_fragment_feuer' },
+        'element_fragment_luft': { name: 'Auge des Sturms', type: 'quest', color: '#d8b4fe', symbol: '💜', resource: 'element_fragment_luft' },
+        'herz_finster': { name: 'Herz der Finsternis', type: 'danger', color: '#4b5563', symbol: '🖤' },
+        'artefakt_terra': { name: 'Artefakt: Terra', type: 'artifact', color: '#facc15', symbol: '🧤', resource: 'artefakt_terra' },
+        'artefakt_ignis': { name: 'Artefakt: Ignis', type: 'artifact', color: '#facc15', symbol: '❤️‍🔥', resource: 'artefakt_ignis' },
+        'artefakt_lyra': { name: 'Artefakt: Lyra', type: 'artifact', color: '#facc15', symbol: '💧', resource: 'artefakt_lyra' },
+        'artefakt_corvus': { name: 'Artefakt: Corvus', type: 'artifact', color: '#facc15', symbol: '👁️', resource: 'artefakt_corvus' },
+        'wald': { name: 'Wald', type: 'empty', color: '#166534'},
+        'huegel': { name: 'Hügel', type: 'empty', color: '#a16207'},
+        'fluss': { name: 'Fluss', type: 'empty', color: '#38bdf8'},
+        'gebirge': { name: 'Gebirge', type: 'empty', color: '#94a3b8'},
+    };
+    const OBSTACLE_DATA = {
+        'geroell': { name: 'Geröll', symbol: '🪨', required_skill: 'geroell_beseitigen' },
+        'dornenwald': { name: 'Dornenwald', symbol: '🌿', required_skill: 'dornen_entfernen' },
+        'ueberflutung': { name: 'Überflutung', symbol: '🌊', required_skill: 'fluss_freimachen' },
+        'finsternis': { name: 'Finsternis', symbol: '🖤', required_skill: 'reinigen' },
+    };
+    const ITEM_SYMBOLS = { 'kristall': '💎', 'bauplan_erde': '📜', 'bauplan_wasser': '📜', 'bauplan_feuer': '📜', 'bauplan_luft': '📜', 'artefakt_terra': '🧤', 'artefakt_ignis': '❤️‍🔥', 'artefakt_lyra': '💧', 'artefakt_corvus': '👁️', 'element_fragment_erde': '💚', 'element_fragment_wasser': '💙', 'element_fragment_feuer': '❤️', 'element_fragment_luft': '💜' };
+    
+    // --- NEUE EREIGNISKARTEN (v.49) ---
+    const EVENT_CARD_DATA = {
+      phase_1_events: {
+        negative: [
+          { name: "Flüstern im Wind", effekt: "Ein unheilvolles Flüstern hallt über die Insel und lässt die Schatten länger werden. Das Licht schwindet.", sphere_change: -1 },
+          { name: "Brüchiger Boden", effekt: "Der Boden unter euren Füßen erzittert. Ein zufällig gewählter Held muss einen mühsam gesammelten Kristall fallen lassen.", effekt_item_ablegen: { ziel: 'zufaellig', item: 'kristall', menge: 1 } },
+          { name: "Verlorener Pfad", effekt: "Dichter Nebel steigt auf und verwirrt die Sinne. Ein zufälliger Held verliert den Überblick und kann in diesem Zug keine neuen Felder mehr aufdecken.", effekt_blockiere_faehigkeit: { ziel: 'zufaellig', faehigkeiten: ['aufdecken', 'spaehen'], dauer: 1 } },
+          { name: "Steinschlag", effekt: "Ein lautes Grollen ertönt von den Bergen. Geröll blockiert eine nahegelegene Kristallwiese.", effekt_hindernis_platzieren: { hindernis: "geroell", ziel_typ: ["wiese_kristall"] } },
+          { name: "Plötzliche Ermüdung", effekt: "Die Anstrengung der Suche fordert ihren Tribut. Ein zufällig gewählter Held ist erschöpft und hat einen Aktionspunkt weniger.", effekt_AP_reduktion: { ziel: 'zufaellig', anzahl: -1, dauer: 1 } },
+          { name: "Gier der Finsternis", effekt: "Die Dunkelheit spürt eure Hoffnung und greift nach ihr. Der Held mit den meisten Kristallen muss einen davon opfern.", effekt_item_vernichten: { ziel: 'hoechste_kristalle', item: 'kristall', menge: 1 } },
+          { name: "Ranken der Verzweiflung", effekt: "Dornige Ranken schießen aus dem Boden und umschlingen einen uralten Bauplan, der im Freien liegt.", effekt_hindernis_platzieren: { hindernis: "dornenwald", ziel_typ: ['bauplan_erde', 'bauplan_wasser', 'bauplan_feuer', 'bauplan_luft'] } },
+          { name: "Trügerische Stille", effekt: "Eine unnatürliche Stille legt sich über die Insel. Die Dunkelheit rückt unaufhaltsam näher.", sphere_change: -1 },
+          { name: "Vergessene Worte", effekt: "Die Anspannung lähmt eure Zungen. Bis zum Beginn der nächsten Sphärenphase dürft ihr nicht über eure Strategie sprechen." },
+          { name: "Blick ins Leere", effekt: "Ein Held blickt in einen Abgrund und wird von Furcht ergriffen. Er muss seinen nächsten Zug aussetzen, um sich zu sammeln.", effekt_aussetzen: { ziel: 'zufaellig', dauer: 1 } },
+          { name: "Geisterhafter Hauch", effekt: "Ein eisiger Hauch streift euch und lässt das Licht flackern.", sphere_change: -1 },
+          { name: "Riss im Rucksack", effekt: "In der Eile des Gefechts reißt der Beutel eines Helden. Ein zufälliger Held verliert einen Kristall.", effekt_item_vernichten: { ziel: 'zufaellig', item: 'kristall', menge: 1 } },
+          { name: "Moment der Verwirrung", effekt: "Die Dunkelheit verwirrt die Gedanken. Ein Held verliert die Übersicht und kann keine Felder mehr aufdecken.", effekt_blockiere_faehigkeit: { ziel: 'zufaellig', faehigkeiten: ['aufdecken', 'spaehen'] , dauer: 1 } },
+          { name: "Unwetter", effekt: "Ein plötzlicher Wolkenbruch überflutet einen Fluss und macht ihn unpassierbar.", effekt_hindernis_platzieren: { hindernis: "ueberflutung", ziel_typ: ["fluss"] } },
+          { name: "Schwerer Schritt", effekt: "Die Last der Verantwortung wiegt schwer. Der aktive Held hat in seinem nächsten Zug einen Aktionspunkt weniger.", effekt_AP_reduktion: { ziel: 'aktiver_spieler', anzahl: -1, dauer: 1 } },
+          { name: "Echo der Verzweiflung", effekt: "Ein Klagelied aus der Ferne schwächt euren Mut. Das Licht schwindet.", sphere_change: -2 },
+          { name: "Schattenfalle", effekt: "Eine unsichtbare Falle schnappt zu. Der Held mit den meisten Kristallen ist bis zur nächsten Sphärenphase an sein Feld gebunden.", effekt_aussetzen: { ziel: 'hoechste_kristalle', dauer: 1 } },
+          { name: "Verlorenes Wissen", effekt: "Ein Windstoß entreißt euch eine wichtige Notiz. Ein zufälliger Held vergisst, wie man späht, bis er gereinigt wird.", effekt_blockiere_faehigkeit: { ziel: 'zufaellig', faehigkeiten: ['spaehen'], dauer: 'bis Reinigung' } },
+          { name: "Dunkle Aura", effekt: "Ein Feld in eurer Nähe wird von Finsternis erfüllt und unpassierbar.", effekt_hindernis_platzieren: { hindernis: "finsternis", ziel_typ: ["wald", "huegel"] } },
+          { name: "Tribut an die Schatten", effekt: "Die Insel fordert einen Tribut. Jeder Held muss einen Kristall abgeben, falls er einen besitzt.", effekt_item_vernichten: { ziel: 'alle', item: 'kristall', menge: 1 } },
+        ],
+        positive: [
+          { name: "Lied der Hoffnung", effekt: "Eine leise Melodie erfüllt die Luft und stärkt euren Willen. Das Licht gewinnt an Kraft.", sphere_change: 1 },
+          { name: "Uraltes Echo", effekt: "Ihr findet die Spuren eines alten Helden. Der aktive Spieler erhält einen zusätzlichen Aktionspunkt für seinen nächsten Zug.", effekt_AP_erhoehen: { ziel: 'aktiver_spieler', menge: 1, dauer: 1 } },
+          { name: "Geistesblitz", effekt: "Einem Helden wird plötzlich klar, wie alle zusammenarbeiten müssen. Alle Helden erlernen die Fähigkeit spähen.", effekt_skill_aenderung: { ziel: 'alle', faehigkeiten: ['spaehen'] } },
+          { name: "Sternenregen", effekt: "Ein Schauer aus Licht ergießt sich über die Insel und vertreibt die Schatten für einen Moment.", prevent_sphere_loss: true },
+          { name: "Vergessener Beutel", effekt: "Versteckt unter einem Stein findet ihr einen alten Beutel. Ein Spieler erhält einen Kristall.", effekt_item_hinzufuegen: { ziel: 'zufaellig', item: 'kristall', menge: 1 } },
+          { name: "Klarer Himmel", effekt: "Die Wolken reißen auf und offenbaren den Sternenhimmel. Eure Hoffnung wächst.", sphere_change: 1 },
+          { name: "Gemeinsame Stärke", effekt: "Euer Zusammenhalt ist eure größte Waffe. Ein Spieler hat einen Aktionspunkt mehr zur Verfügung.", effekt_AP_erhoehen: { ziel: 'zufaellig', menge: 1, dauer: 1 } },
+          { name: "Apeirons Segen", effekt: "Ein warmer Lichtstrahl trifft euch und erfüllt euch mit neuer Energie. Jeder Held erhält einen Aktionspunkt.", effekt_AP_erhoehen: { ziel: 'alle', menge: 1, dauer: 1 } },
+          { name: "Standhaftigkeit", effekt: "Ihr stemmt euch gemeinsam gegen die Dunkelheit. In dieser Runde verliert ihr kein Licht.", prevent_sphere_loss: true },
+          { name: "Kristallader", effekt: "Ihr stoßt auf eine reiche Kristallader. Jeder Held erhält einen Kristall, sofern er Platz hat.", effekt_item_hinzufuegen: { ziel: 'alle', item: 'kristall', menge: 1 } },
+          { name: "Wind in den Segeln", effekt: "Ein günstiger Wind treibt euch an. Ein zufälliger Held bewegt sich von nun an schneller.", effekt_skill_aenderung: { ziel: 'zufaellig', faehigkeiten: ['schnell_bewegen'] } },
+          { name: "Moment der Zuversicht", effekt: "Trotz der Dunkelheit spürt ihr, dass ihr siegen könnt. Das Licht erstarkt.", sphere_change: 2 },
+          { name: "Schützendes Licht", effekt: "Ein unsichtbarer Schild umgibt euch. Die Dunkelheit kann euch in dieser Runde nichts anhaben.", prevent_sphere_loss: true },
+          { name: "Gefundenes Erbstück", effekt: "Ein zufälliger Held findet ein altes Artefakt, das ihn mit neuer Kraft erfüllt. Seine maximalen Aktionspunkte erhöhen sich permanent um 1.", effekt_AP_erhoehen: { ziel: 'zufaellig', menge: 1, dauer: 'bis Spielende' } },
+          { name: "Quelle der Hoffnung", effekt: "Ihr entdeckt eine verborgene Quelle, deren Wasser das Licht nährt.", sphere_change: 1 },
+          { name: "Erleuchtung", effekt: "Einem Helden wird die Kunst des Bauens offenbart. Ein zufälliger Held erlernt die Fähigkeit 'Grundstein legen'.", effekt_skill_aenderung: { ziel: 'zufaellig', faehigkeiten: ['grundstein_legen'] } },
+          { name: "Weg des Lichts", effekt: "Ein Lichtstrahl zeigt euch den Weg. Der aktive Spieler erhält 2 zusätzliche Aktionspunkte für seinen nächsten Zug.", effekt_AP_erhoehen: { ziel: 'aktiver_spieler', menge: 2, dauer: 1 } },
+          { name: "Erinnerung der Ahnen", effekt: "Die Geister der Erbauer helfen euch. Die Dunkelheit weicht zurück.", sphere_change: 2 },
+          { name: "Unbeugsamer Wille", effekt: "Euer Wille ist stark. Die Dunkelheit kann euch in dieser Runde nichts anhaben.", prevent_sphere_loss: true },
+        ]
+      },
+      phase_2_events: {
+        negative: [
+          { name: "Zorn der Sphäre", effekt: "Die Dunkelheit spürt eure Nähe zum Sieg und schlägt mit aller Macht zu.", sphere_change: -2 },
+          { name: "Verräterisches Echo", effekt: "Ein Echo der Verzweiflung lässt einen Helden einen seiner Baupläne fallen.", effekt_item_ablegen: { ziel: 'zufaellig', item: 'bauplan', menge: 1 } },
+          { name: "Elementare Dissonanz", effekt: "Die elementaren Kräfte geraten außer Kontrolle. Ein zufälliger Held, der ein Fragment trägt, muss es ablegen.", effekt_item_ablegen: { ziel: 'zufaellig', item: 'element_fragment', menge: 1 } },
+          { name: "Gebrochener Wille", effekt: "Die schiere Macht der Finsternis lähmt einen Helden. Er vergisst eine seiner angeborenen Fähigkeiten bis zur Reinigung.", effekt_blockiere_faehigkeit: { ziel: 'zufaellig', faehigkeiten: 'innate', dauer: 'bis Reinigung' } },
+          { name: "Herz der Finsternis", effekt: "Das Herz der Finsternis schlägt stärker. Die Dunkelheit rückt unaufhaltsam vor.", sphere_change: -3 },
+          { name: "Verlorene Hoffnung", effekt: "Ein Held verliert den Glauben. Er setzt seinen nächsten Zug aus und verliert einen Kristall.", effekt_aussetzen: { ziel: 'zufaellig', dauer: 1 }, effekt_item_vernichten: { ziel: 'selbst', item: 'kristall', menge: 1 } },
+          { name: "Verwundete Erde", effekt: "Die Verderbnis breitet sich aus. Zwei zufällige leere Felder werden von Finsternis verschlungen.", effekt_hindernis_platzieren: { hindernis: "finsternis", ziel_typ: ["wald", "huegel", "gebirge", "fluss"], anzahl: 2 } },
+          { name: "Schatten des Zweifels", effekt: "Zweifel nagen an euch. Jeder Held verliert einen Aktionspunkt in seinem nächsten Zug.", effekt_AP_reduktion: { ziel: 'alle', anzahl: -1, dauer: 1 } },
+          { name: "Fragment Verlust", effekt: "Einem Helden fällt ein Element-Fragment aus dem Rucksack.", effekt_item_ablegen: { ziel: 'zufaellig', item: 'element_fragment', menge: 1 } },
+          { name: "Überwältigende Dunkelheit", effekt: "Die Finsternis ist überall. Das Licht schwindet rapide.", sphere_change: -2 },
+          { name: "Mentale Blockade", effekt: "Die Komplexität der Aufgabe überfordert einen Helden. Er kann keine Fähigkeiten mehr lernen oder lehren, bis er gereinigt wird.", effekt_blockiere_faehigkeit: { ziel: 'zufaellig', faehigkeiten: ['learn-skill-btn', 'teach-skill-btn'], dauer: 'bis Reinigung' } },
+          { name: "Verfluchtes Land", effekt: "Ein ganzes Gebiet wird unpassierbar. Platziere drei Geröll-Hindernisse auf angrenzenden Feldern.", effekt_hindernis_platzieren: { hindernis: "geroell", ziel_typ: ["wald", "huegel", "gebirge"], anzahl: 3, cluster: true } },
+          { name: "Diebische Schatten", effekt: "Schatten huschen vorbei und stehlen eure Kristalle. Jeder Held verliert einen Kristall.", effekt_item_vernichten: { ziel: 'alle', item: 'kristall', menge: 1 } },
+          { name: "Erschütterung des Turms", effekt: "Ein Beben erschüttert die Fundamente. Die Dunkelheit rückt 2 Felder vor.", sphere_change: -2 },
+          { name: "Blutopfer", effekt: "Die Dunkelheit verlangt ein hohes Opfer. Der Held mit den wenigsten Kristallen setzt seinen nächsten Zug aus.", effekt_aussetzen: { ziel: 'wenigste_kristalle', dauer: 1 } },
+          { name: "Endloser Sturm", effekt: "Ein Sturm zieht auf und behindert alle. Die maximalen Aktionspunkte aller Helden werden permanent um 1 reduziert.", effekt_AP_reduktion: { ziel: 'alle', anzahl: -1, dauer: 'bis Spielende' } },
+          { name: "Spiegel der Verzweiflung", effekt: "Ein Held sieht sein Scheitern in einem magischen Spiegel und verliert alle seine Kristalle.", effekt_item_vernichten: { ziel: 'zufaellig', item: 'kristall', menge: 'alle' } },
+          { name: "Das letzte Siegel bricht", effekt: "Ein uraltes Siegel, das die Finsternis zurückhielt, bricht. Das Licht schwindet dramatisch.", sphere_change: -3 },
+        ],
+        positive: [
+          { name: "Leuchtfeuer der Hoffnung", effekt: "Ihr entzündet ein altes Leuchtfeuer, das die Dunkelheit weit zurückdrängt.", sphere_change: 3 },
+          { name: "Durchbruch", effekt: "Einem Helden gelingt ein entscheidender Durchbruch. Er erhält einen zusätzlichen Aktionspunkt für seinen nächsten Zug.", effekt_AP_erhoehen: { ziel: 'aktiver_spieler', menge: 2, dauer: 1 } },
+          { name: "Konvergenz der Elemente", effekt: "Die Elemente sind im Einklang. Die Dunkelheit kann euch in dieser Runde nichts anhaben.", prevent_sphere_loss: true },
+          { name: "Herz eines Helden", effekt: "Der Mut eines Helden brennt heller als jede Finsternis. Seine maximalen AP erhöhen sich permanent um 1.", effekt_AP_erhoehen: { ziel: 'aktiver_spieler', menge: 1, dauer: 'bis Spielende' } },
+          { name: "Gabe der Ahnen", effekt: "Die Geister der Erbauer überreichen euch ein Geschenk. Jeder Held erhält einen Kristall.", effekt_item_hinzufuegen: { ziel: 'alle', item: 'kristall', menge: 1 } },
+          { name: "Zweiter Wind", effekt: "Gerade als die Hoffnung schwindet, fühlt ihr einen neuen Schub an Energie. Alle Helden erhalten sofort 2 Aktionspunkte.", effekt_AP_erhoehen: { ziel: 'alle', menge: 2, dauer: 1 } },
+          { name: "Reinigung des Landes", effekt: "Ein reinigender Regen fällt auf die Insel und wäscht ein Hindernis fort. Entferne ein beliebiges Hindernis vom Spielfeld.", effekt_hindernis_entfernen: true },
+          { name: "Sternenkonstellation", effekt: "Die Sterne stehen günstig. Das Licht gewinnt an Kraft.", sphere_change: 2 },
+          { name: "Welle des Lichts", effekt: "Eine Welle reinen Lichts schwappt über die Insel und drängt die Schatten zurück.", sphere_change: 3 },
+          { name: "Meister der Elemente", effekt: "Ein zufälliger Held erlangt eine tiefe Verbindung zu den Elementen. Er erlernt die Fähigkeit 'Element aktivieren'.", effekt_skill_aenderung: { ziel: 'zufaellig', faehigkeiten: ['element_aktivieren'] } },
+          { name: "Letzte Bastion", effekt: "Euer Wille, den Turm zu vollenden, ist unerschütterlich. Die Dunkelheit kann in dieser Runde nicht vorrücken.", prevent_sphere_loss: true },
+          { name: "Schatz der Erbauer", effekt: "Ihr findet einen verborgenen Schatz der Erbauer. Das Team erhält 3 Kristalle, die unter den Helden aufgeteilt werden.", effekt_item_hinzufuegen: { ziel: 'alle', item: 'kristall', menge: 3 } },
+          { name: "Harmonie", effekt: "Alle Helden spüren eine tiefe Verbundenheit. Jeder Held erhält +1 AP für seinen nächsten Zug.", effekt_AP_erhoehen: { ziel: 'alle', menge: 1, dauer: 1 } },
+          { name: "Vision des Sieges", effekt: "Ihr seht den fertigen Turm vor eurem inneren Auge. Das Licht wird gestärkt.", sphere_change: 2 },
+          { name: "Opfer des Lichts", effekt: "Ein Lichtgeist opfert sich, um euch Zeit zu erkaufen. Die Dunkelheit rückt in dieser Runde nicht vor.", prevent_sphere_loss: true },
+          { name: "Wiedergeburt", effekt: "Das Land selbst scheint euch zu helfen. Alle negativen Effekte auf den Helden werden sofort aufgehoben.", effekt_reinige_alle: true },
+          { name: "Apeirons letztes Geschenk", effekt: "Apeiron selbst greift ein und segnet euch. Das Licht erhöht sich um 4.", sphere_change: 4 },
+        ]
+      }
+    };
+
+    let gameState = {};
+
+    // --- DOM ELEMENTS ---
+    const setupScreen = document.getElementById('setup-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const mainGameView = document.getElementById('main-game-view');
+    const playerCountSelector = document.getElementById('player-count-selector');
+    const characterSelector = document.getElementById('character-selector');
+    const difficultySelector = document.getElementById('difficulty-selector');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const newGameBtn = document.getElementById('new-game-btn');
+    const roundTracker = document.getElementById('round-tracker');
+    const sphereValueDisplay = document.getElementById('sphere-value');
+    const sphereBarInner = document.getElementById('sphere-bar-inner');
+    const playerInfoBar = document.getElementById('player-info-bar');
+    const boardContainer = document.getElementById('board-container');
+    const actionButtonsContainer = document.getElementById('action-buttons-container');
+    const endTurnBtn = document.getElementById('end-turn-btn');
+    const gameOverModal = document.getElementById('game-over-modal');
+    const gameOverResetBtn = document.getElementById('game-over-reset-btn');
+    const winModal = document.getElementById('win-modal');
+    const winResetBtn = document.getElementById('win-reset-btn');
+    const itemPickupModal = document.getElementById('item-pickup-modal');
+    const itemSelectionContainer = document.getElementById('item-selection-container');
+    const cancelPickupBtn = document.getElementById('cancel-pickup-btn');
+    const learnSkillModal = document.getElementById('learn-skill-modal');
+    const learnSelectionContainer = document.getElementById('learn-selection-container');
+    const cancelLearnBtn = document.getElementById('cancel-learn-btn');
+    const teachSkillModal = document.getElementById('teach-skill-modal');
+    const skillSelectionContainer = document.getElementById('skill-selection-container');
+    const cancelTeachBtn = document.getElementById('cancel-teach-btn');
+    const spherePhaseModal = document.getElementById('sphere-phase-modal');
+    const spherePhaseTitle = document.getElementById('sphere-phase-title');
+    const sphereEventCard = document.getElementById('sphere-event-card');
+    const nextRoundBtn = document.getElementById('next-round-btn');
+    const turnOverModal = document.getElementById('turn-over-modal');
+    const turnOverMessage = document.getElementById('turn-over-message');
+    const turnOverContinueBtn = document.getElementById('turn-over-continue-btn');
+    const skipTurnModal = document.getElementById('skip-turn-modal');
+    const skipTurnMessage = document.getElementById('skip-turn-message');
+    const skipTurnContinueBtn = document.getElementById('skip-turn-continue-btn');
+    const infoModal = document.getElementById('info-modal');
+    const infoModalTitle = document.getElementById('info-modal-title');
+    const infoModalSymbol = document.getElementById('info-modal-symbol');
+    const infoModalText = document.getElementById('info-modal-text');
+    const infoModalCloseBtn = document.getElementById('info-modal-close-btn');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    const eventImpactDiv = document.getElementById('event-impact');
+
+
+    // --- SETUP LOGIC ---
+    function initializeSetup() {
+        characterSelector.innerHTML = Object.values(HERO_DATA).map(hero => `<div id="card-${hero.id}" class="character-card bg-gray-800 rounded-lg overflow-hidden text-center p-2" data-hero-id="${hero.id}"><img src="${hero.img}" alt="${hero.name}" class="w-full h-64 object-cover object-top"><h3 class="font-cinzel text-xl mt-4">${hero.name}</h3><p class="text-sm text-gray-400 mb-2">${hero.title}</p></div>`).join('');
+        playerCountSelector.addEventListener('click', e => e.target.tagName === 'BUTTON' && selectPlayerCount(parseInt(e.target.dataset.count, 10)));
+        difficultySelector.addEventListener('click', e => e.target.tagName === 'BUTTON' && selectDifficulty(e.target.dataset.difficulty));
+        characterSelector.addEventListener('click', handleCharacterSelect);
+        startGameBtn.addEventListener('click', startGame);
+        [newGameBtn, gameOverResetBtn, winResetBtn].forEach(btn => btn.addEventListener('click', () => location.reload()));
+        selectPlayerCount(4);
+        selectDifficulty('normal');
+    }
+
+    function selectPlayerCount(count) {
+        gameState.playerCount = count;
+        gameState.selectedCharacters = [];
+        [...playerCountSelector.children].forEach(btn => btn.classList.toggle('selected', parseInt(btn.dataset.count, 10) === count));
+        renderCharacterCards();
+        validateSetup();
+    }
+    
+    function selectDifficulty(difficulty) {
+        gameState.difficulty = difficulty;
+        [...difficultySelector.children].forEach(btn => btn.classList.toggle('selected', btn.dataset.difficulty === difficulty));
+    }
+
+    function handleCharacterSelect(e) {
+        const card = e.target.closest('.character-card');
+        if (!card) return;
+        const heroId = card.dataset.heroId;
+        const isSelected = gameState.selectedCharacters.includes(heroId);
+        if (isSelected) {
+            gameState.selectedCharacters = gameState.selectedCharacters.filter(id => id !== heroId);
+        } else if (gameState.selectedCharacters.length < gameState.playerCount) {
+            gameState.selectedCharacters.push(heroId);
+        }
+        renderCharacterCards();
+        validateSetup();
+    }
+    
+    function renderCharacterCards() {
+        const maxSelected = gameState.selectedCharacters.length >= gameState.playerCount;
+        [...characterSelector.children].forEach(card => {
+            const heroId = card.dataset.heroId;
+            const isSelected = gameState.selectedCharacters.includes(heroId);
+            card.classList.toggle('selected', isSelected);
+            card.classList.toggle('disabled', maxSelected && !isSelected);
+        });
+    }
+
+    function validateSetup() {
+        startGameBtn.disabled = gameState.selectedCharacters.length !== gameState.playerCount;
+    }
+
+    // --- GAME LOGIC ---
+    function startGame() {
+        const ap = GAME_CONFIG.aktionspunkte_pro_zug;
+        gameState.players = gameState.selectedCharacters.map(id => {
+            const hero = HERO_DATA[id];
+            return { ...hero, ap: ap, maxAp: ap, inventory: [], learned_skills: [...hero.innate_skills, 'aufdecken'], selected_inventory: [], hasPassedGate: false, blocked_skills: [], effects: [] };
+        });
+        gameState.round = 1;
+        gameState.currentPlayerIndex = 0;
+        gameState.light = GAME_CONFIG.licht_maximalwert;
+        gameState.phase = 1;
+        gameState.preventLightLoss = false;
+        gameState.lightLossPerRound = GAME_CONFIG.lichtverlust_pro_runde.phase_1['spieler_' + gameState.playerCount] || -1;
+        gameState.mode = null;
+        gameState.scoutSelections = [];
+        gameState.gateOfWisdomPlaced = false;
+        gameState.spherePhaseStep = null;
+        
+        gameState.board = { '4,4': { id: 'krater', x: 4, y: 4, revealed: true, resources: [] } };
+        gameState.heroPositions = {};
+        gameState.players.forEach(p => gameState.heroPositions[p.id] = '4,4');
+
+        gameState.players[0].ap = gameState.players[0].maxAp;
+
+        gameState.tower = { foundations: [], activated_elements: [] };
+
+        const missingHeroes = Object.keys(HERO_DATA).filter(id => !gameState.selectedCharacters.includes(id));
+        const artifacts = missingHeroes.map(id => `artefakt_${id}`);
+        
+        const tileDeck1Config = GAME_CONFIG.landschaftsplaettchen.phase_1;
+        let tileDeck1 = [];
+        for(const tileId in tileDeck1Config) {
+            for(let i=0; i<tileDeck1Config[tileId]; i++) {
+                tileDeck1.push(tileId);
+            }
+        }
+        gameState.tileDeck1 = shuffle([...tileDeck1, ...artifacts]);
+
+        const tileDeck2Config = GAME_CONFIG.landschaftsplaettchen.phase_2;
+        let tileDeck2 = [];
+        for(const tileId in tileDeck2Config) {
+            for(let i=0; i<tileDeck2Config[tileId]; i++) {
+                tileDeck2.push(tileId);
+            }
+        }
+        gameState.tileDeck2 = shuffle(tileDeck2);
+
+        createEventDecks(gameState.difficulty);
+
+        setupScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+        
+        endTurnBtn.addEventListener('click', endTurn);
+        nextRoundBtn.addEventListener('click', handleSpherePhaseContinue);
+        
+        document.getElementById('pickup-item-btn')?.addEventListener('click', pickupItem);
+        document.getElementById('drop-item-btn')?.addEventListener('click', dropItem);
+        document.getElementById('learn-skill-btn')?.addEventListener('click', learnSkill);
+        document.getElementById('teach-skill-btn')?.addEventListener('click', startTeaching);
+        document.getElementById('pass-gate-btn')?.addEventListener('click', passGateOfWisdom);
+        document.getElementById('scout-btn')?.addEventListener('click', startScouting);
+        document.getElementById('cleanse-btn')?.addEventListener('click', cleanseEffect);
+        document.getElementById('remove-obstacle-btn')?.addEventListener('click', startRemovingObstacle);
+        document.getElementById('build-foundation-btn')?.addEventListener('click', buildFoundation);
+        document.getElementById('activate-element-btn')?.addEventListener('click', activateElement);
+        boardContainer.addEventListener('click', handleBoardClick);
+        playerInfoBar.addEventListener('click', handlePlayerInfoClick);
+        itemSelectionContainer.addEventListener('click', handleItemSelection);
+        cancelPickupBtn.addEventListener('click', () => itemPickupModal.classList.add('hidden'));
+        learnSelectionContainer.addEventListener('click', handleLearnSelection);
+        cancelLearnBtn.addEventListener('click', () => learnSkillModal.classList.add('hidden'));
+        skillSelectionContainer.addEventListener('click', handleSkillSelection);
+        cancelTeachBtn.addEventListener('click', () => teachSkillModal.classList.add('hidden'));
+        turnOverContinueBtn.addEventListener('click', () => {
+            turnOverModal.classList.add('hidden');
+            endTurn();
+        });
+
+        showInfoModal(
+            "Phase 1: Die Suche", "🗺️",  
+            "Die Dunkelheit breitet sich aus! Erkundet die Insel, findet die vier uralten Baupläne und sammelt je 2 Apeiron-Kristalle, um die vier Fundamente des Turms am Krater zu errichten.",
+            renderAll
+        );
+    }
+
+    function createEventDecks(difficulty) {
+        const ratios = {
+            leicht: { positive: 0.7, negative: 0.3 },
+            normal: { positive: 0.5, negative: 0.5 },
+            schwer: { positive: 0.3, negative: 0.7 }
+        };
+        const ratio = ratios[difficulty];
+
+        const buildDeck = (phaseEvents) => {
+            const totalCards = 40;
+            const numPositive = Math.round(totalCards * ratio.positive);
+            const numNegative = totalCards - numPositive;
+
+            const positiveCards = shuffle([...phaseEvents.positive]).slice(0, numPositive);
+            const negativeCards = shuffle([...phaseEvents.negative]).slice(0, numNegative);
+            
+            return shuffle([...positiveCards, ...negativeCards]);
+        };
+
+        gameState.eventDeck1 = buildDeck(EVENT_CARD_DATA.phase_1_events);
+        gameState.eventDeck2 = buildDeck(EVENT_CARD_DATA.phase_2_events);
+    }
+
+    function endTurn() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        
+        currentPlayer.effects = currentPlayer.effects.filter(effect => {
+            if (effect.duration === 'bis Reinigung' || effect.duration === 'bis Spielende') {
+                return true;
+            }
+            return false;
+        });
+        
+        currentPlayer.selected_inventory = [];
+        gameState.currentPlayerIndex++;
+        
+        if (gameState.currentPlayerIndex >= gameState.players.length) {
+            startSpherePhase();
+        } else {
+            startNextPlayerTurn();
+        }
+    }
+
+    function startNextPlayerTurn() {
+        const nextPlayer = gameState.players[gameState.currentPlayerIndex];
+        
+        if (checkForSkipTurn(nextPlayer)) {
+            return; 
+        }
+
+        nextPlayer.ap = nextPlayer.maxAp;
+
+        const permanentApReduction = nextPlayer.effects.find(e => e.type === 'ap_reduction_next_turn' && e.duration === 'bis Reinigung');
+        if (permanentApReduction) {
+            nextPlayer.ap -= permanentApReduction.amount;
+            if (nextPlayer.ap < 1) nextPlayer.ap = 1;
+        }
+        
+        const apBoostEffect = nextPlayer.effects.find(e => e.type === 'ap_boost_next_turn');
+        if (apBoostEffect) {
+            nextPlayer.ap += apBoostEffect.amount;
+        }
+
+        renderAll();
+    }
+
+    function checkForSkipTurn(player) {
+        const skipEffectIndex = player.effects.findIndex(e => e.type === 'skip_turn');
+        if (skipEffectIndex > -1) {
+            skipTurnMessage.textContent = `${player.name} muss diesen Zug aussetzen.`;
+            skipTurnModal.classList.remove('hidden');
+
+            const skipListener = () => {
+                skipTurnModal.classList.add('hidden');
+                player.effects.splice(skipEffectIndex, 1);
+                endTurn(); 
+            };
+            skipTurnContinueBtn.addEventListener('click', skipListener, { once: true });
+            return true;
+        }
+        return false;
+    }
+    
+    function handleSpherePhaseContinue() {
+        if (gameState.spherePhaseStep === 'gate') {
+            processRegularSphereEvent();
+        } else if (gameState.spherePhaseStep === 'event') {
+            endSpherePhase();
+        }
+    }
+    
+    function startSpherePhase() {
+        mainGameView.classList.add('hidden');
+        spherePhaseModal.classList.remove('hidden');
+        eventImpactDiv.innerHTML = '';
+        
+        const gateRound = GAME_CONFIG.erscheinen_tor_der_weisheit['spieler_' + gameState.playerCount];
+        if (gameState.round === gateRound && !gameState.gateOfWisdomPlaced) {
+            gameState.spherePhaseStep = 'gate';
+            handleGateAppearance();
+        } else {
+            gameState.spherePhaseStep = 'event';
+            processRegularSphereEvent();
+        }
+    }
+
+    function handleGateAppearance() {
+        const direction = placeGateOfWisdom();
+        let directionText = 'unbekannten Weiten';
+        if (direction) {
+            switch (direction) {
+                case 'Westen': directionText = 'windgepeitschten Westen'; break;
+                case 'Osten': directionText = 'sonnenverbrannten Osten'; break;
+                case 'Norden': directionText = 'eisigen Norden'; break;
+                case 'Süden': directionText = 'schwülen Süden'; break;
+            }
+        }
+        
+        spherePhaseTitle.textContent = "Ein Hoffnungsschimmer: Das Tor der Weisheit";
+        sphereEventCard.innerHTML = `<div class="text-center">
+            <p class="text-2xl mb-2">⛩️</p>
+            <p class="text-lg">
+                Ein uraltes Licht durchbricht die Dunkelheit! Im ${directionText} hat sich das legendäre <strong>Tor der Weisheit</strong> manifestiert.
+            </p>
+            <p class="text-gray-400 mt-2">
+                Es heißt, nur wahre Meister ihres Elements können es durchschreiten, um ihr Wissen zu teilen und so das Licht im Kampf gegen die Finsternis zu stärken. Sucht das Tor auf, um eure angeborenen Fähigkeiten an eure Verbündeten weiterzugeben!
+            </p>
+        </div>`;
+        eventImpactDiv.innerHTML = '';
+        nextRoundBtn.textContent = 'Weiter zum Ereignis';
+        
+        renderBoard();
+    }
+
+    function processRegularSphereEvent() {
+        gameState.spherePhaseStep = 'event';
+        // 1. Standard Light Loss
+        let lightChange = 0;
+        if (!gameState.preventLightLoss) {
+            lightChange = gameState.lightLossPerRound || 0;
+        }
+        gameState.preventLightLoss = false; // Reset for next round
+
+        // 2. Event Card
+        let eventCardEffect = 0;
+        let eventEffectText = '';
+        let eventImpactMessages = [];
+        const deck = gameState.phase === 1 ? gameState.eventDeck1 : gameState.eventDeck2;
+        let cardToProcess = deck.length > 0 ? deck.pop() : null;
+
+        if (cardToProcess) {
+            if (cardToProcess.prevent_sphere_loss) {
+                lightChange = 0;
+            }
+            if (cardToProcess.sphere_change) {
+                eventCardEffect = cardToProcess.sphere_change;
+            }
+            eventEffectText = `<h3 class="text-2xl font-cinzel mb-2 text-yellow-300">${cardToProcess.name}</h3><div class="bg-gray-900 p-4 rounded-lg"><p class="text-lg">${cardToProcess.effekt}</p></div>`;
+            eventImpactMessages = handleEventEffects(cardToProcess);
+        } else {
+            eventEffectText = `<h3 class="text-2xl font-cinzel mb-2 text-yellow-300">Stille</h3><div class="bg-gray-900 p-4 rounded-lg"><p class="text-gray-400">Keine Ereignisse mehr in diesem Stapel.</p></div>`;
+        }
+
+        // 3. Display
+        sphereEventCard.innerHTML = eventEffectText;
+        if (eventImpactMessages.length > 0) {
+            eventImpactDiv.innerHTML = '<h4 class="font-bold text-gray-300 mt-4">Auswirkungen:</h4>' + eventImpactMessages.map(msg => `<p class="text-sm text-gray-400">${msg}</p>`).join('');
+        } else {
+            eventImpactDiv.innerHTML = '<h4 class="font-bold text-gray-300 mt-4">Auswirkungen:</h4><p class="text-sm text-gray-400">Keine Helden sind von diesem Ereignis betroffen.</p>';
+        }
+
+        // 4. Final Calculation and Update
+        const totalLightChange = lightChange + eventCardEffect;
+        gameState.light += totalLightChange;
+
+        if (totalLightChange < 0) {
+            spherePhaseTitle.textContent = `Das Licht schwindet um ${-totalLightChange}!`;
+        } else if (totalLightChange > 0) {
+            spherePhaseTitle.textContent = `Das Licht wird um ${totalLightChange} gestärkt!`;
+        } else {
+            spherePhaseTitle.textContent = "Das Licht ist diese Runde stabil!";
+        }
+        
+        updateLightDisplay();
+        nextRoundBtn.textContent = 'Nächste Runde beginnen';
+    }
+    
+    // ERWEITERT: Diese Funktion wurde stark überarbeitet, um die neuen Event-Typen zu verarbeiten
+    function handleEventEffects(card) {
+        if (!card) return [];
+        let impacts = [];
+
+        if (card.effekt_hindernis_platzieren) {
+            const effect = card.effekt_hindernis_platzieren;
+            const count = effect.anzahl || 1;
+            for (let i = 0; i < count; i++) {
+                // Vereinfachte Cluster-Logik: platziert in der Nähe des ersten Hindernisses, falls möglich
+                const placedObstacle = placeObstacle(effect.hindernis, effect.ziel_typ, effect.cluster && i > 0);
+                if (placedObstacle) {
+                    impacts.push(`Ein Hindernis "${OBSTACLE_DATA[effect.hindernis].name}" wurde auf ${TILE_DATA[placedObstacle.id].name} platziert.`);
+                } else {
+                    impacts.push(`Kein passendes Feld für "${OBSTACLE_DATA[effect.hindernis].name}" gefunden.`);
+                }
+            }
+        }
+        
+        if (card.effekt_hindernis_entfernen) {
+            const allObstacles = Object.values(gameState.board).filter(t => t.obstacle);
+            if (allObstacles.length > 0) {
+                const tileToRemoveFrom = shuffle(allObstacles)[0];
+                const obstacleName = OBSTACLE_DATA[tileToRemoveFrom.obstacle].name;
+                delete tileToRemoveFrom.obstacle;
+                impacts.push(`Ein "${obstacleName}"-Hindernis wurde vom Feld entfernt.`);
+            } else {
+                impacts.push("Glück gehabt! Es gab keine Hindernisse zum Entfernen.");
+            }
+        }
+
+        if (card.effekt_reinige_alle) {
+            gameState.players.forEach(player => {
+                player.effects = [];
+                player.blocked_skills = [];
+            });
+            impacts.push("Alle negativen Effekte wurden von allen Helden entfernt!");
+        }
+
+        if (card.effekt_item_vernichten) {
+            const effect = card.effekt_item_vernichten;
+            let affectedPlayers = getAffectedPlayers(effect.ziel);
+            affectedPlayers.forEach(player => {
+                if (effect.menge === 'alle') {
+                    const itemCount = player.inventory.filter(item => item === effect.item).length;
+                    if (itemCount > 0) {
+                        player.inventory = player.inventory.filter(item => item !== effect.item);
+                        impacts.push(`${player.name} verliert alle (${itemCount}) Kristalle.`);
+                    }
+                } else {
+                    for (let i = 0; i < effect.menge; i++) {
+                        const itemIndex = player.inventory.lastIndexOf(effect.item);
+                        if (itemIndex > -1) {
+                            player.inventory.splice(itemIndex, 1);
+                            impacts.push(`${player.name} verliert einen Kristall.`);
+                        }
+                    }
+                }
+            });
+        }
+        
+        if (card.effekt_item_ablegen) {
+            const effect = card.effekt_item_ablegen;
+            let affectedPlayers = getAffectedPlayers(effect.ziel);
+            affectedPlayers.forEach(player => {
+                const itemIndex = player.inventory.findIndex(item => item.includes(effect.item));
+                if (itemIndex > -1) {
+                    const itemToDrop = player.inventory.splice(itemIndex, 1)[0];
+                    const posKey = gameState.heroPositions[player.id];
+                    gameState.board[posKey].resources.push(itemToDrop);
+                    impacts.push(`${player.name} lässt ${TILE_DATA[itemToDrop]?.name || itemToDrop} fallen.`);
+                }
+            });
+        }
+
+        if (card.effekt_blockiere_faehigkeit) {
+            const effect = card.effekt_blockiere_faehigkeit;
+            let affectedPlayers = getAffectedPlayers(effect.ziel);
+            affectedPlayers.forEach(player => {
+                let skillsToBlock = [];
+                if (effect.faehigkeiten === 'innate') {
+                    skillsToBlock = HERO_DATA[player.id].innate_skills;
+                } else {
+                    skillsToBlock = effect.faehigkeiten;
+                }
+
+                skillsToBlock.forEach(skillId => {
+                    if (!player.blocked_skills.includes(skillId)) {
+                        player.blocked_skills.push(skillId);
+                        player.effects.push({
+                            type: 'blocked_skill',
+                            skillId: skillId,
+                            duration: effect.dauer === 'bis Reinigung' ? 'bis Reinigung' : 1
+                        });
+                        impacts.push(`${player.name} kann "${SKILL_DATA[skillId].name}" nicht mehr einsetzen.`);
+                    }
+                });
+            });
+        }
+        
+        if (card.effekt_AP_reduktion) {
+            const effect = card.effekt_AP_reduktion;
+            let affectedPlayers = getAffectedPlayers(effect.ziel);
+            affectedPlayers.forEach(player => {
+                const duration = effect.dauer === 'bis Spielende' ? 'bis Spielende' : 1;
+                if (duration === 'bis Spielende') {
+                    player.maxAp += effect.anzahl;
+                    if (player.maxAp < 1) player.maxAp = 1;
+                    impacts.push(`${player.name} hat permanent -1 max AP.`);
+                } else {
+                     player.effects.push({
+                        type: 'ap_reduction_next_turn',
+                        amount: Math.abs(effect.anzahl),
+                        duration: 1
+                    });
+                    impacts.push(`${player.name} hat im nächsten Zug ${Math.abs(effect.anzahl)} AP weniger.`);
+                }
+            });
+        }
+
+        if (card.effekt_aussetzen) {
+            const effect = card.effekt_aussetzen;
+            let affectedPlayers = getAffectedPlayers(effect.ziel);
+            affectedPlayers.forEach(player => {
+                player.effects.push({ type: 'skip_turn', duration: effect.dauer });
+                impacts.push(`${player.name} muss den nächsten Zug aussetzen.`);
+                if (card.effekt_item_vernichten && card.effekt_item_vernichten.ziel === 'selbst') {
+                    const itemIndex = player.inventory.lastIndexOf(card.effekt_item_vernichten.item);
+                    if (itemIndex > -1) {
+                        player.inventory.splice(itemIndex, 1);
+                        impacts.push(`... und verliert dabei einen Kristall.`);
+                    }
+                }
+            });
+        }
+
+        if (card.effekt_item_hinzufuegen) {
+            const effect = card.effekt_item_hinzufuegen;
+            let affectedPlayers = getAffectedPlayers(effect.ziel);
+            let itemsToAdd = effect.menge;
+            affectedPlayers.forEach(player => {
+                for (let i = 0; i < effect.menge; i++) {
+                    if (player.inventory.length < GAME_CONFIG.inventar_vorratsplaetze) {
+                         player.inventory.push(effect.item);
+                         impacts.push(`${player.name} erhält einen Kristall.`);
+                    } else if (effect.ziel === 'alle' && effect.menge > 1) {
+                        // Special case for "Schatz der Erbauer"
+                        // Simple implementation: just give to those who have space
+                    }
+                }
+            });
+        }
+
+        if (card.effekt_AP_erhoehen) {
+            const effect = card.effekt_AP_erhoehen;
+            let affectedPlayers = getAffectedPlayers(effect.ziel);
+            affectedPlayers.forEach(player => {
+                const duration = effect.dauer === 'bis Spielende' ? 'bis Spielende' : 1;
+                if (duration === 'bis Spielende') {
+                    player.maxAp += effect.menge;
+                    impacts.push(`${player.name} hat permanent +${effect.menge} max AP.`);
+                } else {
+                    player.effects.push({ type: 'ap_boost_next_turn', amount: effect.menge, duration: 1 });
+                    impacts.push(`${player.name} erhält im nächsten Zug +${effect.menge} AP.`);
+                }
+            });
+        }
+        
+        if (card.effekt_skill_aenderung) {
+            let affectedPlayers = getAffectedPlayers(card.effekt_skill_aenderung.ziel);
+            affectedPlayers.forEach(player => {
+                card.effekt_skill_aenderung.faehigkeiten.forEach(skillId => {
+                    if (!player.learned_skills.includes(skillId)) {
+                        player.learned_skills.push(skillId);
+                        impacts.push(`${player.name} erlernt "${SKILL_DATA[skillId].name}".`);
+                    }
+                });
+            });
+        }
+        
+        return impacts;
+    }
+    
+    // ERWEITERT: Diese Funktion wurde um 'wenigste_kristalle' erweitert
+    function getAffectedPlayers(ziel) {
+        switch (ziel) {
+            case 'alle':
+                return gameState.players;
+            case 'aktiver_spieler':
+                 // In sphere phase, there's no single active player, so we choose randomly
+                return [gameState.players[Math.floor(Math.random() * gameState.players.length)]];
+            case 'zufaellig':
+                return [getRandomPlayer()];
+            case 'hoechste_kristalle':
+                return getPlayersWithMostCrystals();
+            case 'wenigste_kristalle':
+                 return getPlayersWithLeastCrystals();
+            default:
+                return [];
+        }
+    }
+
+    function getRandomPlayer() {
+        const randomIndex = Math.floor(Math.random() * gameState.players.length);
+        return gameState.players[randomIndex];
+    }
+    
+    function getPlayersWithMostCrystals() {
+        let maxCount = -1;
+        let playersWithMax = [];
+        gameState.players.forEach(p => {
+            const count = p.inventory.filter(item => item === 'kristall').length;
+            if (count > maxCount) {
+                maxCount = count;
+                playersWithMax = [p];
+            } else if (count === maxCount) {
+                playersWithMax.push(p);
+            }
+        });
+        if (maxCount === 0) return [];
+        return [shuffle(playersWithMax)[0]];
+    }
+    
+    // NEU: Diese Funktion wurde hinzugefügt
+    function getPlayersWithLeastCrystals() {
+        let minCount = Infinity;
+        let playersWithMin = [];
+        gameState.players.forEach(p => {
+            const count = p.inventory.filter(item => item === 'kristall').length;
+            if (count < minCount) {
+                minCount = count;
+                playersWithMin = [p];
+            } else if (count === minCount) {
+                playersWithMin.push(p);
+            }
+        });
+        return [shuffle(playersWithMin)[0]];
+    }
+
+    function cleanseEffect() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+        
+        const currentPos = gameState.heroPositions[currentPlayer.id];
+        const playersOnTileWithEffects = gameState.players.filter(p => gameState.heroPositions[p.id] === currentPos && (p.effects.length > 0 || p.blocked_skills.length > 0));
+
+        if (playersOnTileWithEffects.length === 0) {
+            showToast("Es gibt hier keinen Helden, den du reinigen kannst.");
+            return;
+        }
+
+        currentPlayer.ap--;
+        
+        playersOnTileWithEffects.forEach(player => {
+            player.effects = [];
+            player.blocked_skills = [];
+        });
+        
+        showToast(`${currentPlayer.name} reinigt alle Helden auf diesem Feld! (-1 AP)`);
+        renderAll();
+        checkAndEndTurn();
+    }
+
+    function endSpherePhase() {
+        spherePhaseModal.classList.add('hidden');
+        mainGameView.classList.remove('hidden');
+
+        gameState.players.forEach(p => {
+             p.effects = p.effects.filter(effect => effect.duration !== 1);
+        });
+
+        gameState.round++;
+        gameState.currentPlayerIndex = 0;
+        startNextPlayerTurn();
+    }
+
+    function learnSkill() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+
+        const learnableItems = currentPlayer.inventory.filter(item => LEARNABLE_ITEMS[item]);
+        if (learnableItems.length === 0) { showToast("Du hast nichts zum Lernen im Inventar."); return; }
+        
+        if (learnableItems.length === 1) {
+            const itemToLearn = learnableItems[0];
+            executeLearn(itemToLearn);
+        } else {
+            learnSelectionContainer.innerHTML = learnableItems.map(item =>
+                `<button data-item-id="${item}" class="btn-custom btn-purple w-full">${ITEM_SYMBOLS[item] || ''} ${item}</button>`
+            ).join('');
+            learnSkillModal.classList.remove('hidden');
+        }
+    }
+    
+    function handleLearnSelection(e) {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const itemId = btn.dataset.itemId;
+        executeLearn(itemId);
+        learnSkillModal.classList.add('hidden');
+    }
+
+    function executeLearn(itemToLearn) {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        const itemIndex = currentPlayer.inventory.findIndex(item => item === itemToLearn);
+        if (itemIndex === -1) return;
+
+        currentPlayer.ap--;
+        currentPlayer.inventory.splice(itemIndex, 1);
+        const skillsToLearn = Array.isArray(LEARNABLE_ITEMS[itemToLearn]) ? LEARNABLE_ITEMS[itemToLearn] : [LEARNABLE_ITEMS[itemToLearn]];
+        
+        const currentPos = gameState.heroPositions[currentPlayer.id];
+        const playersOnTile = gameState.players.filter(p => gameState.heroPositions[p.id] === currentPos);
+
+        let newSkillsInfo = [];
+        playersOnTile.forEach(player => {
+            skillsToLearn.forEach(skillId => {
+                if (!player.learned_skills.includes(skillId)) {
+                    player.learned_skills.push(skillId);
+                    if (!newSkillsInfo.find(s => s.id === skillId)) {
+                        newSkillsInfo.push({id: skillId, ...SKILL_DATA[skillId]});
+                    }
+                }
+            });
+        });
+        
+        showToast(`Alle Helden auf dem Feld lernen neue Fähigkeiten! (-1 AP)`);
+        if (newSkillsInfo.length > 0) {
+            const info = newSkillsInfo[0];
+            showInfoModal("Fähigkeit gelernt!", info.symbol, info.desc);
+        }
+        renderAll();
+        checkAndEndTurn();
+    }
+    
+    function handleBoardClick(e) {
+        const tileEl = e.target.closest('.tile');
+        if (!tileEl) return;
+        const { x, y } = tileEl.dataset;
+        const newX = parseInt(x, 10);
+        const newY = parseInt(y, 10);
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        
+        const isAufdeckenBlocked = currentPlayer.blocked_skills.includes('aufdecken');
+
+        if (gameState.mode === 'removing_obstacle') {
+            executeRemoveObstacle(newX, newY);
+            return;
+        }
+        
+        if (gameState.mode === 'scouting') { handleScoutSelection(newX, newY); return; }
+        if (tileEl.classList.contains('discoverable') && !isAufdeckenBlocked) { discoverTile(newX, newY); }  
+        else if (tileEl.classList.contains('movable')) { moveHero(newX, newY); }
+    }
+    
+    function handlePlayerInfoClick(e) {
+        const slot = e.target.closest('.inventory-slot');
+        if (!slot || !slot.classList.contains('can-drop')) return;
+        
+        const itemIndex = parseInt(slot.dataset.index, 10);
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        const item = currentPlayer.inventory[itemIndex];
+        if (!item) return;
+
+        const selectionIndex = currentPlayer.selected_inventory.indexOf(itemIndex);
+        if (selectionIndex > -1) {
+            currentPlayer.selected_inventory.splice(selectionIndex, 1);
+        } else {
+            currentPlayer.selected_inventory.push(itemIndex);
+        }
+        renderPlayerInfo();
+        updateActionButtons();
+    }
+
+    function moveHero(x, y) {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+
+        currentPlayer.ap--;
+        gameState.heroPositions[currentPlayer.id] = `${x},${y}`;
+        showToast(`${currentPlayer.name} bewegt sich. (-1 AP)`);
+        renderAll();
+        checkAndEndTurn();
+    }
+
+    function discoverTile(x, y) {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+        
+        const deck = gameState.phase === 1 ? gameState.tileDeck1 : gameState.tileDeck2;
+        if(deck.length === 0) { showToast("Keine Landschaftsplättchen mehr!"); return; }
+        
+        currentPlayer.ap--;
+        
+        const tileId = deck.pop();
+        const key = `${x},${y}`;
+        gameState.board[key] = { id: tileId, x, y, revealed: true, resources: [] };
+        if (TILE_DATA[tileId].resource) {
+            gameState.board[key].resources.push(TILE_DATA[tileId].resource);
+        }
+
+        showToast(`Ort entdeckt: ${TILE_DATA[tileId].name} (-1 AP)`);
+        renderAll();
+        checkAndEndTurn();
+    }
+    
+    function pickupItem() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+        const posKey = gameState.heroPositions[currentPlayer.id];
+        const currentTile = gameState.board[posKey];
+        if (!currentTile || !currentTile.resources || currentTile.resources.length === 0) { showToast("Hier gibt es nichts zum Aufnehmen."); return; }
+        if (currentPlayer.inventory.length >= GAME_CONFIG.inventar_vorratsplaetze) { showToast("Dein Inventar ist voll!"); return; }
+
+        if (currentTile.resources.length === 1) {
+            executePickup(currentTile.resources[0]);
+        } else {
+            itemSelectionContainer.innerHTML = currentTile.resources.map(item => 
+                `<button data-item-id="${item}" class="btn-custom btn-green w-full">${ITEM_SYMBOLS[item] || ''} ${item}</button>`
+            ).join('');
+            itemPickupModal.classList.remove('hidden');
+        }
+    }
+
+    function handleItemSelection(e) {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const itemId = btn.dataset.itemId;
+        executePickup(itemId);
+        itemPickupModal.classList.add('hidden');
+    }
+
+    function executePickup(itemId) {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        const posKey = gameState.heroPositions[currentPlayer.id];
+        const currentTile = gameState.board[posKey];
+        
+        const itemIndex = currentTile.resources.findIndex(item => item === itemId);
+        if (itemIndex === -1) return;
+
+        currentPlayer.ap--;
+        const item = currentTile.resources.splice(itemIndex, 1)[0];
+        currentPlayer.inventory.push(item);
+
+        showToast(`${currentPlayer.name} nimmt ${item} auf. (-1 AP)`);
+        renderAll();
+        checkAndEndTurn();
+    }
+    
+    function dropItem() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+        if (currentPlayer.selected_inventory.length === 0) { showToast("Kein Item zum Ablegen ausgewählt."); return; }
+        
+        currentPlayer.ap--;
+        const posKey = gameState.heroPositions[currentPlayer.id];
+        const currentTile = gameState.board[posKey];
+        
+        const itemsToDrop = [];
+        currentPlayer.selected_inventory.sort((a,b) => b-a).forEach(index => {
+            const item = currentPlayer.inventory.splice(index, 1)[0];
+            itemsToDrop.push(item);
+        });
+        
+        currentTile.resources.push(...itemsToDrop);
+        currentPlayer.selected_inventory = [];
+
+        showToast(`Items abgelegt. (-1 AP)`);
+        renderAll();
+        checkAndEndTurn();
+    }
+
+    function startTeaching() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+        
+        const currentPos = gameState.heroPositions[currentPlayer.id];
+        const otherPlayersOnTile = gameState.players.filter(p => p.id !== currentPlayer.id && gameState.heroPositions[p.id] === currentPos);
+        
+        const teachableSkills = currentPlayer.innate_skills.filter(skillId => 
+            otherPlayersOnTile.some(p => !p.learned_skills.includes(skillId))
+        );
+
+        if (teachableSkills.length > 0) {
+            skillSelectionContainer.innerHTML = teachableSkills.map(skillId => 
+                `<button data-skill-id="${skillId}" class="btn-custom btn-purple w-full">${SKILL_DATA[skillId].symbol} ${SKILL_DATA[skillId].name}</button>`
+            ).join('');
+            teachSkillModal.classList.remove('hidden');
+        } else {
+            showToast("Es gibt hier niemanden, dem du etwas beibringen könntest.");
+        }
+    }
+
+    function handleSkillSelection(e) {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const skillId = btn.dataset.skillId;
+        executeTeachSkill(skillId);
+        teachSkillModal.classList.add('hidden');
+    }
+
+    function executeTeachSkill(skillId) {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        currentPlayer.ap--;
+
+        const currentPos = gameState.heroPositions[currentPlayer.id];
+        const otherPlayersOnTile = gameState.players.filter(p => p.id !== currentPlayer.id && gameState.heroPositions[p.id] === currentPos);
+
+        otherPlayersOnTile.forEach(player => {
+            if (!player.learned_skills.includes(skillId)) {
+                player.learned_skills.push(skillId);
+            }
+        });
+        
+        showToast(`${currentPlayer.name} lehrt ${SKILL_DATA[skillId].name}. (-1 AP)`);
+        showInfoModal("Fähigkeit gelernt!", SKILL_DATA[skillId].symbol, SKILL_DATA[skillId].desc);
+        renderAll();
+        checkAndEndTurn();
+    }
+
+    function startScouting() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+
+        gameState.mode = 'scouting';
+        currentPlayer.ap--;
+        showToast("Spähen: Wähle 2 angrenzende Felder zum Aufdecken. (-1 AP)");
+        renderAll();
+    }
+
+    function handleScoutSelection(x, y) {
+        const key = `${x},${y}`;
+        if (gameState.scoutSelections.includes(key)) return;
+
+        gameState.scoutSelections.push(key);
+
+        if (gameState.scoutSelections.length === 2) {
+            const deck = gameState.phase === 1 ? gameState.tileDeck1 : gameState.tileDeck2;
+            gameState.scoutSelections.forEach(selKey => {
+                if (deck.length > 0) {
+                    const [selX, selY] = selKey.split(',').map(Number);
+                    const tileId = deck.pop();
+                    gameState.board[selKey] = { id: tileId, x: selX, y: selY, revealed: true, resources: [] };
+                    if (TILE_DATA[tileId].resource) {
+                        gameState.board[selKey].resources.push(TILE_DATA[tileId].resource);
+                    }
+                }
+            });
+            showToast("2 Felder aufgedeckt!");
+            gameState.mode = null;
+            gameState.scoutSelections = [];
+            renderAll();
+            checkAndEndTurn();
+        } else {
+            renderBoard();
+        }
+    }
+
+    function startRemovingObstacle() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+        
+        gameState.mode = 'removing_obstacle';
+        showToast("Wähle ein angrenzendes Hindernis-Feld zum Beseitigen. (-1 AP)");
+        renderAll();
+    }
+    
+    function executeRemoveObstacle(x, y) {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        const key = `${x},${y}`;
+        const targetTile = gameState.board[key];
+
+        if (!targetTile || !targetTile.obstacle) {
+            showToast("Dies ist kein Hindernis-Feld.");
+            gameState.mode = null;
+            renderAll();
+            return;
+        }
+        
+        const requiredSkill = OBSTACLE_DATA[targetTile.obstacle].required_skill;
+        if (!currentPlayer.learned_skills.includes(requiredSkill)) {
+            showToast(`Du benötigst die Fähigkeit "${SKILL_DATA[requiredSkill].name}".`);
+            gameState.mode = null;
+            renderAll();
+            return;
+        }
+
+        currentPlayer.ap--;
+        const obstacleName = OBSTACLE_DATA[targetTile.obstacle].name;
+        delete targetTile.obstacle;
+        showToast(`Hindernis "${obstacleName}" entfernt! (-1 AP)`);
+        gameState.mode = null;
+        renderAll();
+        checkAndEndTurn();
+    }
+
+    function buildFoundation() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+
+        const crystalsInInventory = currentPlayer.inventory.filter(item => item === 'kristall').length;
+        if (crystalsInInventory < 2) { showToast("Du benötigst 2 Kristalle."); return; }
+        
+        const buildableFoundation = Object.keys(FOUNDATION_REQUIREMENTS).find(element => {
+            const requiredSkill = FOUNDATION_REQUIREMENTS[element];
+            return !gameState.tower.foundations.includes(element) && currentPlayer.learned_skills.includes(requiredSkill);
+        });
+
+        if (!buildableFoundation) { showToast("Du kannst hier keinen Grundstein bauen."); return; }
+
+        currentPlayer.ap--;
+        
+        for(let i = 0; i < 2; i++) {
+            const crystalIndex = currentPlayer.inventory.indexOf('kristall');
+            currentPlayer.inventory.splice(crystalIndex, 1);
+        }
+
+        gameState.tower.foundations.push(buildableFoundation);
+        showToast(`Fundament für ${buildableFoundation} wurde errichtet! (-1 AP, -2 💎)`);
+
+        if (gameState.tower.foundations.length === 4) {
+            showInfoModal("Die Fundamente stehen!", "🏛️", "Großartige Arbeit! Alle vier Grundsteine wurden gelegt. Doch die Dunkelheit weicht nicht...", () => {
+                changeToPhase2();
+            });
+        }
+        
+        renderAll();
+        checkAndEndTurn();
+    }
+    
+    function changeToPhase2() {
+        gameState.phase = 2;
+        gameState.lightLossPerRound = GAME_CONFIG.lichtverlust_pro_runde.phase_2['spieler_' + gameState.playerCount] || -2;
+        gameState.light += 10;
+        if (gameState.light > GAME_CONFIG.licht_maximalwert) {
+            gameState.light = GAME_CONFIG.licht_maximalwert;
+        }
+        
+        showInfoModal("Phase 2: Die Jagd", "💎", "Ein Hoffnungsschimmer erhellt die Insel und die Dunkelheit weicht zurück! Aber der Kampf ist noch nicht gewonnen. Findet die vier Element-Fragmente und aktiviert damit die Fundamente am Krater.", renderAll);
+    }
+
+    function passGateOfWisdom() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+        
+        currentPlayer.ap--;
+        currentPlayer.hasPassedGate = true;
+        showInfoModal("Tor der Weisheit", "⛩️", `${currentPlayer.name} hat das Tor durchschritten! Das uralte Wissen erlaubt es ${currentPlayer.name} von nun an, seine angeborenen Fähigkeiten an Mitstreiter weiterzugeben.`);
+        renderAll();
+        checkAndEndTurn();
+    }
+    
+    function placeGateOfWisdom() {
+        const revealedTiles = Object.values(gameState.board);
+        if (revealedTiles.length === 0) return null;
+
+        const minX = Math.min(...revealedTiles.map(t => t.x));
+        const maxX = Math.max(...revealedTiles.map(t => t.x));
+        const minY = Math.min(...revealedTiles.map(t => t.y));
+        const maxY = Math.max(...revealedTiles.map(t => t.y));
+
+        const westernmost = revealedTiles.filter(t => t.x === minX);
+        const easternmost = revealedTiles.filter(t => t.x === maxX);
+        const northernmost = revealedTiles.filter(t => t.y === minY);
+        const southernmost = revealedTiles.filter(t => t.y === maxY);
+
+        const potentialSpawns = [];
+
+        const addPotentialSpawns = (tiles, direction) => {
+            for (const tile of tiles) {
+                const neighbors = [
+                    { x: tile.x - 1, y: tile.y }, { x: tile.x + 1, y: tile.y },
+                    { x: tile.x, y: tile.y - 1 }, { x: tile.x, y: tile.y + 1 }
+                ];
+                for (const n of neighbors) {
+                    const key = `${n.x},${n.y}`;
+                    if (n.x >= 0 && n.x < 9 && n.y >= 0 && n.y < 9 && !gameState.board[key]) {
+                        potentialSpawns.push({ ...n, direction });
+                    }
+                }
+            }
+        };
+
+        addPotentialSpawns(westernmost, 'Westen');
+        addPotentialSpawns(easternmost, 'Osten');
+        addPotentialSpawns(northernmost, 'Norden');
+        addPotentialSpawns(southernmost, 'Süden');
+
+        if (potentialSpawns.length === 0) return null;
+
+        const spawnPoint = shuffle(potentialSpawns)[0];
+        const key = `${spawnPoint.x},${spawnPoint.y}`;
+
+        gameState.board[key] = { id: 'tor_der_weisheit', x: spawnPoint.x, y: spawnPoint.y, revealed: true, resources: [] };
+        gameState.gateOfWisdomPlaced = true;
+        
+        return spawnPoint.direction;
+    }
+    
+    function activateElement() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) { showToast("Keine Aktionspunkte mehr!"); return; }
+
+        const activatableFragment = currentPlayer.inventory.find(item => item.startsWith('element_fragment_'));
+        if (!activatableFragment) { showToast("Du hast kein Element-Fragment zum Aktivieren."); return; }
+
+        const crystalIndex = currentPlayer.inventory.indexOf('kristall');
+        if (crystalIndex === -1) { showToast("Du benötigst einen Kristall zum Aktivieren."); return; }
+
+        currentPlayer.ap--;
+        
+        currentPlayer.inventory.splice(crystalIndex, 1);
+        const fragmentIndex = currentPlayer.inventory.indexOf(activatableFragment);
+        currentPlayer.inventory.splice(fragmentIndex, 1);
+
+        const element = activatableFragment.replace('element_fragment_', '');
+        gameState.tower.activated_elements.push(element);
+
+        let bonusInfo = null;
+        for (const bonusKey in ELEMENT_BONUS_CONFIG) {
+            const bonus = ELEMENT_BONUS_CONFIG[bonusKey];
+            if (bonus.triggered_by_elements.includes(element)) {
+                bonusInfo = bonus;
+                break;
+            }
+        }
+
+        const onBonusConfirm = () => {
+            checkWinCondition();
+            renderAll();
+            checkAndEndTurn();
+        };
+
+        if (bonusInfo) {
+            const bonusValue = bonusInfo.bonus_value_by_player_count[gameState.playerCount];
+            let bonusMessage = "";
+
+            if (bonusInfo.type === 'licht') {
+                gameState.light += bonusValue;
+                if (gameState.light > GAME_CONFIG.licht_maximalwert) {
+                    gameState.light = GAME_CONFIG.licht_maximalwert;
+                }
+                bonusMessage = `Das Team erhält +${bonusValue} Licht!`;
+            } else if (bonusInfo.type === 'ap') {
+                gameState.players.forEach(p => {
+                    p.maxAp += bonusValue;
+                    p.ap += bonusValue;
+                });
+                bonusMessage = `Jeder Held hat nun permanent +${bonusValue} AP!`;
+            }
+            showInfoModal(bonusInfo.name, bonusInfo.symbol, bonusMessage, onBonusConfirm);
+        } else {
+            showToast(`Das Element ${element} wurde aktiviert!`);
+            onBonusConfirm();
+        }
+    }
+
+    function checkWinCondition() {
+        if (gameState.tower.activated_elements.length === 4) {
+            winModal.classList.remove('hidden');
+        }
+    }
+
+    function checkAndEndTurn() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        if (currentPlayer.ap <= 0) {
+            const nextPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+            const nextPlayer = gameState.players[nextPlayerIndex];
+            turnOverMessage.textContent = `${nextPlayer.name} ist nun am Zug.`;
+            turnOverModal.classList.remove('hidden');
+        }
+    }
+
+    function renderAll() {
+        renderBoard();
+        renderPlayerInfo();
+        updateRoundTracker();
+        updateActionButtons();
+        renderTower();
+        updateLightDisplay();
+        updateGameSummary();
+    }
+
+    function renderBoard() {
+        boardContainer.innerHTML = '';
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        const playerPosKey = gameState.heroPositions[currentPlayer.id];
+        const [px, py] = playerPosKey.split(',').map(Number);
+        const moveRange = currentPlayer.learned_skills.includes('schnell_bewegen') ? 2 : 1;
+        
+        for (let y = 0; y < 9; y++) {
+            for (let x = 0; x < 9; x++) {
+                const key = `${x},${y}`;
+                const tileData = gameState.board[key];
+                const tileEl = document.createElement('div');
+                tileEl.classList.add('tile');
+                tileEl.dataset.x = x;
+                tileEl.dataset.y = y;
+
+                const dist = Math.abs(x - px) + Math.abs(y - py);
+
+                if (tileData) {
+                    const tileInfo = TILE_DATA[tileData.id];
+                    
+                    let content = `<span>${tileInfo.name}</span>`;
+                    
+                    if (tileData.id === 'krater') {
+                        tileEl.style.backgroundColor = tileInfo.color;
+                        if (tileData.resources && tileData.resources.length > 0) {
+                            content += `<div class="flex gap-1 mt-1">${tileData.resources.map(r => `<span class="text-lg">${ITEM_SYMBOLS[r] || ''}</span>`).join('')}</div>`;
+                        }
+                        content += `<div class="absolute w-3/4 h-3/4 border-4 border-gray-500 rounded-full"></div>`;
+                    } else if (tileData.id === 'tor_der_weisheit') {
+                        tileEl.classList.add('tile-gate-of-wisdom');
+                        content = `<span class="text-2xl">${tileInfo.symbol}</span><span>${tileInfo.name}</span>`;
+                    } else {
+                         tileEl.style.backgroundColor = tileInfo.color;
+                        if (tileData.resources && tileData.resources.length > 0) {
+                            content += `<div class="flex gap-1 mt-1">${tileData.resources.map(r => `<span class="text-lg">${ITEM_SYMBOLS[r] || ''}</span>`).join('')}</div>`;
+                        }
+                    }
+                    
+                    tileEl.innerHTML = content;
+
+                    if (tileData.obstacle) {
+                        tileEl.classList.add('tile-obstacle', `tile-${tileData.obstacle}`);
+                    }
+                    
+                    const heroesOnTile = gameState.players.filter(p => gameState.heroPositions[p.id] === key);
+                    if(heroesOnTile.length > 0) {
+                        const heroContainer = document.createElement('div');
+                        heroContainer.className = `absolute inset-0 w-full h-full p-1 flex items-end justify-end hero-container-${heroesOnTile.length}`;
+                        heroesOnTile.forEach(hero => {
+                            const heroToken = document.createElement('div');
+                            heroToken.className = 'hero-token w-5 h-5 rounded-full border-2 border-white flex justify-center items-center';
+                            if (hero.effects.length > 0 || hero.blocked_skills.length > 0) {
+                                heroToken.classList.add('effect-active');
+                            }
+                            if (hero.id === currentPlayer.id) {
+                                heroToken.classList.add('active-hero');
+                            }
+                            heroToken.style.backgroundColor = {terra: '#8B4513', ignis: '#DC2626', lyra: '#3B82F6', corvus: '#4B5563'}[hero.id];
+                            heroToken.textContent = hero.name[0];
+                            heroToken.style.fontSize = '12px';
+                            heroContainer.appendChild(heroToken);
+                        });
+                        tileEl.appendChild(heroContainer);
+                    }
+
+                    const isTargetable = gameState.mode === 'removing_obstacle' && isAdjacent(px, py, x, y) && tileData.obstacle;
+                    if (isTargetable) {
+                        tileEl.classList.add('scoutable');
+                    }
+
+
+                    if (dist > 0 && dist <= moveRange && currentPlayer.ap > 0 && gameState.mode !== 'scouting') {
+                         if (!tileData.obstacle || (currentPlayer.learned_skills.includes('schnell_bewegen') && dist > 1) ) {
+                             tileEl.classList.add('movable');
+                         }
+                    } else if (dist === 1 && !tileData.obstacle && currentPlayer.ap > 0) {
+                        tileEl.classList.add('movable');
+                    }
+
+
+                } else {
+                    if (dist === 1) {
+                       if (gameState.mode === 'scouting' || (currentPlayer.ap > 0 && gameState.mode !== 'scouting')) {
+                           tileEl.classList.add('discoverable');
+                       }
+                       if (gameState.mode === 'scouting') {
+                           tileEl.classList.add('scoutable');
+                           if (gameState.scoutSelections.includes(key)) {
+                               tileEl.classList.add('scout-selected');
+                           }
+                       }
+                    }
+                }
+                boardContainer.appendChild(tileEl);
+            }
+        }
+    }
+
+    function isAdjacent(x1, y1, x2, y2) {
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2) === 1;
+    }
+
+    function renderPlayerInfo() {
+        playerInfoBar.innerHTML = gameState.players.map((player, index) => {
+            let inventoryHTML = '';
+            for (let i = 0; i < GAME_CONFIG.inventar_vorratsplaetze; i++) {
+                const item = player.inventory[i];
+                const isSelected = player.selected_inventory.includes(i);
+                inventoryHTML += `<div class="inventory-slot ${item ? 'can-drop' : ''} ${isSelected ? 'selected-for-drop' : ''}" data-index="${i}" title="${item || 'Leer'}">${item ? ITEM_SYMBOLS[item] : ''}</div>`;
+            }
+
+            let skillsHTML = Object.keys(SKILL_DATA).map(skillId => {
+                 if (player.learned_skills.includes(skillId) && skillId !== 'aufdecken') {
+                     const skill = SKILL_DATA[skillId];
+                     const isBlocked = player.blocked_skills.includes(skillId);
+                     return `<div class="skill-slot relative ${isBlocked ? 'blocked-skill' : ''}" title="${skill.name}">${skill.symbol}</div>`;
+                 }
+                 return '';
+            }).join('');
+
+            const isSkipping = player.effects.some(e => e.type === 'skip_turn');
+
+            return `
+            <div id="hero-display-${player.id}" class="hero-display bg-gray-800 rounded-lg p-3 text-center transition-all duration-300 ${index === gameState.currentPlayerIndex ? 'active' : ''} ${isSkipping ? 'skipping-turn' : ''}">
+                <img src="${player.img}" alt="${player.name}" class="w-16 h-16 rounded-full mx-auto border-2 border-gray-600">
+                <h4 class="font-bold mt-2 text-sm">${player.name}</h4>
+                <p class="text-sm font-bold text-yellow-300">AP: ${player.ap}/${player.maxAp}</p>
+                <div class="flex justify-center gap-1 mt-2">${inventoryHTML}</div>
+                <div class="flex justify-center gap-1 mt-1 flex-wrap">${skillsHTML}</div>
+            </div>`;
+        }).join('');
+    }
+    
+    function renderTower() {
+        Object.keys(FOUNDATION_SYMBOLS).forEach(element => {
+            const foundSlot = document.getElementById(`foundation-${element}`);
+            if (gameState.tower.foundations.includes(element)) {
+                foundSlot.classList.add('built');
+                foundSlot.innerHTML = FOUNDATION_SYMBOLS[element];
+            } else {
+                foundSlot.classList.remove('built');
+                foundSlot.innerHTML = '';
+            }
+            const elemSlot = document.getElementById(`element-${element}`);
+             if (gameState.tower.activated_elements.includes(element)) {
+                elemSlot.classList.add('activated');
+                elemSlot.innerHTML = FOUNDATION_SYMBOLS[element];
+            } else {
+                elemSlot.classList.remove('activated');
+                elemSlot.innerHTML = '';
+            }
+        });
+    }
+
+    function updateActionButtons() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        const posKey = gameState.heroPositions[currentPlayer.id];
+        const currentTile = gameState.board[posKey];
+        const hasAP = currentPlayer.ap > 0;
+        const isAufdeckenBlocked = currentPlayer.blocked_skills.includes('aufdecken');
+        
+        actionButtonsContainer.innerHTML = '';
+
+        const buttons = [];
+        
+        if (currentTile?.resources?.length > 0 && currentPlayer.inventory.length < GAME_CONFIG.inventar_vorratsplaetze) {
+            buttons.push({ id: 'pickup-item-btn', text: 'Item aufnehmen', icon: '📦', color: 'green' });
+        }
+        if (currentPlayer.selected_inventory.length > 0) {
+            buttons.push({ id: 'drop-item-btn', text: 'Item ablegen', icon: '🗑️', color: 'green' });
+        }
+        if (currentPlayer.inventory.some(item => LEARNABLE_ITEMS[item])) {
+            buttons.push({ id: 'learn-skill-btn', text: 'Fähigkeit lernen', icon: '🎓', color: 'purple' });
+        }
+
+        const otherPlayersOnTile = gameState.players.filter(p => p.id !== currentPlayer.id && gameState.heroPositions[p.id] === posKey);
+        const canTeach = currentPlayer.hasPassedGate && otherPlayersOnTile.length > 0 && currentPlayer.innate_skills.some(skill => otherPlayersOnTile.some(p => !p.learned_skills.includes(skill)));
+        if (canTeach) {
+            buttons.push({ id: 'teach-skill-btn', text: 'Fähigkeit lehren', icon: '🤝', color: 'purple' });
+        }
+        
+        const canPassGate = currentTile?.id === 'tor_der_weisheit' && !currentPlayer.hasPassedGate;
+        if (canPassGate) {
+            buttons.push({ id: 'pass-gate-btn', text: 'Tor durchschreiten', icon: '⛩️', color: 'purple' });
+        }
+        
+        const [px, py] = posKey.split(',').map(Number);
+        const discoverableNeighbors = [ [px, py-1], [px, py+1], [px-1, py], [px+1, py] ]
+            .filter(([x,y]) => x >= 0 && x < 9 && y >= 0 && y < 9)
+            .filter(([x,y]) => !gameState.board[`${x},${y}`]).length;
+        const canScout = currentPlayer.learned_skills.includes('spaehen') && !currentPlayer.blocked_skills.includes('spaehen') && discoverableNeighbors >= 2;
+        if (canScout) {
+             buttons.push({ id: 'scout-btn', text: 'Spähen', icon: '👁️', color: 'purple' });
+        }
+
+        const playersOnTileWithEffects = gameState.players.filter(p => gameState.heroPositions[p.id] === posKey && (p.effects.length > 0 || p.blocked_skills.length > 0));
+        const canCleanse = currentPlayer.learned_skills.includes('reinigen') && playersOnTileWithEffects.length > 0;
+        if (canCleanse) {
+            buttons.push({ id: 'cleanse-btn', text: 'Reinigen', icon: '✨', color: 'purple' });
+        }
+
+        const adjacentObstacles = getAdjacentObstacles(px, py);
+        const canRemoveObstacle = adjacentObstacles.some(obs => currentPlayer.learned_skills.includes(OBSTACLE_DATA[obs.type].required_skill));
+        if (canRemoveObstacle) {
+            buttons.push({ id: 'remove-obstacle-btn', text: 'Hindernis beseitigen', icon: '🔨', color: 'gold' });
+        }
+
+        const crystals = currentPlayer.inventory.filter(i => i === 'kristall').length;
+        const canBuild = posKey === '4,4' && currentPlayer.learned_skills.includes('grundstein_legen') && !currentPlayer.blocked_skills.includes('grundstein_legen') && crystals >= 2 && Object.keys(FOUNDATION_REQUIREMENTS).some(e => !gameState.tower.foundations.includes(e) && currentPlayer.learned_skills.includes(FOUNDATION_REQUIREMENTS[e]));
+        if (canBuild) {
+            buttons.push({ id: 'build-foundation-btn', text: 'Grundstein legen', icon: '🧱', color: 'gold' });
+        }
+
+        const hasCrystal = currentPlayer.inventory.includes('kristall');
+        const activatableFragment = currentPlayer.inventory.find(item => item.startsWith('element_fragment_') && !gameState.tower.activated_elements.includes(item.replace('element_fragment_', '')));
+        const canActivate = gameState.phase === 2 && posKey === '4,4' && currentPlayer.learned_skills.includes('element_aktivieren') && !currentPlayer.blocked_skills.includes('element_aktivieren') && hasCrystal && activatableFragment;
+        if (canActivate) {
+            buttons.push({ id: 'activate-element-btn', text: 'Element aktivieren', icon: '🔥', color: 'gold' });
+        }
+        
+        buttons.forEach(btnInfo => {
+             const button = document.createElement('button');
+             button.id = btnInfo.id;
+             button.className = `btn-custom btn-${btnInfo.color} flex items-center justify-center p-2`;
+             button.innerHTML = `${btnInfo.icon}<span class="ml-2 hidden sm:inline">${btnInfo.text}</span>`;
+             button.disabled = !hasAP;
+             actionButtonsContainer.appendChild(button);
+        });
+
+        document.getElementById('pickup-item-btn')?.addEventListener('click', pickupItem);
+        document.getElementById('drop-item-btn')?.addEventListener('click', dropItem);
+        document.getElementById('learn-skill-btn')?.addEventListener('click', learnSkill);
+        document.getElementById('teach-skill-btn')?.addEventListener('click', startTeaching);
+        document.getElementById('pass-gate-btn')?.addEventListener('click', passGateOfWisdom);
+        document.getElementById('scout-btn')?.addEventListener('click', startScouting);
+        document.getElementById('cleanse-btn')?.addEventListener('click', cleanseEffect);
+        document.getElementById('remove-obstacle-btn')?.addEventListener('click', startRemovingObstacle);
+        document.getElementById('build-foundation-btn')?.addEventListener('click', buildFoundation);
+        document.getElementById('activate-element-btn')?.addEventListener('click', activateElement);
+    }
+
+    function getAdjacentObstacles(x, y) {
+        const neighbors = [ [x-1, y], [x+1, y], [x, y-1], [x, y+1] ];
+        const obstacles = [];
+        neighbors.forEach(([nx, ny]) => {
+            const key = `${nx},${ny}`;
+            const tile = gameState.board[key];
+            if (tile && tile.obstacle) {
+                obstacles.push({ key: key, type: tile.obstacle });
+            }
+        });
+        return obstacles;
+    }
+
+
+    function updateLightDisplay() {
+        if (gameState.light < 0) gameState.light = 0;
+        if (gameState.light > GAME_CONFIG.licht_maximalwert) gameState.light = GAME_CONFIG.licht_maximalwert;
+        sphereValueDisplay.textContent = gameState.light;
+        sphereBarInner.style.width = `${(gameState.light / GAME_CONFIG.licht_maximalwert) * 100}%`;
+        if (gameState.light <= 0) gameOverModal.classList.remove('hidden');
+    }
+
+    function updateRoundTracker() {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        roundTracker.textContent = `Runde ${gameState.round} - ${currentPlayer.name} ist am Zug`;
+    }
+    
+    function updateGameSummary() {
+        const playerList = document.getElementById('summary-player-list');
+        playerList.innerHTML = gameState.players.map(player => {
+            const effectDescriptions = player.effects.map(e => {
+                switch(e.type) {
+                    case 'ap_reduction_next_turn': return `AP-Reduktion`;
+                    case 'blocked_skill': return `Geblockt: ${SKILL_DATA[e.skillId].name}`;
+                    case 'skip_turn': return `Setzt aus`;
+                    default: return '';
+                }
+            }).filter(Boolean);
+
+            const effectText = effectDescriptions.length > 0 ? effectDescriptions.join('<br>') : 'Keine';
+            
+            return `<li><span class="font-bold">${player.name}:</span><br>${effectText}</li>`;
+        }).join('');
+    }
+
+    function showToast(message) {
+        toastMessage.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function showInfoModal(title, symbol, text, onConfirm = () => {}) {
+        infoModalTitle.textContent = title;
+        infoModalSymbol.textContent = symbol;
+        infoModalText.textContent = text;
+        infoModal.classList.remove('hidden');
+        
+        const confirmListener = () => {
+            infoModal.classList.add('hidden');
+            infoModalCloseBtn.removeEventListener('click', confirmListener);
+            onConfirm();
+        };
+        infoModalCloseBtn.addEventListener('click', confirmListener);
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+    
+    window.addEventListener('beforeunload', (event) => {
+        if (!gameScreen.classList.contains('hidden')) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    });
+
+    window.onload = initializeSetup;
+    </script>
+</body>
+</html>
