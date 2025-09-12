@@ -1,0 +1,206 @@
+{
+  "phase1": {
+    "positive": [
+      {
+        "id": "licht_segen",
+        "name": "Segen des Lichts",
+        "symbol": "✨",
+        "description": "Das Licht stärkt euch!",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "id": "kristall_fund",
+        "name": "Kristallfund",
+        "symbol": "💎", 
+        "description": "Ihr findet zusätzliche Kristalle!",
+        "effects": [
+          {
+            "type": "add_resource",
+            "resource": "kristall",
+            "value": 1,
+            "target": "active_player"
+          }
+        ]
+      },
+      {
+        "id": "wind_ruecken",
+        "name": "Wind im Rücken",
+        "symbol": "💨",
+        "description": "Ein günstiger Wind beschleunigt eure Bewegung!",
+        "effects": [
+          {
+            "type": "bonus_ap",
+            "value": 1,
+            "target": "active_player"
+          }
+        ]
+      },
+      {
+        "id": "heilung",
+        "name": "Heilende Quelle",
+        "symbol": "💧",
+        "description": "Eine magische Quelle heilt eure Wunden!",
+        "effects": [
+          {
+            "type": "remove_effect",
+            "target": "all_players",
+            "effect_type": "any"
+          }
+        ]
+      }
+    ],
+    "negative": [
+      {
+        "id": "finsternis_wachsend", 
+        "name": "Wachsende Finsternis",
+        "symbol": "🌑",
+        "description": "Die Schatten werden länger...",
+        "effects": [
+          {
+            "type": "light_loss",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "id": "geroell",
+        "name": "Erdrutsch",
+        "symbol": "🪨",
+        "description": "Ein Erdrutsch blockiert euren Weg!",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "geroell",
+            "target": "random_revealed_tile"
+          }
+        ]
+      },
+      {
+        "id": "dornenwald",
+        "name": "Wuchernde Dornen", 
+        "symbol": "🌿",
+        "description": "Dornige Ranken überwuchern ein Gebiet!",
+        "effects": [
+          {
+            "type": "add_obstacle", 
+            "obstacle": "dornenwald",
+            "target": "random_revealed_tile"
+          }
+        ]
+      },
+      {
+        "id": "ermuedung",
+        "name": "Ermüdung",
+        "symbol": "😴",
+        "description": "Die Anstrengung zehrt an euren Kräften!",
+        "effects": [
+          {
+            "type": "reduce_ap",
+            "value": 1,
+            "target": "all_players", 
+            "duration": "next_turn"
+          }
+        ]
+      }
+    ]
+  },
+  "phase2": {
+    "positive": [
+      {
+        "id": "elementare_kraft",
+        "name": "Elementare Kraft",
+        "symbol": "💪",
+        "description": "Die Elemente verstärken eure Fähigkeiten!",
+        "effects": [
+          {
+            "type": "bonus_ap",
+            "value": 1,
+            "target": "all_players"
+          }
+        ]
+      },
+      {
+        "id": "licht_verstärkt",
+        "name": "Verstärktes Licht", 
+        "symbol": "☀️",
+        "description": "Das Licht des Turms leuchtet heller!",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": 3
+          }
+        ]
+      },
+      {
+        "id": "element_harmonie",
+        "name": "Elementare Harmonie",
+        "symbol": "🌈",
+        "description": "Die Elemente schwingen in perfekter Harmonie!",
+        "effects": [
+          {
+            "type": "prevent_light_loss",
+            "duration": "this_round"
+          }
+        ]
+      }
+    ],
+    "negative": [
+      {
+        "id": "schatten_sturm",
+        "name": "Schattensturm",
+        "symbol": "🌪️", 
+        "description": "Ein Sturm aus purer Finsternis fegt über die Insel!",
+        "effects": [
+          {
+            "type": "light_loss",
+            "value": 4
+          }
+        ]
+      },
+      {
+        "id": "ueberflutung",
+        "name": "Dunkle Flut",
+        "symbol": "🌊",
+        "description": "Schwarzes Wasser überflutet Teile der Insel!",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "ueberflutung",
+            "target": "random_revealed_tile"
+          }
+        ]
+      },
+      {
+        "id": "finsternis_feld",
+        "name": "Feld der Finsternis",
+        "symbol": "🖤",
+        "description": "Ein Feld wird von absoluter Dunkelheit verschlungen!",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "finsternis", 
+            "target": "random_revealed_tile"
+          }
+        ]
+      },
+      {
+        "id": "faehigkeit_blockiert",
+        "name": "Magische Störung",
+        "symbol": "⚡",
+        "description": "Magische Interferenz blockiert eine eurer Fähigkeiten!",
+        "effects": [
+          {
+            "type": "block_skill",
+            "target": "random_player",
+            "duration": "2_turns"
+          }
+        ]
+      }
+    ]
+  }
+}

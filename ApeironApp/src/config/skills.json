@@ -1,0 +1,106 @@
+{
+  "grundstein_legen": {
+    "id": "grundstein_legen",
+    "name": "Grundstein legen",
+    "symbol": "🧱",
+    "description": "Ermöglicht das Bauen von Fundamenten am Krater",
+    "actionCost": 1,
+    "category": "building",
+    "requiredResources": ["kristall", "kristall"]
+  },
+  "geroell_beseitigen": {
+    "id": "geroell_beseitigen", 
+    "name": "Geröll beseitigen",
+    "symbol": "💥",
+    "description": "Entfernt Geröll-Hindernisse von einem Feld",
+    "actionCost": 1,
+    "category": "obstacle_removal"
+  },
+  "element_aktivieren": {
+    "id": "element_aktivieren",
+    "name": "Element aktivieren", 
+    "symbol": "🔥",
+    "description": "Aktiviert Element-Fragmente am Turm",
+    "actionCost": 1,
+    "category": "tower_building",
+    "requiredResources": ["element_fragment"]
+  },
+  "dornen_entfernen": {
+    "id": "dornen_entfernen",
+    "name": "Dornen entfernen",
+    "symbol": "🌿", 
+    "description": "Entfernt Dornen-Hindernisse von einem Feld",
+    "actionCost": 1,
+    "category": "obstacle_removal"
+  },
+  "reinigen": {
+    "id": "reinigen",
+    "name": "Reinigen",
+    "symbol": "💧",
+    "description": "Dreht ein dunkles Feld wieder auf die helle Seite",
+    "actionCost": 1,
+    "category": "cleansing"
+  },
+  "fluss_freimachen": {
+    "id": "fluss_freimachen",
+    "name": "Fluss freimachen",
+    "symbol": "🌊",
+    "description": "Macht einen blockierten Fluss wieder passierbar", 
+    "actionCost": 1,
+    "category": "obstacle_removal"
+  },
+  "spaehen": {
+    "id": "spaehen",
+    "name": "Spähen",
+    "symbol": "👁️",
+    "description": "Deckt 2 angrenzende Felder für 1 AP auf",
+    "actionCost": 1,
+    "category": "exploration",
+    "specialRules": "reveals_2_tiles"
+  },
+  "schnell_bewegen": {
+    "id": "schnell_bewegen",
+    "name": "Schnell bewegen", 
+    "symbol": "💨",
+    "description": "Ermöglicht die Bewegung von bis zu 2 Feldern für 1 AP",
+    "actionCost": 1,
+    "category": "movement",
+    "specialRules": "move_2_tiles"
+  },
+  "aufdecken": {
+    "id": "aufdecken",
+    "name": "Aufdecken",
+    "symbol": "🗺️", 
+    "description": "Deckt ein angrenzendes Feld für 1 AP auf",
+    "actionCost": 1,
+    "category": "exploration"
+  },
+  "kenntnis_bauplan_erde": {
+    "id": "kenntnis_bauplan_erde",
+    "name": "Bauplan: Erde",
+    "symbol": "📜",
+    "description": "Du kennst den Bauplan für das Erd-Fundament",
+    "category": "knowledge"
+  },
+  "kenntnis_bauplan_wasser": {
+    "id": "kenntnis_bauplan_wasser", 
+    "name": "Bauplan: Wasser",
+    "symbol": "📜",
+    "description": "Du kennst den Bauplan für das Wasser-Fundament",
+    "category": "knowledge"
+  },
+  "kenntnis_bauplan_feuer": {
+    "id": "kenntnis_bauplan_feuer",
+    "name": "Bauplan: Feuer", 
+    "symbol": "📜",
+    "description": "Du kennst den Bauplan für das Feuer-Fundament",
+    "category": "knowledge"
+  },
+  "kenntnis_bauplan_luft": {
+    "id": "kenntnis_bauplan_luft",
+    "name": "Bauplan: Luft",
+    "symbol": "📜",
+    "description": "Du kennst den Bauplan für das Luft-Fundament", 
+    "category": "knowledge"
+  }
+}

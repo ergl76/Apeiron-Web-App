@@ -1,0 +1,38 @@
+{
+  "terra": {
+    "id": "terra",
+    "name": "Terra",
+    "element": "earth",
+    "description": "Meisterin der Erde und des Bauens",
+    "innateSkills": ["grundstein_legen", "geroell_beseitigen"],
+    "image": "https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/8410058b-302a-4384-93f0-5847b85e05d0.jpg",
+    "color": "#ca8a04"
+  },
+  "ignis": {
+    "id": "ignis", 
+    "name": "Ignis",
+    "element": "fire",
+    "description": "Herr des Feuers und der Aktivierung",
+    "innateSkills": ["element_aktivieren", "dornen_entfernen"],
+    "image": "https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/05b13824-2c6f-443b-87b6-14fdd1f9d45e.jpg",
+    "color": "#ef4444"
+  },
+  "lyra": {
+    "id": "lyra",
+    "name": "Lyra", 
+    "element": "water",
+    "description": "Hüterin des Wassers und der Reinigung",
+    "innateSkills": ["reinigen", "fluss_freimachen"],
+    "image": "https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/e7e9549f-b983-4a60-b6a2-632b71900a68.jpg",
+    "color": "#3b82f6"
+  },
+  "corvus": {
+    "id": "corvus",
+    "name": "Corvus",
+    "element": "air", 
+    "description": "Späher der Lüfte und schneller Beweger",
+    "innateSkills": ["spaehen", "schnell_bewegen"],
+    "image": "https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/b0559c5d-24e5-4f7f-a63e-a74092d63428.jpg",
+    "color": "#a78bfa"
+  }
+}

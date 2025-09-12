@@ -1,0 +1,208 @@
+{
+  "phase1": {
+    "wiese_kristall": {
+      "count": 5,
+      "id": "wiese_kristall",
+      "name": "Kristallwiese",
+      "type": "resource",
+      "color": "#4ade80",
+      "symbol": "💎",
+      "resource": "kristall",
+      "description": "Eine glitzernde Wiese voller Apeiron-Kristalle"
+    },
+    "hoehle_kristall": {
+      "count": 5,
+      "id": "hoehle_kristall", 
+      "name": "Kristallhöhle",
+      "type": "resource",
+      "color": "#6b7280",
+      "symbol": "💎", 
+      "resource": "kristall",
+      "description": "Eine dunkle Höhle mit schimmernden Kristallen"
+    },
+    "fluss": {
+      "count": 5,
+      "id": "fluss",
+      "name": "Fluss",
+      "type": "terrain",
+      "color": "#3b82f6", 
+      "symbol": "🌊",
+      "description": "Ein klarer, fließender Fluss"
+    },
+    "gebirge": {
+      "count": 5,
+      "id": "gebirge",
+      "name": "Gebirge", 
+      "type": "terrain",
+      "color": "#6b7280",
+      "symbol": "⛰️",
+      "description": "Schroffe Berggipfel"
+    },
+    "wald": {
+      "count": 5,
+      "id": "wald",
+      "name": "Wald",
+      "type": "terrain",
+      "color": "#16a34a",
+      "symbol": "🌲", 
+      "description": "Ein dichter, grüner Wald"
+    },
+    "huegel": {
+      "count": 5,
+      "id": "huegel",
+      "name": "Hügel",
+      "type": "terrain", 
+      "color": "#65a30d",
+      "symbol": "⛰️",
+      "description": "Sanfte, grüne Hügel"
+    },
+    "bauplan_erde": {
+      "count": 1,
+      "id": "bauplan_erde",
+      "name": "Bauplan: Erde",
+      "type": "quest",
+      "color": "#ca8a04",
+      "symbol": "📜",
+      "resource": "bauplan_erde",
+      "description": "Der uralte Bauplan für das Erd-Fundament"
+    },
+    "bauplan_wasser": {
+      "count": 1, 
+      "id": "bauplan_wasser",
+      "name": "Bauplan: Wasser",
+      "type": "quest",
+      "color": "#3b82f6",
+      "symbol": "📜",
+      "resource": "bauplan_wasser",
+      "description": "Der uralte Bauplan für das Wasser-Fundament"
+    },
+    "bauplan_feuer": {
+      "count": 1,
+      "id": "bauplan_feuer", 
+      "name": "Bauplan: Feuer",
+      "type": "quest",
+      "color": "#ef4444",
+      "symbol": "📜",
+      "resource": "bauplan_feuer",
+      "description": "Der uralte Bauplan für das Feuer-Fundament"
+    },
+    "bauplan_luft": {
+      "count": 1,
+      "id": "bauplan_luft",
+      "name": "Bauplan: Luft",
+      "type": "quest",
+      "color": "#a78bfa", 
+      "symbol": "📜",
+      "resource": "bauplan_luft",
+      "description": "Der uralte Bauplan für das Luft-Fundament"
+    },
+    "herz_finster": {
+      "count": 1,
+      "id": "herz_finster",
+      "name": "Herz der Finsternis",
+      "type": "dark",
+      "color": "#1f2937",
+      "symbol": "🖤",
+      "description": "Ein Ort voller dunkler Energie",
+      "effect": "triggers_dark_event"
+    }
+  },
+  "phase2": {
+    "wald": {
+      "count": 4,
+      "id": "wald",
+      "name": "Wald", 
+      "type": "terrain",
+      "color": "#16a34a",
+      "symbol": "🌲",
+      "description": "Ein dichter, grüner Wald"
+    },
+    "huegel": {
+      "count": 4,
+      "id": "huegel",
+      "name": "Hügel",
+      "type": "terrain",
+      "color": "#65a30d", 
+      "symbol": "⛰️",
+      "description": "Sanfte, grüne Hügel"
+    },
+    "fluss": {
+      "count": 4,
+      "id": "fluss",
+      "name": "Fluss",
+      "type": "terrain",
+      "color": "#3b82f6",
+      "symbol": "🌊",
+      "description": "Ein klarer, fließender Fluss"
+    },
+    "gebirge": {
+      "count": 4,
+      "id": "gebirge",
+      "name": "Gebirge",
+      "type": "terrain",
+      "color": "#6b7280", 
+      "symbol": "⛰️",
+      "description": "Schroffe Berggipfel"
+    },
+    "wiese_kristall": {
+      "count": 3,
+      "id": "wiese_kristall",
+      "name": "Kristallwiese",
+      "type": "resource",
+      "color": "#4ade80",
+      "symbol": "💎",
+      "resource": "kristall",
+      "description": "Eine glitzernde Wiese voller Apeiron-Kristalle"
+    },
+    "hoehle_kristall": {
+      "count": 3,
+      "id": "hoehle_kristall",
+      "name": "Kristallhöhle", 
+      "type": "resource",
+      "color": "#6b7280",
+      "symbol": "💎",
+      "resource": "kristall",
+      "description": "Eine dunkle Höhle mit schimmernden Kristallen"
+    },
+    "element_fragment_erde": {
+      "count": 1,
+      "id": "element_fragment_erde",
+      "name": "Erd-Fragment",
+      "type": "element",
+      "color": "#ca8a04",
+      "symbol": "🟫", 
+      "resource": "element_fragment_erde",
+      "description": "Ein Fragment des Erd-Elements"
+    },
+    "element_fragment_wasser": {
+      "count": 1,
+      "id": "element_fragment_wasser",
+      "name": "Wasser-Fragment",
+      "type": "element",
+      "color": "#3b82f6",
+      "symbol": "🟦",
+      "resource": "element_fragment_wasser", 
+      "description": "Ein Fragment des Wasser-Elements"
+    },
+    "element_fragment_feuer": {
+      "count": 1,
+      "id": "element_fragment_feuer",
+      "name": "Feuer-Fragment",
+      "type": "element",
+      "color": "#ef4444",
+      "symbol": "🟥",
+      "resource": "element_fragment_feuer",
+      "description": "Ein Fragment des Feuer-Elements"
+    },
+    "element_fragment_luft": {
+      "count": 1, 
+      "id": "element_fragment_luft",
+      "name": "Luft-Fragment",
+      "type": "element",
+      "color": "#a78bfa",
+      "symbol": "🟪",
+      "resource": "element_fragment_luft",
+      "description": "Ein Fragment des Luft-Elements"
+    }
+  }
+}
