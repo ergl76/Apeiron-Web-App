@@ -1,4 +1,76 @@
 import React, { useState } from 'react';
+import eventsConfig from './config/events.json';
+
+// Konter-Informationen aus ereigniskarten.md
+const eventCounters = {
+  // Phase 1 Negative
+  "fluestern_der_schatten": "Kein Konter möglich",
+  "dichter_nebel": "Corvus' Fähigkeit 'Spähen' funktioniert weiterhin",
+  "erdrutsch_am_krater": "Terra kann das Hindernis mit 'Geröll beseitigen' entfernen",
+  "dornenplage_im_osten": "Ignis kann das Hindernis mit 'Dornenwald entfernen' beseitigen",
+  "sturzflut_im_westen": "Lyra kann mit 'Überflutung trockenlegen' das Gebiet wieder passierbar machen",
+  "schwere_buerde": "Lyra kann mit 'Heilende Reinigung' den Effekt aufheben",
+  "kristallverlust": "Kein Konter möglich",
+  "zwietracht": "Kein Konter möglich",
+  "truegerische_stille": "Kein Konter möglich",
+  "erschoepfung": "Kein Konter möglich",
+  "verwirrende_vision": "Lyra kann mit 'Heilende Reinigung' den Effekt aufheben",
+  "gierige_schatten": "Kein Konter möglich",
+  "blockade_im_sueden": "Terra kann das Hindernis mit 'Geröll beseitigen' entfernen",
+  "laehmende_kaelte": "Kein Konter möglich",
+  "dunkle_vorahnung": "Kein Konter möglich",
+  "verlockung_der_schatten": "Kein Konter möglich",
+  "zerrissener_beutel": "Kein Konter möglich",
+  "wuchernde_wildnis": "Ignis kann die Hindernisse einzeln mit 'Dornenwald entfernen' beseitigen",
+  "echo_der_verzweiflung": "Teilweise - Lyra kann den AP-Verlust mit 'Heilende Reinigung' verhindern",
+  "falle_der_finsternis": "Lyra kann mit 'Heilende Reinigung' die Bindung lösen",
+
+  // Phase 1 Positive
+  "sternschnuppe": "-",
+  "gluecksfund": "-",
+  "rueckenwind": "-",
+  "moment_der_klarheit": "-",
+  "gemeinsame_staerke": "-",
+  "hoffnungsschimmer": "-",
+  "versteckter_schatz": "-",
+  "guenstiges_omen": "-",
+  "apeirons_segen": "-",
+  "leuchtfeuer": "-",
+
+  // Phase 2 Negative
+  "zorn_der_sphaere": "Kein Konter möglich",
+  "welle_der_finsternis": "Kein Konter möglich",
+  "fragment_diebstahl": "Kein Konter möglich",
+  "totale_erschoepfung": "Lyra kann mit 'Heilende Reinigung' einzelne Helden davon befreien",
+  "verlorene_hoffnung": "Teilweise - Lyra kann das Aussetzen mit 'Heilende Reinigung' verhindern",
+  "dreifache_blockade": "Terra kann die Hindernisse einzeln mit 'Geröll beseitigen' entfernen",
+  "dornen_der_verzweiflung": "Ignis kann die Hindernisse einzeln mit 'Dornenwald entfernen' beseitigen",
+  "sintflut_der_traenen": "Lyra kann mit 'Überflutung trockenlegen' die Gebiete wieder passierbar machen",
+  "boeser_zauber": "Kein Konter möglich",
+  "schattensturm": "Kein Konter möglich",
+  "kristall_fluch": "Kein Konter möglich",
+  "paralyse": "Lyra kann mit 'Heilende Reinigung' einzelne Helden befreien",
+  "verrat_der_elemente": "Kein Konter möglich",
+  "dunkle_metamorphose": "Lyra kann die Felder einzeln mit 'Heilende Reinigung' säubern",
+  "verlust_der_orientierung": "Teilweise - Lyra kann den AP-Verlust einzeln aufheben",
+  "opfer_der_schatten": "Kein Konter möglich",
+  "gebrochene_verbindung": "Kein Konter möglich",
+  "tsunami_der_finsternis": "Lyra kann Überflutungen einzeln trockenlegen",
+  "letztes_aufbaeumen": "Teilweise - Lyra kann AP-Verlust und Aussetzen bei einzelnen Helden aufheben",
+  "herz_der_finsternis_pulsiert": "Kein Konter möglich",
+
+  // Phase 2 Positive
+  "apeirons_intervention": "-",
+  "reinigendes_feuer": "-",
+  "welle_der_hoffnung": "-",
+  "geschenk_der_ahnen": "-",
+  "elementare_harmonie": "-",
+  "sternenkonstellation": "-",
+  "durchbruch": "-",
+  "laeuterung": "-",
+  "vereinte_kraft": "-",
+  "triumph_des_lichts": "-"
+};
 
 // Game Data
 const heroes = {
@@ -559,6 +631,8 @@ function GameScreen({ gameData, onNewGame }) {
     board: {},
     tower: { foundations: [], activatedElements: [] },
     isTransitioning: false,
+    currentEvent: null,
+    eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
     scoutingMode: {
       active: false,
       availablePositions: [],
@@ -710,28 +784,279 @@ function GameScreen({ gameData, onNewGame }) {
 
   const handleAutoTurnTransition = (updatedPlayers, currentPlayerIndex, round) => {
     const updatedCurrentPlayer = updatedPlayers[currentPlayerIndex];
-    
+
+    // Only transition if current player has no AP left
     if (updatedCurrentPlayer.ap === 0) {
-      // Find next player with AP or start new round
-      let foundPlayerWithAP = false;
+      // Find next player with AP
+      let nextPlayerWithAP = null;
+
       for (let i = 1; i < updatedPlayers.length; i++) {
         const checkIndex = (currentPlayerIndex + i) % updatedPlayers.length;
         if (updatedPlayers[checkIndex].ap > 0) {
-          triggerTurnTransition(checkIndex);
-          return { nextPlayerIndex: checkIndex, newRound: round };
+          nextPlayerWithAP = checkIndex;
+          break;
         }
       }
-      
-      // If no player has AP left, start new round
-      if (!foundPlayerWithAP) {
+
+      if (nextPlayerWithAP !== null) {
+        // Continue with next player who has AP
+        triggerTurnTransition(nextPlayerWithAP);
+        return { nextPlayerIndex: nextPlayerWithAP, newRound: round };
+      } else {
+        // NO player has AP left - round is truly complete
+        const newRound = round + 1;
+
+        // Reset ALL players AP and start new round
         updatedPlayers.forEach(player => { player.ap = player.maxAp; });
+
+        // Set next player to 0 (start of new round)
         triggerTurnTransition(0);
-        return { nextPlayerIndex: 0, newRound: round + 1 };
+
+        // Trigger event IMMEDIATELY if we're starting round 2 or later
+        // (Events start from round 2, not round 1)
+        if (newRound >= 2) {
+          console.log(`Round completed: ${round} -> ${newRound}, triggering event`);
+          // Use a very short timeout to ensure state is updated
+          setTimeout(() => {
+            triggerRandomEvent();
+          }, 10);
+        }
+
+        return { nextPlayerIndex: 0, newRound: newRound };
       }
     }
-    
+
+    // Current player still has AP, no transition needed
     return { nextPlayerIndex: currentPlayerIndex, newRound: round };
   };
+
+  // Event System
+  const triggerRandomEvent = () => {
+    setGameState(prev => {
+      // Prevent triggering if there's already an active event
+      if (prev.currentEvent) {
+        console.log('Event trigger blocked - event already active:', prev.currentEvent.name);
+        return prev;
+      }
+
+      // Prevent triggering if no events left
+      if (prev.eventDeck.length === 0) {
+        console.log('Event trigger blocked - deck empty');
+        return prev;
+      }
+
+      const randomIndex = Math.floor(Math.random() * prev.eventDeck.length);
+      const selectedEvent = prev.eventDeck[randomIndex];
+
+      console.log(`Triggering event: ${selectedEvent.name} at round ${prev.round}. Deck has ${prev.eventDeck.length} cards left.`);
+
+      return {
+        ...prev,
+        currentEvent: selectedEvent,
+        eventDeck: prev.eventDeck.filter((_, index) => index !== randomIndex)
+      };
+    });
+  };
+
+  const applyEventEffect = (event) => {
+    setGameState(prev => {
+      let newState = { ...prev };
+
+      event.effects.forEach(effect => {
+        switch (effect.type) {
+          case 'light_gain':
+            let gainValue = effect.value;
+            if (gainValue === 'player_count') {
+              gainValue = newState.players.length;
+            } else if (gainValue === 'player_count_times_2') {
+              gainValue = newState.players.length * 2;
+            }
+            newState.light = Math.min(20, newState.light + gainValue);
+            break;
+          case 'light_loss':
+            newState.light = Math.max(0, newState.light - effect.value);
+            break;
+          case 'bonus_ap':
+            if (effect.target === 'active_player') {
+              newState.players[newState.currentPlayerIndex].ap += effect.value;
+            } else if (effect.target === 'all_players') {
+              newState.players = newState.players.map(player => ({
+                ...player,
+                ap: Math.min(player.maxAp + 2, player.ap + effect.value)
+              }));
+            } else if (effect.target === 'random_hero') {
+              const randomIndex = Math.floor(Math.random() * newState.players.length);
+              newState.players[randomIndex].ap += effect.value;
+            }
+            break;
+          case 'reduce_ap':
+            if (effect.target === 'all_players') {
+              newState.players = newState.players.map(player => ({
+                ...player,
+                ap: Math.max(0, player.ap - effect.value)
+              }));
+            } else if (effect.target === 'random_hero') {
+              const randomIndex = Math.floor(Math.random() * newState.players.length);
+              newState.players[randomIndex].ap = Math.max(0, newState.players[randomIndex].ap - effect.value);
+            }
+            break;
+          case 'set_ap':
+            if (effect.target === 'all_players') {
+              newState.players = newState.players.map(player => ({
+                ...player,
+                ap: effect.value
+              }));
+            }
+            break;
+          case 'add_resource':
+            if (effect.target === 'active_player') {
+              const currentPlayer = newState.players[newState.currentPlayerIndex];
+              if (currentPlayer.inventory.length < currentPlayer.maxInventory) {
+                currentPlayer.inventory.push(effect.resource);
+              }
+            } else if (effect.target === 'crater') {
+              // Add resources to crater field
+              if (!newState.board['4,4'].resources) {
+                newState.board['4,4'].resources = [];
+              }
+              for (let i = 0; i < effect.value; i++) {
+                newState.board['4,4'].resources.push(effect.resource);
+              }
+            } else if (effect.target === 'all_adjacent_to_crater') {
+              // Add resources to fields adjacent to crater
+              const adjacentPositions = ['3,4', '5,4', '4,3', '4,5'];
+              adjacentPositions.forEach(pos => {
+                if (newState.board[pos]) {
+                  if (!newState.board[pos].resources) {
+                    newState.board[pos].resources = [];
+                  }
+                  newState.board[pos].resources.push(effect.resource);
+                }
+              });
+            }
+            break;
+          case 'drop_resource':
+            if (effect.target === 'hero_with_most_crystals') {
+              let maxCrystals = 0;
+              let heroesWithMost = [];
+              newState.players.forEach((player, index) => {
+                const crystalCount = player.inventory.filter(item => item === 'kristall').length;
+                if (crystalCount > maxCrystals) {
+                  maxCrystals = crystalCount;
+                  heroesWithMost = [index];
+                } else if (crystalCount === maxCrystals && crystalCount > 0) {
+                  heroesWithMost.push(index);
+                }
+              });
+              heroesWithMost.forEach(playerIndex => {
+                const player = newState.players[playerIndex];
+                const crystalIndex = player.inventory.findIndex(item => item === 'kristall');
+                if (crystalIndex !== -1) {
+                  player.inventory.splice(crystalIndex, 1);
+                  // Add to current field
+                  const pos = player.position;
+                  if (!newState.board[pos].resources) {
+                    newState.board[pos].resources = [];
+                  }
+                  newState.board[pos].resources.push('kristall');
+                }
+              });
+            } else if (effect.target === 'heroes_on_crater') {
+              newState.players.forEach(player => {
+                if (player.position === '4,4') {
+                  const crystalIndex = player.inventory.findIndex(item => item === 'kristall');
+                  if (crystalIndex !== -1) {
+                    player.inventory.splice(crystalIndex, 1);
+                    if (!newState.board['4,4'].resources) {
+                      newState.board['4,4'].resources = [];
+                    }
+                    newState.board['4,4'].resources.push('kristall');
+                  }
+                }
+              });
+            }
+            break;
+          case 'drop_all_items':
+            if (effect.target === 'random_hero') {
+              const randomIndex = Math.floor(Math.random() * newState.players.length);
+              const player = newState.players[randomIndex];
+              const pos = player.position;
+              if (!newState.board[pos].resources) {
+                newState.board[pos].resources = [];
+              }
+              newState.board[pos].resources.push(...player.inventory);
+              player.inventory = [];
+            }
+            break;
+          case 'add_obstacle':
+            if (effect.target === 'north_of_crater') {
+              if (newState.board['4,3']) {
+                newState.board['4,3'].obstacle = effect.obstacle;
+              }
+            } else if (effect.target === 'east_of_crater') {
+              if (newState.board['5,4']) {
+                newState.board['5,4'].obstacle = effect.obstacle;
+              }
+            } else if (effect.target === 'south_of_crater') {
+              if (newState.board['4,5']) {
+                newState.board['4,5'].obstacle = effect.obstacle;
+              }
+            } else if (effect.target === 'west_of_crater') {
+              if (newState.board['3,4']) {
+                newState.board['3,4'].obstacle = effect.obstacle;
+              }
+            } else if (effect.target === 'all_adjacent_to_crater') {
+              const adjacentPositions = ['3,4', '5,4', '4,3', '4,5'];
+              adjacentPositions.forEach(pos => {
+                if (newState.board[pos]) {
+                  newState.board[pos].obstacle = effect.obstacle;
+                }
+              });
+            } else if (effect.target === 'random_revealed_tile') {
+              const revealedTiles = Object.keys(newState.board).filter(pos => pos !== '4,4');
+              if (revealedTiles.length > 0) {
+                const randomTile = revealedTiles[Math.floor(Math.random() * revealedTiles.length)];
+                if (newState.board[randomTile]) {
+                  newState.board[randomTile].obstacle = effect.obstacle;
+                }
+              }
+            }
+            break;
+          case 'skip_turn':
+            if (effect.target === 'random_hero') {
+              const randomIndex = Math.floor(Math.random() * newState.players.length);
+              // Mark player to skip next turn - would need additional state tracking
+              console.log(`Player ${newState.players[randomIndex].name} will skip next turn`);
+            }
+            break;
+          case 'remove_all_negative_effects':
+            // Remove all negative effects from players - would need effect tracking
+            console.log('All negative effects removed');
+            break;
+          // Block/Prevent actions would require additional state management
+          case 'block_action':
+          case 'block_skills':
+          case 'prevent_movement':
+          case 'disable_communication':
+            console.log(`Effect ${effect.type} applied - UI feedback needed`);
+            break;
+          // Phase 2 effects - not yet implemented
+          case 'spread_darkness':
+          case 'cleanse_darkness':
+          case 'remove_obstacles':
+          case 'remove_all_obstacles':
+            console.log(`Phase 2 effect ${effect.type} - not yet implemented`);
+            break;
+        }
+      });
+
+      return {
+        ...newState,
+        currentEvent: null
+      };
+    });
+  };
+
 
   // Special Hero Actions
   const handleBuildFoundation = () => {
@@ -1222,6 +1547,106 @@ function GameScreen({ gameData, onNewGame }) {
           Neues Spiel einrichten
         </button>
       </header>
+
+      {/* Event Card Modal */}
+      {gameState.currentEvent && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: '#374151',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: gameState.currentEvent.effects?.some(e => e.type === 'light_loss' || e.type === 'reduce_ap' || e.type === 'add_obstacle')
+              ? '3px solid #ef4444' : '3px solid #10b981'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{
+                fontSize: '3rem',
+                marginBottom: '0.5rem'
+              }}>
+                {gameState.currentEvent.symbol}
+              </div>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                color: '#f59e0b',
+                marginBottom: '0.5rem'
+              }}>
+                {gameState.currentEvent.name}
+              </h2>
+              <p style={{
+                color: '#d1d5db',
+                fontSize: '1rem',
+                lineHeight: '1.5',
+                marginBottom: '1rem'
+              }}>
+                {gameState.currentEvent.description}
+              </p>
+
+              {/* Konter-Information */}
+              {eventCounters[gameState.currentEvent.id] && eventCounters[gameState.currentEvent.id] !== '-' && (
+                <div style={{
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid #3b82f6',
+                  borderRadius: '8px',
+                  padding: '0.75rem',
+                  marginTop: '1rem'
+                }}>
+                  <h4 style={{
+                    color: '#3b82f6',
+                    fontSize: '0.875rem',
+                    fontWeight: 'bold',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Möglicher Konter:
+                  </h4>
+                  <p style={{
+                    color: '#e5e7eb',
+                    fontSize: '0.875rem',
+                    margin: 0
+                  }}>
+                    {eventCounters[gameState.currentEvent.id]}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => applyEventEffect(gameState.currentEvent)}
+                style={{
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  padding: '12px 32px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                Bestätigen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile-friendly Layout */}
       <div style={{ 

@@ -1,65 +1,114 @@
 {
   "phase1": {
-    "positive": [
-      {
-        "id": "licht_segen",
-        "name": "Segen des Lichts",
-        "symbol": "✨",
-        "description": "Das Licht stärkt euch!",
-        "effects": [
-          {
-            "type": "light_gain",
-            "value": 2
-          }
-        ]
-      },
-      {
-        "id": "kristall_fund",
-        "name": "Kristallfund",
-        "symbol": "💎", 
-        "description": "Ihr findet zusätzliche Kristalle!",
-        "effects": [
-          {
-            "type": "add_resource",
-            "resource": "kristall",
-            "value": 1,
-            "target": "active_player"
-          }
-        ]
-      },
-      {
-        "id": "wind_ruecken",
-        "name": "Wind im Rücken",
-        "symbol": "💨",
-        "description": "Ein günstiger Wind beschleunigt eure Bewegung!",
-        "effects": [
-          {
-            "type": "bonus_ap",
-            "value": 1,
-            "target": "active_player"
-          }
-        ]
-      },
-      {
-        "id": "heilung",
-        "name": "Heilende Quelle",
-        "symbol": "💧",
-        "description": "Eine magische Quelle heilt eure Wunden!",
-        "effects": [
-          {
-            "type": "remove_effect",
-            "target": "all_players",
-            "effect_type": "any"
-          }
-        ]
-      }
-    ],
     "negative": [
       {
-        "id": "finsternis_wachsend", 
-        "name": "Wachsende Finsternis",
+        "id": "fluestern_der_schatten",
+        "name": "Flüstern der Schatten",
         "symbol": "🌑",
-        "description": "Die Schatten werden länger...",
+        "description": "Unheilvolle Stimmen hallen über die Insel und nähren die wachsende Finsternis.",
+        "effects": [
+          {
+            "type": "light_loss",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "dichter_nebel",
+        "name": "Dichter Nebel",
+        "symbol": "🌫️",
+        "description": "Ein undurchdringlicher Nebel legt sich über die Insel und raubt euch die Orientierung.",
+        "effects": [
+          {
+            "type": "block_action",
+            "action": "discover",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "erdrutsch_am_krater",
+        "name": "Erdrutsch am Krater",
+        "symbol": "🪨",
+        "description": "Die Berge erzittern und Geröll poltert zum Zentrum.",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "geroell",
+            "target": "north_of_crater"
+          }
+        ]
+      },
+      {
+        "id": "dornenplage_im_osten",
+        "name": "Dornenplage im Osten",
+        "symbol": "🌿",
+        "description": "Über Nacht wuchern dornige Ranken aus dem Waldboden.",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "dornenwald",
+            "target": "east_of_crater"
+          }
+        ]
+      },
+      {
+        "id": "sturzflut_im_westen",
+        "name": "Sturzflut im Westen",
+        "symbol": "🌊",
+        "description": "Heftige Regenfälle lassen die Flüsse über die Ufer treten.",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "ueberflutung",
+            "target": "west_of_crater"
+          }
+        ]
+      },
+      {
+        "id": "schwere_buerde",
+        "name": "Schwere Bürde",
+        "symbol": "😔",
+        "description": "Die Last der Verantwortung wiegt schwer auf euren Schultern.",
+        "effects": [
+          {
+            "type": "reduce_ap",
+            "value": 1,
+            "target": "furthest_from_crater",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "kristallverlust",
+        "name": "Kristallverlust",
+        "symbol": "💎",
+        "description": "In der Eile stolpert ein Held und verliert kostbare Ressourcen.",
+        "effects": [
+          {
+            "type": "drop_resource",
+            "resource": "kristall",
+            "target": "hero_with_most_crystals"
+          }
+        ]
+      },
+      {
+        "id": "zwietracht",
+        "name": "Zwietracht",
+        "symbol": "🗣️",
+        "description": "Meinungsverschiedenheiten spalten die Gruppe.",
+        "effects": [
+          {
+            "type": "disable_communication",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "truegerische_stille",
+        "name": "Trügerische Stille",
+        "symbol": "🔇",
+        "description": "Eine unnatürliche Stille senkt sich über die Insel.",
         "effects": [
           {
             "type": "light_loss",
@@ -68,93 +117,498 @@
         ]
       },
       {
-        "id": "geroell",
-        "name": "Erdrutsch",
+        "id": "erschoepfung",
+        "name": "Erschöpfung",
+        "symbol": "😴",
+        "description": "Die andauernde Suche fordert ihren Tribut.",
+        "effects": [
+          {
+            "type": "skip_turn",
+            "target": "random_hero"
+          }
+        ]
+      },
+      {
+        "id": "verwirrende_vision",
+        "name": "Verwirrende Vision",
+        "symbol": "👁️",
+        "description": "Trugbilder täuschen eure Sinne.",
+        "effects": [
+          {
+            "type": "block_action",
+            "action": "discover_and_scout",
+            "target": "random_hero",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "gierige_schatten",
+        "name": "Gierige Schatten",
+        "symbol": "👻",
+        "description": "Die Dunkelheit greift nach euren wertvollsten Schätzen.",
+        "effects": [
+          {
+            "type": "drop_resource",
+            "resource": "kristall",
+            "target": "heroes_on_crater"
+          }
+        ]
+      },
+      {
+        "id": "blockade_im_sueden",
+        "name": "Blockade im Süden",
         "symbol": "🪨",
-        "description": "Ein Erdrutsch blockiert euren Weg!",
+        "description": "Ein massiver Felssturz versperrt wichtige Wege.",
         "effects": [
           {
             "type": "add_obstacle",
             "obstacle": "geroell",
-            "target": "random_revealed_tile"
+            "target": "south_of_crater"
           }
         ]
       },
       {
-        "id": "dornenwald",
-        "name": "Wuchernde Dornen", 
-        "symbol": "🌿",
-        "description": "Dornige Ranken überwuchern ein Gebiet!",
-        "effects": [
-          {
-            "type": "add_obstacle", 
-            "obstacle": "dornenwald",
-            "target": "random_revealed_tile"
-          }
-        ]
-      },
-      {
-        "id": "ermuedung",
-        "name": "Ermüdung",
-        "symbol": "😴",
-        "description": "Die Anstrengung zehrt an euren Kräften!",
+        "id": "laehmende_kaelte",
+        "name": "Lähmende Kälte",
+        "symbol": "🧊",
+        "description": "Ein eisiger Wind lähmt eure Bewegungen.",
         "effects": [
           {
             "type": "reduce_ap",
             "value": 1,
-            "target": "all_players", 
-            "duration": "next_turn"
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "dunkle_vorahnung",
+        "name": "Dunkle Vorahnung",
+        "symbol": "🌙",
+        "description": "Ein Schauer läuft euch über den Rücken - die Finsternis naht.",
+        "effects": [
+          {
+            "type": "light_loss",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "verlockung_der_schatten",
+        "name": "Verlockung der Schatten",
+        "symbol": "💫",
+        "description": "Die Dunkelheit flüstert verlockende Lügen.",
+        "effects": [
+          {
+            "type": "block_skills",
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "zerrissener_beutel",
+        "name": "Zerrissener Beutel",
+        "symbol": "🎒",
+        "description": "Ein Rucksack reißt und wertvolle Gegenstände fallen heraus.",
+        "effects": [
+          {
+            "type": "drop_all_items",
+            "target": "random_hero"
+          }
+        ]
+      },
+      {
+        "id": "wuchernde_wildnis",
+        "name": "Wuchernde Wildnis",
+        "symbol": "🌲",
+        "description": "Die Natur selbst scheint sich gegen euch zu wenden.",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "dornenwald",
+            "target": "all_adjacent_to_crater"
+          }
+        ]
+      },
+      {
+        "id": "echo_der_verzweiflung",
+        "name": "Echo der Verzweiflung",
+        "symbol": "💀",
+        "description": "Die Schreie vergangener Helden hallen durch die Nacht.",
+        "effects": [
+          {
+            "type": "light_loss",
+            "value": 1
+          },
+          {
+            "type": "reduce_ap",
+            "value": 1,
+            "target": "random_hero",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "falle_der_finsternis",
+        "name": "Falle der Finsternis",
+        "symbol": "🕷️",
+        "description": "Dunkle Magie umschlingt einen eurer Gefährten.",
+        "effects": [
+          {
+            "type": "prevent_movement",
+            "target": "random_hero",
+            "duration": "next_round"
+          }
+        ]
+      }
+    ],
+    "positive": [
+      {
+        "id": "sternschnuppe",
+        "name": "Sternschnuppe",
+        "symbol": "⭐",
+        "description": "Ein heller Stern durchbricht die Dunkelheit und spendet Hoffnung.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": "player_count"
+          }
+        ]
+      },
+      {
+        "id": "gluecksfund",
+        "name": "Glücksfund",
+        "symbol": "💎",
+        "description": "Zwischen den Felsen glitzert etwas Wertvolles.",
+        "effects": [
+          {
+            "type": "add_resource",
+            "resource": "kristall",
+            "value": 2,
+            "target": "crater"
+          }
+        ]
+      },
+      {
+        "id": "rueckenwind",
+        "name": "Rückenwind",
+        "symbol": "💨",
+        "description": "Ein günstiger Wind treibt euch voran.",
+        "effects": [
+          {
+            "type": "bonus_ap",
+            "value": 2,
+            "target": "random_hero",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "moment_der_klarheit",
+        "name": "Moment der Klarheit",
+        "symbol": "💡",
+        "description": "Plötzlich wird euch der Weg klar.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": "player_count"
+          }
+        ]
+      },
+      {
+        "id": "gemeinsame_staerke",
+        "name": "Gemeinsame Stärke",
+        "symbol": "💪",
+        "description": "Eure Verbundenheit gibt euch neue Kraft.",
+        "effects": [
+          {
+            "type": "bonus_ap",
+            "value": 1,
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "hoffnungsschimmer",
+        "name": "Hoffnungsschimmer",
+        "symbol": "✨",
+        "description": "Ein warmer Lichtstrahl durchbricht die Wolken.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "id": "versteckter_schatz",
+        "name": "Versteckter Schatz",
+        "symbol": "🗝️",
+        "description": "Ihr entdeckt einen alten Vorratsbeutel der Erbauer.",
+        "effects": [
+          {
+            "type": "add_resource",
+            "resource": "kristall",
+            "value": 1,
+            "target": "all_adjacent_to_crater"
+          }
+        ]
+      },
+      {
+        "id": "guenstiges_omen",
+        "name": "Günstiges Omen",
+        "symbol": "🌟",
+        "description": "Die Zeichen stehen gut für eure Mission.",
+        "effects": [
+          {
+            "type": "bonus_ap",
+            "value": 1,
+            "target": "random_hero",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "apeirons_segen",
+        "name": "Apeirons Segen",
+        "symbol": "🔮",
+        "description": "Die Ursubstanz selbst scheint euch zu unterstützen.",
+        "effects": [
+          {
+            "type": "remove_all_negative_effects",
+            "target": "all_players"
+          }
+        ]
+      },
+      {
+        "id": "leuchtfeuer",
+        "name": "Leuchtfeuer",
+        "symbol": "🔥",
+        "description": "Ein uraltes Leuchtfeuer erwacht zu neuem Leben.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": 4
           }
         ]
       }
     ]
   },
   "phase2": {
-    "positive": [
+    "negative": [
       {
-        "id": "elementare_kraft",
-        "name": "Elementare Kraft",
-        "symbol": "💪",
-        "description": "Die Elemente verstärken eure Fähigkeiten!",
+        "id": "zorn_der_sphaere",
+        "name": "Zorn der Sphäre",
+        "symbol": "☄️",
+        "description": "Die Sphäre der Dunkelheit pulsiert vor Wut über euren Fortschritt.",
         "effects": [
           {
-            "type": "bonus_ap",
-            "value": 1,
-            "target": "all_players"
-          }
-        ]
-      },
-      {
-        "id": "licht_verstärkt",
-        "name": "Verstärktes Licht", 
-        "symbol": "☀️",
-        "description": "Das Licht des Turms leuchtet heller!",
-        "effects": [
-          {
-            "type": "light_gain",
+            "type": "light_loss",
             "value": 3
           }
         ]
       },
       {
-        "id": "element_harmonie",
-        "name": "Elementare Harmonie",
-        "symbol": "🌈",
-        "description": "Die Elemente schwingen in perfekter Harmonie!",
+        "id": "welle_der_finsternis",
+        "name": "Welle der Finsternis",
+        "symbol": "🌊",
+        "description": "Eine Woge aus purer Dunkelheit rollt über die Insel.",
         "effects": [
           {
-            "type": "prevent_light_loss",
-            "duration": "this_round"
+            "type": "spread_darkness",
+            "value": 2
           }
         ]
-      }
-    ],
-    "negative": [
+      },
       {
-        "id": "schatten_sturm",
+        "id": "fragment_diebstahl",
+        "name": "Fragment-Diebstahl",
+        "symbol": "💸",
+        "description": "Schattenhafte Klauen greifen nach den heiligen Fragmenten.",
+        "effects": [
+          {
+            "type": "drop_resource",
+            "resource": "element_fragment",
+            "target": "heroes_with_fragments"
+          }
+        ]
+      },
+      {
+        "id": "totale_erschoepfung",
+        "name": "Totale Erschöpfung",
+        "symbol": "😵",
+        "description": "Die andauernde Schlacht gegen die Finsternis zehrt an euren Kräften.",
+        "effects": [
+          {
+            "type": "set_ap",
+            "value": 2,
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "verlorene_hoffnung",
+        "name": "Verlorene Hoffnung",
+        "symbol": "💔",
+        "description": "Der Anblick der wachsenden Finsternis lässt euch verzweifeln.",
+        "effects": [
+          {
+            "type": "light_loss",
+            "value": 2
+          },
+          {
+            "type": "skip_turn",
+            "target": "random_hero"
+          }
+        ]
+      },
+      {
+        "id": "dreifache_blockade",
+        "name": "Dreifache Blockade",
+        "symbol": "🧱",
+        "description": "Die Erde bebt und versperrt wichtige Zugänge.",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "geroell",
+            "target": "gate_and_adjacent"
+          }
+        ]
+      },
+      {
+        "id": "dornen_der_verzweiflung",
+        "name": "Dornen der Verzweiflung",
+        "symbol": "🌹",
+        "description": "Ein Dornenwald, geboren aus Hass, verschlingt die Insel.",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "dornenwald",
+            "target": "ring_around_crater"
+          }
+        ]
+      },
+      {
+        "id": "sintflut_der_traenen",
+        "name": "Sintflut der Tränen",
+        "symbol": "😭",
+        "description": "Die Tränen der gefallenen Helden lassen Flüsse anschwellen.",
+        "effects": [
+          {
+            "type": "add_obstacle",
+            "obstacle": "ueberflutung",
+            "target": "diagonal_to_crater"
+          }
+        ]
+      },
+      {
+        "id": "boeser_zauber",
+        "name": "Böser Zauber",
+        "symbol": "🧙‍♂️",
+        "description": "Dunkle Magie blockiert eure angeborenen Talente.",
+        "effects": [
+          {
+            "type": "block_skills",
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "schattensturm",
         "name": "Schattensturm",
-        "symbol": "🌪️", 
-        "description": "Ein Sturm aus purer Finsternis fegt über die Insel!",
+        "symbol": "🌪️",
+        "description": "Ein Sturm aus reiner Finsternis fegt über Elyria.",
+        "effects": [
+          {
+            "type": "light_loss",
+            "value": 2
+          },
+          {
+            "type": "spread_darkness",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "kristall_fluch",
+        "name": "Kristall-Fluch",
+        "symbol": "💀",
+        "description": "Die Kristalle in euren Taschen werden zu schwerer Last.",
+        "effects": [
+          {
+            "type": "drop_all_resources",
+            "resource": "kristall",
+            "target": "all_players"
+          }
+        ]
+      },
+      {
+        "id": "paralyse",
+        "name": "Paralyse",
+        "symbol": "🥶",
+        "description": "Die Macht der Finsternis lähmt eure Körper.",
+        "effects": [
+          {
+            "type": "prevent_movement",
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "verrat_der_elemente",
+        "name": "Verrat der Elemente",
+        "symbol": "⚡",
+        "description": "Die Elemente selbst scheinen sich gegen euch zu wenden.",
+        "effects": [
+          {
+            "type": "drop_resource",
+            "resource": "element_fragment",
+            "target": "heroes_with_fragments",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "id": "dunkle_metamorphose",
+        "name": "Dunkle Metamorphose",
+        "symbol": "🦋",
+        "description": "Die Landschaft selbst wird von Finsternis korrumpiert.",
+        "effects": [
+          {
+            "type": "spread_darkness",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "id": "verlust_der_orientierung",
+        "name": "Verlust der Orientierung",
+        "symbol": "🧭",
+        "description": "Die Finsternis verwirrt eure Sinne vollständig.",
+        "effects": [
+          {
+            "type": "disable_communication",
+            "duration": "next_round"
+          },
+          {
+            "type": "reduce_ap",
+            "value": 1,
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "opfer_der_schatten",
+        "name": "Opfer der Schatten",
+        "symbol": "👥",
+        "description": "Die Dunkelheit fordert ein schweres Opfer.",
         "effects": [
           {
             "type": "light_loss",
@@ -163,41 +617,208 @@
         ]
       },
       {
-        "id": "ueberflutung",
-        "name": "Dunkle Flut",
+        "id": "gebrochene_verbindung",
+        "name": "Gebrochene Verbindung",
+        "symbol": "🔗",
+        "description": "Die Verbindung zwischen den Helden reißt.",
+        "effects": [
+          {
+            "type": "block_action",
+            "action": "learn_skills",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "tsunami_der_finsternis",
+        "name": "Tsunami der Finsternis",
         "symbol": "🌊",
-        "description": "Schwarzes Wasser überflutet Teile der Insel!",
+        "description": "Eine gewaltige Welle aus Dunkelheit überflutet die Insel.",
         "effects": [
           {
             "type": "add_obstacle",
             "obstacle": "ueberflutung",
-            "target": "random_revealed_tile"
+            "target": "all_apeiron_sources_east"
           }
         ]
       },
       {
-        "id": "finsternis_feld",
-        "name": "Feld der Finsternis",
-        "symbol": "🖤",
-        "description": "Ein Feld wird von absoluter Dunkelheit verschlungen!",
+        "id": "letztes_aufbaeumen",
+        "name": "Letztes Aufbäumen",
+        "symbol": "💥",
+        "description": "Die Sphäre spürt ihre drohende Niederlage und schlägt wild um sich.",
         "effects": [
           {
-            "type": "add_obstacle",
-            "obstacle": "finsternis", 
-            "target": "random_revealed_tile"
+            "type": "light_loss",
+            "value": 2
+          },
+          {
+            "type": "reduce_ap",
+            "value": 1,
+            "target": "all_players",
+            "duration": "next_round"
+          },
+          {
+            "type": "skip_turn",
+            "target": "random_hero"
           }
         ]
       },
       {
-        "id": "faehigkeit_blockiert",
-        "name": "Magische Störung",
-        "symbol": "⚡",
-        "description": "Magische Interferenz blockiert eine eurer Fähigkeiten!",
+        "id": "herz_der_finsternis_pulsiert",
+        "name": "Herz der Finsternis pulsiert",
+        "symbol": "❤️‍🔥",
+        "description": "Das Herz der Finsternis schlägt schneller und stärker.",
         "effects": [
           {
-            "type": "block_skill",
-            "target": "random_player",
-            "duration": "2_turns"
+            "type": "spread_darkness",
+            "value": 3
+          }
+        ]
+      }
+    ],
+    "positive": [
+      {
+        "id": "apeirons_intervention",
+        "name": "Apeirons Intervention",
+        "symbol": "🌟",
+        "description": "Die Ursubstanz selbst greift ein und drängt die Dunkelheit zurück.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": 4
+          }
+        ]
+      },
+      {
+        "id": "reinigendes_feuer",
+        "name": "Reinigendes Feuer",
+        "symbol": "🔥",
+        "description": "Ein heiliges Feuer brennt über die Insel und vernichtet die Verderbnis.",
+        "effects": [
+          {
+            "type": "remove_obstacles",
+            "obstacle": "dornenwald"
+          },
+          {
+            "type": "cleanse_darkness",
+            "value": 2,
+            "target": "closest_to_crater"
+          }
+        ]
+      },
+      {
+        "id": "welle_der_hoffnung",
+        "name": "Welle der Hoffnung",
+        "symbol": "🌊",
+        "description": "Eine Woge aus purem Licht rollt über Elyria.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": 2
+          },
+          {
+            "type": "remove_all_negative_effects",
+            "target": "all_players"
+          }
+        ]
+      },
+      {
+        "id": "geschenk_der_ahnen",
+        "name": "Geschenk der Ahnen",
+        "symbol": "👴",
+        "description": "Die Geister der alten Erbauer manifestieren sich und helfen.",
+        "effects": [
+          {
+            "type": "add_resource",
+            "resource": "kristall",
+            "value": 3,
+            "target": "crater"
+          },
+          {
+            "type": "bonus_ap",
+            "value": 2,
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "elementare_harmonie",
+        "name": "Elementare Harmonie",
+        "symbol": "🌈",
+        "description": "Die vier Elemente vereinen sich für einen Moment in perfekter Balance.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": "player_count_times_2"
+          }
+        ]
+      },
+      {
+        "id": "sternenkonstellation",
+        "name": "Sternenkonstellation",
+        "symbol": "✨",
+        "description": "Die Sterne formen ein uraltes Schutzsymbol am Himmel.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": 3
+          }
+        ]
+      },
+      {
+        "id": "durchbruch",
+        "name": "Durchbruch",
+        "symbol": "💡",
+        "description": "Ein Held findet plötzlich die Lösung für ein altes Rätsel.",
+        "effects": [
+          {
+            "type": "bonus_ap",
+            "value": 2,
+            "target": "random_hero",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "laeuterung",
+        "name": "Läuterung",
+        "symbol": "🌪️",
+        "description": "Ein reinigender Sturm fegt alle Hindernisse fort.",
+        "effects": [
+          {
+            "type": "remove_all_obstacles"
+          }
+        ]
+      },
+      {
+        "id": "vereinte_kraft",
+        "name": "Vereinte Kraft",
+        "symbol": "🤝",
+        "description": "Eure Verbundenheit manifestiert sich als sichtbare Macht.",
+        "effects": [
+          {
+            "type": "bonus_ap",
+            "value": 2,
+            "target": "all_players",
+            "duration": "next_round"
+          }
+        ]
+      },
+      {
+        "id": "triumph_des_lichts",
+        "name": "Triumph des Lichts",
+        "symbol": "☀️",
+        "description": "Das Licht siegt über die Dunkelheit in einer epischen Schlacht.",
+        "effects": [
+          {
+            "type": "light_gain",
+            "value": 5
+          },
+          {
+            "type": "cleanse_darkness",
+            "target": "all_adjacent_to_crater"
           }
         ]
       }
