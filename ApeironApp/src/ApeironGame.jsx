@@ -340,6 +340,7 @@ function GameBoard({ gameState, onTileClick }) {
     const tile = gameState.board[position];
     
     // Find heroes on this tile
+    // eslint-disable-next-line no-unused-vars
     const heroesOnTile = gameState.players.filter(player => player.position === position);
     
     // Check if discoverable (adjacent to current player's position)
@@ -476,6 +477,17 @@ function GameBoard({ gameState, onTileClick }) {
                 {hero.name[0]}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Obstacle on tile */}
+        {tile?.obstacle && (
+          <div style={{
+            position: 'absolute',
+            fontSize: '24px',
+            filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))'
+          }}>
+            {tile.obstacle === 'geroell' ? '🪨' : tile.obstacle === 'dornenwald' ? '🌿' : tile.obstacle === 'ueberflutung' ? '🌊' : '🚧'}
           </div>
         )}
       </div>
@@ -644,11 +656,18 @@ function GameScreen({ gameData, onNewGame }) {
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
       scoutingMode: { active: false, availablePositions: [], selectedPositions: [], maxSelections: 2 },
       tileDeck: phase1TileDeck.sort(() => Math.random() - 0.5),
-      actionBlockers: []
+      actionBlockers: [],
+      isEventTriggering: false
     };
   });
 
   const handleTileClick = (position) => {
+    // Prevent actions if current player should skip turn
+    if (shouldPlayerSkipTurn(gameState.players[gameState.currentPlayerIndex], gameState.round)) {
+      console.log('Player cannot perform actions - must skip turn due to effect');
+      return;
+    }
+
     // Handle scouting mode selection
     if (gameState.scoutingMode.active) {
       if (gameState.scoutingMode.availablePositions.includes(position)) {
@@ -703,6 +722,19 @@ function GameScreen({ gameData, onNewGame }) {
         };
       });
     } else if (tile && currentPlayer.ap > 0 && canMoveToPosition(currentPlayer.position, position, currentPlayer.id)) {
+      // Prevent moving if player has 'prevent_movement' effect
+      if (currentPlayer.effects?.some(e => e.type === 'prevent_movement' && e.expiresInRound > gameState.round)) {
+        console.log(`Movement for ${currentPlayer.name} blocked by an effect.`);
+        // Optional: Add visual feedback for the user
+        return;
+      }
+
+      // Prevent moving to a tile with an obstacle
+      if (tile.obstacle) {
+        console.log(`Movement to ${position} blocked by obstacle: ${tile.obstacle}`);
+        return;
+      }
+
       // Move to tile (only if within allowed movement range)
       setGameState(prev => {
         const newPlayers = prev.players.map((player, index) => 
@@ -727,8 +759,15 @@ function GameScreen({ gameData, onNewGame }) {
 
   const handleCollectResources = () => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Prevent actions if current player should skip turn
+    if (shouldPlayerSkipTurn(currentPlayer, gameState.round)) {
+      console.log('Player cannot collect resources - must skip turn due to effect');
+      return;
+    }
+
     const currentTile = gameState.board[currentPlayer.position];
-    
+
     if (!currentTile || currentTile.resources.length === 0 || currentPlayer.ap === 0) return;
     if (currentPlayer.inventory.length >= currentPlayer.maxInventory) return; // Inventory full
     
@@ -791,93 +830,181 @@ function GameScreen({ gameData, onNewGame }) {
     }, 1500);
   };
 
-  const handleAutoTurnTransition = (updatedPlayers, currentPlayerIndex, round, prevState, forceRoundEnd = false) => {
-    const updatedCurrentPlayer = updatedPlayers[currentPlayerIndex];
+  // Centralized function to handle end-of-round event triggering
+  const handleRoundCompleted = () => {
+    console.log('🏁 handleRoundCompleted called - preparing to trigger event');
+    setGameState(prevState => {
+      // Prevent duplicate triggering with flag guard
+      if (prevState.isEventTriggering) {
+        console.log('⚠️ Event already triggering, skipping duplicate call');
+        return prevState;
+      }
+
+      // Set flag and trigger event directly (no setTimeout race condition)
+      triggerRandomEvent();
+      return {
+        ...prevState,
+        isEventTriggering: true
+      };
+    });
+  };
+
+  const handleAutoTurnTransition = (players, currentPlayerIndex, round, prevState) => {
+    const updatedCurrentPlayer = players[currentPlayerIndex];
 
     // Only transition if current player has no AP left
     if (updatedCurrentPlayer.ap <= 0) {
       // Check if all other players also have 0 AP.
-      const allOtherPlayersDone = updatedPlayers.every((p, index) => {
-        if (index === currentPlayerIndex) return true; // Ignore current player
-        return p.ap <= 0 || forceRoundEnd;
-      });
+      const allPlayersDone = players.every(p => p.ap <= 0);
 
-      if (allOtherPlayersDone) {
+      if (allPlayersDone) {
         // NO player has AP left - round is truly complete
         const newRound = round + 1;
+        console.log(`🎯 Round ${round} completed! Starting round ${newRound}. Triggering event.`);
 
         // Reset ALL players AP and start new round
-        const newPlayersState = updatedPlayers.map(p => ({
-          ...p, ap: p.maxAp
+        const newPlayersState = players.map(p => ({
+          ...p, ap: p.maxAp, effects: (p.effects || []).filter(e => e.expiresInRound > round)
         }));
 
+        // Apply AP modifications from effects at the start of a new round
+        newPlayersState.forEach(player => {
+          const setApEffect = player.effects?.find(e => e.type === 'set_ap' && e.expiresInRound > round);
+          if (setApEffect) {
+            player.ap = setApEffect.value;
+          } else {
+            const bonusApEffect = player.effects?.find(e => e.type === 'bonus_ap' && e.expiresInRound > round);
+            if (bonusApEffect) {
+              player.ap += bonusApEffect.value;
+            }
+            const reduceApEffect = player.effects?.find(e => e.type === 'reduce_ap' && e.expiresInRound > round);
+            if (reduceApEffect) {
+              player.ap = Math.max(0, player.ap - reduceApEffect.value);
+            }
+          }
+        });
+
+        // Clean up expired player effects at the start of a new round
+        newPlayersState.forEach(player => {
+          if (player.effects) {
+            player.effects = player.effects.filter(effect => effect.expiresInRound > round);
+          }
+        });
+
         // Clean up expired action blockers
-        const activeBlockers = (prevState.actionBlockers || []).filter(blocker => blocker.expiresInRound >= newRound);
+        const activeBlockers = (prevState.actionBlockers || []).filter(blocker => blocker.expiresInRound > round);
 
         // Replace the players array with the new state
-        updatedPlayers.splice(0, updatedPlayers.length, ...newPlayersState); // This is a mutation, be careful
+        players.splice(0, players.length, ...newPlayersState); // This is a mutation, be careful
 
-        // Set next player to 0 (start of new round)
-        triggerTurnTransition(0);
+        // Trigger the event for the completed round
+        handleRoundCompleted();
 
-        // Trigger event IMMEDIATELY if we're starting round 2 or later
-        // (Events start from round 2, not round 1)
-        if (newRound >= 2) {
-          console.log(`Round completed: ${round} -> ${newRound}, triggering event`);
-          // Use a very short timeout to ensure state is updated
-          setTimeout(() => {
-            triggerRandomEvent();
-          }, 10);
-        }
-
-        return { nextPlayerIndex: 0, newRound: newRound, actionBlockers: activeBlockers }; // Return new state for setGameState
+        return { nextPlayerIndex: 0, newRound: newRound, actionBlockers: activeBlockers, roundCompleted: true };
       } else {
         // Not all players are done, find the next player with AP
-        let nextPlayerIndex = (currentPlayerIndex + 1) % updatedPlayers.length;
-        while (updatedPlayers[nextPlayerIndex].ap <= 0) {
-          nextPlayerIndex = (nextPlayerIndex + 1) % updatedPlayers.length;
+        let nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        while (players[nextPlayerIndex].ap <= 0) {
+          nextPlayerIndex = (nextPlayerIndex + 1) % players.length;
         }
-        
+
+        // Check if the next player must skip their turn
+        const nextPlayer = players[nextPlayerIndex];
+        const hasSkipTurnEffect = nextPlayer.effects?.some(e => e.type === 'skip_turn' && e.expiresInRound > round);
+
+        if (hasSkipTurnEffect) {
+          console.log(`${nextPlayer.name} is skipping their turn due to skip_turn effect.`);
+          // Set AP to 0 to force skip and add visual indicator
+          nextPlayer.ap = 0;
+          nextPlayer.isSkippingTurn = true;
+
+          // Find the next player who can actually take a turn
+          let skipNextIndex = (nextPlayerIndex + 1) % players.length;
+          let attempts = 0;
+
+          // Prevent infinite loops by limiting attempts to player count
+          while (attempts < players.length) {
+            const skipNextPlayer = players[skipNextIndex];
+            const nextHasSkip = skipNextPlayer.effects?.some(e => e.type === 'skip_turn' && e.expiresInRound > round);
+
+            if (!nextHasSkip) {
+              // Found a player who can take a turn
+              triggerTurnTransition(skipNextIndex);
+              return { nextPlayerIndex: skipNextIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false };
+            }
+
+            // This player also needs to skip
+            console.log(`${skipNextPlayer.name} is also skipping their turn due to skip_turn effect.`);
+            skipNextPlayer.ap = 0;
+            skipNextPlayer.isSkippingTurn = true;
+
+            skipNextIndex = (skipNextIndex + 1) % players.length;
+            attempts++;
+          }
+
+          // If all players need to skip (shouldn't happen with proper game logic)
+          console.warn('All players have skip_turn effects - this should not happen!');
+        }
+
         triggerTurnTransition(nextPlayerIndex);
-        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound >= round) };
+        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false };
       }
     }
 
     // Current player still has AP, no transition needed
-    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound >= round) };
+    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false };
   };
 
   // Event System
   const triggerRandomEvent = () => {
+    console.log('🎯 triggerRandomEvent called');
     setGameState(prev => {
+      // Additional guard: check if already triggering
+      if (prev.isEventTriggering && prev.currentEvent) {
+        console.warn('❌ Event trigger blocked - already triggering or active event:', prev.currentEvent?.name);
+        return prev;
+      }
+
       // Prevent triggering if there's already an active event
       if (prev.currentEvent) {
-        console.log('Event trigger blocked - event already active:', prev.currentEvent.name);
+        console.warn('❌ Event trigger blocked - event already active:', prev.currentEvent.name);
         return prev;
       }
 
       // Prevent triggering if no events left
       if (prev.eventDeck.length === 0) {
-        console.log('Event trigger blocked - deck empty');
+        console.log('❌ Event trigger blocked - deck empty');
         return prev;
       }
 
       const randomIndex = Math.floor(Math.random() * prev.eventDeck.length);
       const selectedEvent = prev.eventDeck[randomIndex];
 
-      console.log(`Triggering event: ${selectedEvent.name} at round ${prev.round}. Deck has ${prev.eventDeck.length} cards left.`);
+      console.log(`🎲 Triggering event: ${selectedEvent.name} at round ${prev.round}. Deck has ${prev.eventDeck.length} cards left.`);
+
+      // Apply the effect immediately, then show the modal.
+      const stateAfterEffect = applyEventEffect(selectedEvent, prev);
 
       return {
-        ...prev,
-        currentEvent: selectedEvent,
+        ...stateAfterEffect,
+        // The modal will now show the event with the resolved text
         eventDeck: prev.eventDeck.filter((_, index) => index !== randomIndex)
       };
     });
   };
 
-  const applyEventEffect = (event) => {
-    setGameState(prev => {
-      let newState = { ...prev };
+  const applyEventEffect = (event, currentState) => {
+      let newState = { ...currentState };
+      let resolvedTexts = [];
+      
+      // Pre-determine random targets ONCE before applying effects
+      const randomHeroIndex = newState.players.length > 0 ? Math.floor(Math.random() * newState.players.length) : -1;
+      const randomHero = randomHeroIndex !== -1 ? newState.players[randomHeroIndex] : null;
+      
+      const revealedTiles = Object.keys(newState.board).filter(pos => pos !== '4,4' && newState.board[pos]);
+      const randomRevealedTilePos = revealedTiles.length > 0 ? revealedTiles[Math.floor(Math.random() * revealedTiles.length)] : null;
+
+
 
       event.effects.forEach(effect => {
         switch (effect.type) {
@@ -894,35 +1021,47 @@ function GameScreen({ gameData, onNewGame }) {
             newState.light = Math.max(0, newState.light - effect.value);
             break;
           case 'bonus_ap':
-            if (effect.target === 'active_player') {
-              newState.players[newState.currentPlayerIndex].ap += effect.value;
-            } else if (effect.target === 'all_players') {
-              newState.players = newState.players.map(player => ({
-                ...player,
-                ap: Math.min(player.maxAp + 2, player.ap + effect.value)
-              }));
-            } else if (effect.target === 'random_hero') {
-              const randomIndex = Math.floor(Math.random() * newState.players.length);
-              newState.players[randomIndex].ap += effect.value;
+            {
+              const duration = effect.duration === 'next_round' ? newState.round + 2 : newState.round;
+              if (effect.target === 'all_players') {
+                newState.players.forEach(player => {
+                  if (!player.effects) player.effects = [];
+                  player.effects.push({ type: 'bonus_ap', value: effect.value, expiresInRound: duration });
+                });
+                resolvedTexts.push(`Gemeinsame Stärke: Alle Helden erhalten +${effect.value} AP.`);
+              } else if (effect.target === 'random_hero' && randomHero) {
+                if (!randomHero.effects) randomHero.effects = [];
+                randomHero.effects.push({ type: 'bonus_ap', value: effect.value, expiresInRound: duration });
+                resolvedTexts.push(`Günstiges Omen: ${randomHero.name} erhält +${effect.value} AP.`);
+              }
             }
             break;
           case 'reduce_ap':
-            if (effect.target === 'all_players') {
-              newState.players = newState.players.map(player => ({
-                ...player,
-                ap: Math.max(0, player.ap - effect.value)
-              }));
-            } else if (effect.target === 'random_hero') {
-              const randomIndex = Math.floor(Math.random() * newState.players.length);
-              newState.players[randomIndex].ap = Math.max(0, newState.players[randomIndex].ap - effect.value);
+            {
+              const duration = effect.duration === 'next_round' ? newState.round + 2 : newState.round;
+              if (effect.target === 'all_players') {
+                newState.players.forEach(player => {
+                  if (!player.effects) player.effects = [];
+                  player.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: duration });
+                });
+                resolvedTexts.push(`Lähmende Kälte: Alle Helden haben -${effect.value} AP.`);
+              } else if (effect.target === 'random_hero' && randomHero) {
+                if (!randomHero.effects) randomHero.effects = [];
+                randomHero.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: duration });
+                resolvedTexts.push(`Echo der Verzweiflung: ${randomHero.name} hat -${effect.value} AP.`);
+              }
             }
             break;
           case 'set_ap':
-            if (effect.target === 'all_players') {
-              newState.players = newState.players.map(player => ({
-                ...player,
-                ap: effect.value
-              }));
+            {
+              const duration = effect.duration === 'next_round' ? newState.round + 2 : newState.round;
+              if (effect.target === 'all_players') {
+                newState.players.forEach(player => {
+                  if (!player.effects) player.effects = [];
+                  player.effects.push({ type: 'set_ap', value: effect.value, expiresInRound: duration });
+                });
+                resolvedTexts.push(`Totale Erschöpfung: Alle Helden haben nur ${effect.value} AP.`);
+              }
             }
             break;
           case 'add_resource':
@@ -936,18 +1075,23 @@ function GameScreen({ gameData, onNewGame }) {
               if (!newState.board['4,4'].resources) {
                 newState.board['4,4'].resources = [];
               }
-              for (let i = 0; i < effect.value; i++) {
-                newState.board['4,4'].resources.push(effect.resource);
+              const amount = effect.value || 1;
+              for (let i = 0; i < amount; i++) {
+                  newState.board['4,4'].resources.push(effect.resource);
               }
+              resolvedTexts.push(`Glücksfund: ${amount} Kristalle wurden auf dem Krater platziert.`);
             } else if (effect.target === 'all_adjacent_to_crater') {
               // Add resources to fields adjacent to crater
               const adjacentPositions = ['3,4', '5,4', '4,3', '4,5'];
               adjacentPositions.forEach(pos => {
-                if (newState.board[pos]) {
+                if (newState.board[pos] || pos.match(/^\d+,\d+$/)) {
                   if (!newState.board[pos].resources) {
                     newState.board[pos].resources = [];
                   }
-                  newState.board[pos].resources.push(effect.resource);
+                  const amount = effect.value || 1;
+                  for (let i = 0; i < amount; i++) {
+                    newState.board[pos].resources.push(effect.resource);
+                  }
                 }
               });
             }
@@ -994,103 +1138,285 @@ function GameScreen({ gameData, onNewGame }) {
             }
             break;
           case 'drop_all_items':
-            if (effect.target === 'random_hero') {
-              const randomIndex = Math.floor(Math.random() * newState.players.length);
-              const player = newState.players[randomIndex];
+            if (effect.target === 'random_hero' && randomHero) {
+              const player = randomHero;
               const pos = player.position;
               if (!newState.board[pos].resources) {
                 newState.board[pos].resources = [];
               }
               newState.board[pos].resources.push(...player.inventory);
               player.inventory = [];
+              resolvedTexts.push(`Zerrissener Beutel: ${player.name} verliert alle Gegenstände.`);
             }
             break;
-          case 'add_obstacle':
-            if (effect.target === 'north_of_crater') {
-              if (newState.board['4,3']) {
-                newState.board['4,3'].obstacle = effect.obstacle;
-              }
-            } else if (effect.target === 'east_of_crater') {
-              if (newState.board['5,4']) {
-                newState.board['5,4'].obstacle = effect.obstacle;
-              }
-            } else if (effect.target === 'south_of_crater') {
-              if (newState.board['4,5']) {
-                newState.board['4,5'].obstacle = effect.obstacle;
-              }
-            } else if (effect.target === 'west_of_crater') {
-              if (newState.board['3,4']) {
-                newState.board['3,4'].obstacle = effect.obstacle;
-              }
-            } else if (effect.target === 'all_adjacent_to_crater') {
-              const adjacentPositions = ['3,4', '5,4', '4,3', '4,5'];
-              adjacentPositions.forEach(pos => {
-                if (newState.board[pos]) {
-                  newState.board[pos].obstacle = effect.obstacle;
+          case 'drop_all_resources': {
+            if (effect.target === 'all_players') {
+              const resourceType = effect.resource || 'kristall';
+              newState.players.forEach(player => {
+                const pos = player.position;
+                const resourcesToDrop = player.inventory.filter(item => item === resourceType);
+                if (resourcesToDrop.length > 0) {
+                  if (!newState.board[pos].resources) {
+                    newState.board[pos].resources = [];
+                  }
+                  newState.board[pos].resources.push(...resourcesToDrop);
+                  player.inventory = player.inventory.filter(item => item !== resourceType);
                 }
               });
-            } else if (effect.target === 'random_revealed_tile') {
-              const revealedTiles = Object.keys(newState.board).filter(pos => pos !== '4,4');
-              if (revealedTiles.length > 0) {
-                const randomTile = revealedTiles[Math.floor(Math.random() * revealedTiles.length)];
-                if (newState.board[randomTile]) {
-                  newState.board[randomTile].obstacle = effect.obstacle;
+              resolvedTexts.push(`Kristall-Fluch: Alle Helden müssen ihre ${resourceType}e ablegen.`);
+            }
+            break;
+          }
+          case 'add_obstacle':
+            {
+              const newBoard = { ...newState.board };
+              const obstacle = effect.obstacle;
+              let targetPositions = [];
+
+              if (effect.target === 'north_of_crater') {
+                targetPositions.push('4,3');
+              } else if (effect.target === 'east_of_crater') {
+                targetPositions.push('5,4');
+              } else if (effect.target === 'south_of_crater') {
+                targetPositions.push('4,5');
+              } else if (effect.target === 'west_of_crater') {
+                targetPositions.push('3,4');
+              } else if (effect.target === 'all_adjacent_to_crater') {
+                targetPositions.push('4,3', '5,4', '4,5', '3,4');
+              } else if (effect.target === 'gate_and_adjacent') {
+                const gatePosition = Object.keys(newBoard).find(pos => newBoard[pos]?.id === 'tor_der_weisheit');
+                if (gatePosition) {
+                  targetPositions.push(gatePosition);
+                  const [x, y] = gatePosition.split(',').map(Number);
+                  targetPositions.push(`${x},${y-1}`, `${x+1},${y}`, `${x},${y+1}`, `${x-1},${y}`);
                 }
+              } else if (effect.target === 'ring_around_crater') {
+                // Ring with 2 fields distance from crater
+                const ringPositions = [
+                  '2,2', '3,2', '4,2', '5,2', '6,2',
+                  '2,3', '6,3',
+                  '2,4', '6,4',
+                  '2,5', '6,5',
+                  '2,6', '3,6', '4,6', '5,6', '6,6'
+                ];
+                targetPositions.push(...ringPositions);
+              } else if (effect.target === 'diagonal_to_crater') {
+                targetPositions.push('5,3', '5,5', '3,5', '3,3');
+              } else if (effect.target === 'all_apeiron_sources_east') {
+                const sourcePositions = Object.keys(newBoard).filter(pos => {
+                  const tile = newBoard[pos];
+                  const [x] = pos.split(',').map(Number);
+                  return x > 4 && (tile?.id === 'wiese_kristall' || tile?.id === 'hoehle_kristall');
+                });
+                targetPositions.push(...sourcePositions);
+              } else if (effect.target === 'random_revealed_tile' && randomRevealedTilePos) {
+                targetPositions.push(randomRevealedTilePos);
               }
+
+              targetPositions.forEach(pos => {
+                if (newBoard[pos] || pos.match(/^\d+,\d+$/)) { // Allow placing on undiscovered tiles
+                  newBoard[pos] = { ...newBoard[pos], obstacle };
+                }
+              });
+
+              newState.board = newBoard;
             }
             break;
           case 'skip_turn':
-            if (effect.target === 'random_hero') {
-              const randomIndex = Math.floor(Math.random() * newState.players.length);
-              // Mark player to skip next turn - would need additional state tracking
-              console.log(`Player ${newState.players[randomIndex].name} will skip next turn`);
+            {
+              const duration = effect.duration === 'next_round' ? newState.round + 2 : newState.round;
+              if (effect.target === 'random_hero' && randomHero) {
+                if (!randomHero.effects) randomHero.effects = [];
+                randomHero.effects.push({ type: 'skip_turn', expiresInRound: duration });
+                resolvedTexts.push(`Erschöpfung: ${randomHero.name} muss in der nächsten Runde aussetzen.`);
+              }
             }
             break;
           case 'remove_all_negative_effects':
             // Remove all negative effects from players - would need effect tracking
             console.log('All negative effects removed');
             break;
-          // Block/Prevent actions would require additional state management
           case 'block_action': {
+            const duration = effect.duration === 'next_round' ? newState.round + 2 : newState.round;
             const newBlocker = {
               action: effect.action,
-              expiresInRound: newState.round,
+              expiresInRound: duration,
               target: effect.target || 'all_players',
             };
             if (newBlocker.target === 'random_hero') {
-              if (newState.players.length > 0) {
-                const randomIndex = Math.floor(Math.random() * newState.players.length);
-                newBlocker.target = newState.players[randomIndex].id;
-                console.log(`Action ${effect.action} blocked for random hero: ${newState.players[randomIndex].name}`);
+              if (randomHero) {
+                newBlocker.target = randomHero.id;
+                resolvedTexts.push(`${effect.action === 'discover_and_scout' ? 'Entdecken/Spähen' : effect.action} blockiert für ${randomHero.name}.`);
               } else {
-                newBlocker.target = 'all_players'; // Fallback
+                newBlocker.target = 'all_players';
+                resolvedTexts.push(`${effect.action === 'discover_and_scout' ? 'Entdecken/Spähen' : effect.action} für alle blockiert.`);
               }
-            };
+            } else if (newBlocker.target === 'all_players') {
+              resolvedTexts.push(`${effect.action === 'discover_and_scout' ? 'Entdecken/Spähen' : effect.action} für alle blockiert.`);
+            }
             if (!newState.actionBlockers) newState.actionBlockers = [];
             newState.actionBlockers.push(newBlocker);
             break;
           }
-          case 'block_skills':
-          case 'prevent_movement':
-          case 'disable_communication':
-            console.log(`Effect ${effect.type} applied - UI feedback needed`);
+          case 'block_skills': {
+            const duration = effect.duration === 'next_round' ? newState.round + 2 : newState.round;
+            if (effect.target === 'all_players') {
+              newState.players.forEach(player => {
+                if (!player.effects) player.effects = [];
+                player.effects.push({ type: 'block_skills', expiresInRound: duration });
+              });
+              resolvedTexts.push('Spezialfähigkeiten für alle Helden blockiert.');
+            } else if (effect.target === 'random_hero' && randomHero) {
+              if (!randomHero.effects) randomHero.effects = [];
+              randomHero.effects.push({ type: 'block_skills', expiresInRound: duration });
+              resolvedTexts.push(`Spezialfähigkeiten für ${randomHero.name} blockiert.`);
+            }
             break;
-          // Phase 2 effects - not yet implemented
-          case 'spread_darkness':
-          case 'cleanse_darkness':
-          case 'remove_obstacles':
-          case 'remove_all_obstacles':
-            console.log(`Phase 2 effect ${effect.type} - not yet implemented`);
+          }
+          case 'prevent_movement': {
+            const duration = effect.duration === 'next_round' ? newState.round + 2 : newState.round;
+            if (effect.target === 'all_players') {
+              newState.players.forEach(player => {
+                if (!player.effects) player.effects = [];
+                player.effects.push({ type: 'prevent_movement', expiresInRound: duration });
+              });
+              resolvedTexts.push('Bewegung für alle Helden blockiert.');
+            } else if (effect.target === 'random_hero' && randomHero) {
+              if (!randomHero.effects) randomHero.effects = [];
+              randomHero.effects.push({ type: 'prevent_movement', expiresInRound: duration });
+              resolvedTexts.push(`Bewegung für ${randomHero.name} blockiert.`);
+            }
             break;
+          }
+          case 'disable_communication': {
+            const duration = effect.duration === 'next_round' ? newState.round + 2 : newState.round;
+            if (!newState.actionBlockers) newState.actionBlockers = [];
+            newState.actionBlockers.push({
+              action: 'communication',
+              expiresInRound: duration,
+              target: 'all_players'
+            });
+            resolvedTexts.push('Kommunikation zwischen Spielern ist in der nächsten Runde nicht erlaubt.');
+            break;
+          }
+          case 'remove_obstacles': {
+            const obstacleType = effect.obstacle;
+            const newBoard = { ...newState.board };
+            Object.keys(newBoard).forEach(pos => {
+              if (newBoard[pos]?.obstacle === obstacleType) {
+                delete newBoard[pos].obstacle;
+              }
+            });
+            newState.board = newBoard;
+            resolvedTexts.push(`Reinigendes Feuer: Alle ${obstacleType}-Hindernisse wurden entfernt.`);
+            break;
+          }
+          case 'remove_all_obstacles': {
+            const newBoard = { ...newState.board };
+            Object.keys(newBoard).forEach(pos => {
+              if (newBoard[pos]?.obstacle) {
+                delete newBoard[pos].obstacle;
+              }
+            });
+            newState.board = newBoard;
+            resolvedTexts.push('Läuterung: Alle Hindernisse wurden vom Spielfeld entfernt.');
+            break;
+          }
+          case 'remove_all_negative_effects': {
+            if (effect.target === 'all_players') {
+              newState.players.forEach(player => {
+                if (player.effects) {
+                  // Remove negative effects (keep positive ones like bonus_ap)
+                  player.effects = player.effects.filter(e =>
+                    e.type === 'bonus_ap' || !['skip_turn', 'reduce_ap', 'prevent_movement', 'block_skills'].includes(e.type)
+                  );
+                }
+              });
+              // Also remove action blockers
+              newState.actionBlockers = [];
+              resolvedTexts.push('Apeirons Segen: Alle negativen Effekte wurden aufgehoben.');
+            }
+            break;
+          }
+          // Phase 2 effects
+          case 'spread_darkness': {
+            const spreadCount = effect.value || 1;
+            const newBoard = { ...newState.board };
+            let fieldsSpread = 0;
+
+            // Find fields adjacent to existing darkness fields to spread to
+            const darkFields = Object.keys(newBoard).filter(pos => newBoard[pos]?.isDark);
+            const adjacentToDark = [];
+
+            darkFields.forEach(darkPos => {
+              const [dx, dy] = darkPos.split(',').map(Number);
+              const adjacent = [
+                `${dx-1},${dy}`, `${dx+1},${dy}`, `${dx},${dy-1}`, `${dx},${dy+1}`
+              ].filter(pos => {
+                const [x, y] = pos.split(',').map(Number);
+                return x >= 0 && x < 9 && y >= 0 && y < 9 &&
+                       newBoard[pos] && !newBoard[pos].isDark &&
+                       !adjacentToDark.includes(pos);
+              });
+              adjacentToDark.push(...adjacent);
+            });
+
+            // Spread darkness to random adjacent fields
+            while (fieldsSpread < spreadCount && adjacentToDark.length > 0) {
+              const randomIndex = Math.floor(Math.random() * adjacentToDark.length);
+              const posToSpread = adjacentToDark.splice(randomIndex, 1)[0];
+              newBoard[posToSpread] = { ...newBoard[posToSpread], isDark: true };
+              fieldsSpread++;
+            }
+
+            newState.board = newBoard;
+            resolvedTexts.push(`Welle der Finsternis: ${fieldsSpread} Felder wurden von Dunkelheit erfasst.`);
+            break;
+          }
+          case 'cleanse_darkness': {
+            const cleanseCount = effect.value || 1;
+            const newBoard = { ...newState.board };
+            let fieldsCleansed = 0;
+
+            if (effect.target === 'closest_to_crater') {
+              // Find dark fields closest to crater and cleanse them
+              const darkFields = Object.keys(newBoard)
+                .filter(pos => newBoard[pos]?.isDark)
+                .map(pos => {
+                  const [x, y] = pos.split(',').map(Number);
+                  const distance = Math.abs(x - 4) + Math.abs(y - 4); // Manhattan distance to crater
+                  return { pos, distance };
+                })
+                .sort((a, b) => a.distance - b.distance)
+                .slice(0, cleanseCount);
+
+              darkFields.forEach(field => {
+                delete newBoard[field.pos].isDark;
+                fieldsCleansed++;
+              });
+            } else if (effect.target === 'all_adjacent_to_crater') {
+              // Cleanse all dark fields adjacent to crater
+              const adjacentToCrater = ['3,4', '5,4', '4,3', '4,5'];
+              adjacentToCrater.forEach(pos => {
+                if (newBoard[pos]?.isDark) {
+                  delete newBoard[pos].isDark;
+                  fieldsCleansed++;
+                }
+              });
+            }
+
+            newState.board = newBoard;
+            resolvedTexts.push(`Triumph des Lichts: ${fieldsCleansed} Felder wurden von Finsternis gereinigt.`);
+            break;
+          }
         }
       });
 
-      return {
-        ...newState,
-        currentEvent: null
-      };
-    });
+      // Update the event object with the resolved text for the modal
+      newState.currentEvent = { ...event, resolvedEffectText: resolvedTexts.join(' ') || event.effectText };
+      return newState;
   };
+
 
 
   // Special Hero Actions
@@ -1371,25 +1697,132 @@ function GameScreen({ gameData, onNewGame }) {
     });
   };
 
+  const handleRemoveObstacle = (obstaclePosition, obstacleType) => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    const targetTile = gameState.board[obstaclePosition];
+  
+    const skillMap = {
+      'geroell': 'geroell_beseitigen',
+      'dornenwald': 'dornen_entfernen',
+      'ueberflutung': 'fluss_freimachen'
+    };
+  
+    const requiredSkill = skillMap[obstacleType];
+  
+    // Check if player is adjacent to the obstacle
+    const [playerX, playerY] = currentPlayer.position.split(',').map(Number);
+    const [obstacleX, obstacleY] = obstaclePosition.split(',').map(Number);
+    const isAdjacent = Math.abs(playerX - obstacleX) + Math.abs(playerY - obstacleY) === 1;
+  
+    if (isAdjacent && currentPlayer.ap > 0 && targetTile?.obstacle === obstacleType && currentPlayer.learnedSkills.includes(requiredSkill)) {
+      setGameState(prev => {
+        const newBoard = { ...prev.board };
+        const { [obstaclePosition]: tileToUpdate, ...restOfBoard } = newBoard;
+        const { obstacle, ...restOfTile } = tileToUpdate;
+        newBoard[obstaclePosition] = restOfTile;
+  
+        const newPlayers = prev.players.map((player, index) =>
+          index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
+        );
+  
+        const { nextPlayerIndex, newRound, actionBlockers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+  
+        return {
+          ...prev,
+          board: newBoard,
+          players: newPlayers,
+          currentPlayerIndex: nextPlayerIndex,
+          round: newRound,
+          actionBlockers: actionBlockers,
+        };
+      });
+    }
+  };
+
   const renderActionButtons = () => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Check if skills are blocked
+    const areSkillsBlocked = currentPlayer.effects?.some(e => e.type === 'block_skills' && e.expiresInRound > gameState.round);
+
+    // Show skip turn message if player should skip
+    if (shouldPlayerSkipTurn(currentPlayer, gameState.round)) {
+      return (
+        <div style={{
+          textAlign: 'center',
+          color: '#fbbf24',
+          fontWeight: 'bold',
+          fontSize: '0.75rem',
+          padding: '16px',
+          backgroundColor: 'rgba(251, 191, 36, 0.1)',
+          borderRadius: '8px',
+          border: '2px solid #fbbf24'
+        }}>
+          😴 {currentPlayer.name} muss aussetzen
+          <div style={{
+            fontSize: '0.7rem',
+            color: '#9ca3af',
+            marginTop: '8px',
+            fontWeight: 'normal'
+          }}>
+            Effekt läuft bis zum Ende der Runde
+          </div>
+        </div>
+      );
+    }
+
     const currentTile = gameState.board[currentPlayer.position];
     const canCollect = currentTile?.resources?.length > 0 && 
                       currentPlayer.inventory.length < currentPlayer.maxInventory && 
                       currentPlayer.ap > 0;
-    const canBuildFoundation = currentPlayer.position === '4,4' && 
+    const canBuildFoundation = currentPlayer.position === '4,4' &&
                               currentPlayer.learnedSkills.includes('grundstein_legen') &&
                               currentPlayer.inventory.filter(item => item === 'kristall').length >= 2 &&
-                              currentPlayer.ap > 0;    
+                              currentPlayer.ap > 0 &&
+                              !areSkillsBlocked;    
     const isScoutBlocked = (gameState.actionBlockers || []).some(blocker =>
       (blocker.action === 'spaehen' || blocker.action === 'discover_and_scout') &&
       (blocker.target === 'all_players' || blocker.target === currentPlayer.id));
-    const canScout = currentPlayer.learnedSkills.includes('spaehen') && 
-                    currentPlayer.ap > 0 && 
+    const canScout = currentPlayer.learnedSkills.includes('spaehen') &&
+                    currentPlayer.ap > 0 &&
                     gameState.tileDeck.length > 0 &&
-                    !isScoutBlocked;
+                    !isScoutBlocked &&
+                    !areSkillsBlocked;
     const canLearn = currentTile?.resources?.some(r => r.startsWith('bauplan_')) && 
                     currentPlayer.ap > 0;
+    
+    // Obstacle Removal Actions - Check adjacent tiles
+    const adjacentObstacles = [];
+    if (currentPlayer.ap > 0) {
+      const [x, y] = currentPlayer.position.split(',').map(Number);
+      const adjacentPositions = {
+        'Norden': `${x},${y-1}`,
+        'Osten': `${x+1},${y}`,
+        'Süden': `${x},${y+1}`,
+        'Westen': `${x-1},${y}`
+      };
+
+      for (const [direction, pos] of Object.entries(adjacentPositions)) {
+        const adjacentTile = gameState.board[pos];
+        if (adjacentTile?.obstacle) {
+          const obstacleType = adjacentTile.obstacle;
+          const skillMap = {
+            'geroell': 'geroell_beseitigen',
+            'dornenwald': 'dornen_entfernen',
+            'ueberflutung': 'fluss_freimachen'
+          };
+          if (currentPlayer.learnedSkills.includes(skillMap[obstacleType]) && !areSkillsBlocked) {
+            adjacentObstacles.push({
+              position: pos,
+              type: obstacleType,
+              direction: direction
+            });
+          }
+        }
+      }
+    }
+
+
 
     // Show simplified scouting mode UI when active
     if (gameState.scoutingMode.active) {
@@ -1530,6 +1963,37 @@ function GameScreen({ gameData, onNewGame }) {
           </button>
         )}
 
+        {/* Obstacle Removal Buttons */}
+        {adjacentObstacles.map(obstacle => {
+          const obstacleInfo = {
+            'geroell': { icon: '⛏️', text: 'Geröll beseitigen', color: '#a16207', borderColor: '#ca8a04' },
+            'dornenwald': { icon: '🔥', text: 'Dornen entfernen', color: '#b91c1c', borderColor: '#ef4444' },
+            'ueberflutung': { icon: '💧', text: 'Überflutung trockenlegen', color: '#1d4ed8', borderColor: '#3b82f6' }
+          }[obstacle.type];
+
+          return (
+            <button
+              key={obstacle.position}
+              onClick={() => handleRemoveObstacle(obstacle.position, obstacle.type)}
+              style={{
+                backgroundColor: obstacleInfo.color,
+                color: 'white',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: `2px solid ${obstacleInfo.borderColor}`,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                gridColumn: '1 / -1',
+                marginBottom: '0.5rem'
+              }}
+              title={`Entferne ${obstacle.type} im ${obstacle.direction}`}
+            >
+              {obstacleInfo.icon} {obstacleInfo.text} im {obstacle.direction} (1 AP)
+            </button>
+          );
+        })}
+
         <button
           onClick={handleEndTurn}
           style={{
@@ -1555,42 +2019,39 @@ function GameScreen({ gameData, onNewGame }) {
   };
 
   const handleEndTurn = () => {
-      setGameState(prev => {
-        const updatedPlayers = prev.players.map((p, index) => 
-            index === prev.currentPlayerIndex ? { ...p, ap: 0 } : p
-        );
+    setGameState(prev => {
+      if (prev.isTransitioning || prev.currentEvent) {
+        return prev; // Prevent multiple triggers
+      }
 
-        // Check if this was the last player in the round
-        const isLastPlayerOfRound = updatedPlayers.every(p => p.ap <= 0);
+      // Create a new players array with the current player's AP set to 0
+      const playersWithEndedTurn = prev.players.map((p, index) =>
+        index === prev.currentPlayerIndex ? { ...p, ap: 0 } : p
+      );
 
-        if (isLastPlayerOfRound) {
-            // It's the end of the round.
-            const { nextPlayerIndex, newRound, actionBlockers } = handleAutoTurnTransition(updatedPlayers, prev.currentPlayerIndex, prev.round, prev);
-            return {
-                ...prev,
-                players: updatedPlayers, // This will be reset inside handleAutoTurnTransition
-                currentPlayerIndex: nextPlayerIndex,
-                round: newRound,
-                actionBlockers: actionBlockers
-            };
-        }
+      // The auto-transition logic will handle finding the next player or starting a new round
+      const { nextPlayerIndex, newRound, actionBlockers, roundCompleted } = handleAutoTurnTransition(
+        [...playersWithEndedTurn], // Pass a copy to avoid mutation issues
+        prev.currentPlayerIndex,
+        prev.round,
+        { ...prev, players: playersWithEndedTurn } // Pass a consistent state view
+      );
 
-        // It's not the end of the round, just go to the next player.
-        let nextPlayerIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
-        while (updatedPlayers[nextPlayerIndex].ap <= 0) {
-            nextPlayerIndex = (nextPlayerIndex + 1) % prev.players.length;
-        }
-        triggerTurnTransition(nextPlayerIndex);
+      // Event triggering is now handled centrally in handleAutoTurnTransition
+      // No need for separate handling here as roundCompleted is now consistently managed
 
-        return {
-          ...prev,
-          players: updatedPlayers,
-          currentPlayerIndex: nextPlayerIndex
-        };
-      });
+      // The state update is now based on the result of the transition logic
+      return { ...prev, players: playersWithEndedTurn, currentPlayerIndex: nextPlayerIndex, round: newRound, actionBlockers: actionBlockers };
+    });
+  };
+
+  // Helper function to check if a player should skip their turn
+  const shouldPlayerSkipTurn = (player, currentRound) => {
+    return player.effects?.some(e => e.type === 'skip_turn' && e.expiresInRound > currentRound);
   };
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const currentPlayerShouldSkip = shouldPlayerSkipTurn(currentPlayer, gameState.round);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#1a202c', color: '#e2e8f0' }}>
@@ -1684,12 +2145,12 @@ function GameScreen({ gameData, onNewGame }) {
                   color: '#e5e7eb',
                   fontSize: '0.875rem',
                   margin: 0
-                }}>{gameState.currentEvent.effectText}</p>
+                }}>{gameState.currentEvent.resolvedEffectText || gameState.currentEvent.effectText}</p>
               </div>
 
               {/* Konter-Information */}
               {eventCounters[gameState.currentEvent.id] && eventCounters[gameState.currentEvent.id] !== '-' && (
-                <div style={{
+                <div key={`counter-${gameState.currentEvent.id}`} style={{
                   backgroundColor: 'rgba(59, 130, 246, 0.1)',
                   border: '1px solid #3b82f6',
                   borderRadius: '8px',
@@ -1720,7 +2181,7 @@ function GameScreen({ gameData, onNewGame }) {
               justifyContent: 'center'
             }}>
               <button
-                onClick={() => applyEventEffect(gameState.currentEvent)}
+                onClick={() => setGameState(prev => ({ ...prev, currentEvent: null, isEventTriggering: false }))}
                 style={{
                   backgroundColor: '#3b82f6',
                   color: 'white',
@@ -1824,12 +2285,84 @@ function GameScreen({ gameData, onNewGame }) {
                     }}></div>
                     <span style={{ fontWeight: 'bold', fontSize: '0.75rem' }}>
                       {player.name}
+                      {isCurrentPlayer && shouldPlayerSkipTurn(player, gameState.round) && (
+                        <span style={{ color: '#fbbf24', marginLeft: '6px', fontSize: '0.7rem' }}>
+                          (Aussetzen) 😴
+                        </span>
+                      )}
                     </span>
                     <div style={{ fontSize: '0.7rem', color: '#d1d5db' }}>
                       AP: {player.ap}/{player.maxAp}
                     </div>
                   </div>
                   
+                  {/* Active Effects */}
+                  {player.effects && player.effects.filter(e => e.expiresInRound > gameState.round).length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                      {player.effects.filter(e => e.expiresInRound > gameState.round).map((effect, index) => {
+                        const effectInfo = {
+                          skip_turn: { icon: '😴', title: 'Muss nächste Runde aussetzen' },
+                          prevent_movement: { icon: '⛓️', title: 'Kann sich nicht bewegen' },
+                          block_skills: { icon: '🚫', title: 'Spezialfähigkeiten blockiert' },
+                          bonus_ap: { icon: '⚡', title: `Hat +${effect.value} AP in dieser Runde` },
+                          reduce_ap: { icon: '🧊', title: `Hat -${effect.value} AP in dieser Runde` },
+                          set_ap: { icon: '⏸️', title: `AP auf ${effect.value} gesetzt` }
+                        }[effect.type];
+
+                        if (!effectInfo) return null;
+
+                        return (
+                          <div 
+                            key={index}
+                            title={effectInfo.title}
+                            style={{
+                              backgroundColor: effect.type.includes('bonus') ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                              border: effect.type.includes('bonus') ? '1px solid #22c55e' : '1px solid #ef4444',
+                              color: '#fca5a5',
+                              borderRadius: '4px',
+                              padding: '2px 4px',
+                              fontSize: '0.8rem'
+                            }}
+                          >
+                            {effectInfo.icon}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {/* Action Blockers */}
+                  {gameState.actionBlockers && gameState.actionBlockers.filter(b => b.target === player.id || b.target === 'all_players').length > 0 && (
+                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                      {gameState.actionBlockers.filter(b => b.target === player.id || b.target === 'all_players').map((blocker, index) => {
+                        const blockerInfo = {
+                          discover_and_scout: { icon: '🚫', title: 'Entdecken/Spähen blockiert' },
+                          discover: { icon: '🚫', title: 'Entdecken blockiert' },
+                          spaehen: { icon: '🚫', title: 'Spähen blockiert' },
+                          communication: { icon: '🔇', title: 'Kommunikation nicht erlaubt' },
+                          learn_skills: { icon: '📚', title: 'Fähigkeiten lernen blockiert' }
+                        }[blocker.action];
+
+                        if (!blockerInfo) return null;
+
+                        return (
+                          <div
+                            key={`blocker-${index}`}
+                            title={blockerInfo.title}
+                            style={{
+                              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                              border: '1px solid #ef4444',
+                              borderRadius: '4px',
+                              padding: '2px 4px',
+                              fontSize: '0.8rem'
+                            }}
+                          >
+                            {blockerInfo.icon}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {/* Inventory Slots */}
                   <div style={{ display: 'flex', gap: '4px' }}>
                     {Array.from({ length: player.maxInventory }, (_, slotIndex) => {

@@ -144,7 +144,8 @@
         "effects": [
           {
             "type": "skip_turn",
-            "target": "random_hero"
+            "target": "random_hero",
+            "duration": "next_round"
           }
         ]
       },
@@ -532,7 +533,8 @@
           },
           {
             "type": "skip_turn",
-            "target": "random_hero"
+            "target": "random_hero",
+            "duration": "next_round"
           }
         ]
       },
@@ -758,7 +760,8 @@
           },
           {
             "type": "skip_turn",
-            "target": "random_hero"
+            "target": "random_hero",
+            "duration": "next_round"
           }
         ]
       },
