@@ -635,16 +635,13 @@ function GameScreen({ gameData, onNewGame }) {
                       heroes[heroId].element === 'water' ? ['reinigen', 'fluss_freimachen', 'aufdecken'] :
                       ['spaehen', 'schnell_bewegen', 'aufdecken'] // air/corvus
       })),
-      board: {
-        '4,4': { id: 'krater', x: 4, y: 4, resources: [] }
-      },
+      board: {},
       tower: { foundations: [], activatedElements: [] },
       isTransitioning: false,
       currentEvent: null,
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
       scoutingMode: { active: false, availablePositions: [], selectedPositions: [], maxSelections: 2 },
-      tileDeck: phase1TileDeck.sort(() => Math.random() - 0.5),
-      actionBlockers: []
+      tileDeck: phase1TileDeck.sort(() => Math.random() - 0.5)
     };
   });
 
@@ -664,13 +661,7 @@ function GameScreen({ gameData, onNewGame }) {
     // Check if clicked tile is adjacent to current player
     const isAdjacentToPlayer = isAdjacentToCurrentPlayer(clickedX, clickedY, currentPlayer.position);
     
-    // Check if 'discover' action is blocked
-    const isDiscoverBlocked = (gameState.actionBlockers || []).some(blocker =>
-      (blocker.action === 'discover' || blocker.action === 'discover_and_scout') &&
-      (blocker.target === 'all_players' || blocker.target === currentPlayer.id)
-    );
-
-    if (!tile && gameState.tileDeck.length > 0 && currentPlayer.ap > 0 && isAdjacentToPlayer && !isDiscoverBlocked) {
+    if (!tile && gameState.tileDeck.length > 0 && currentPlayer.ap > 0 && isAdjacentToPlayer) {
       // Discover new tile
       const newTileId = gameState.tileDeck.pop();
       const [x, y] = position.split(',').map(Number);
@@ -683,7 +674,7 @@ function GameScreen({ gameData, onNewGame }) {
         );
         
         // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round);
         
         return {
           ...prev,
@@ -698,8 +689,7 @@ function GameScreen({ gameData, onNewGame }) {
           },
           players: newPlayers,
           currentPlayerIndex: nextPlayerIndex,
-          round: newRound,
-          actionBlockers: actionBlockers
+          round: newRound
         };
       });
     } else if (tile && currentPlayer.ap > 0 && canMoveToPosition(currentPlayer.position, position, currentPlayer.id)) {
@@ -712,14 +702,13 @@ function GameScreen({ gameData, onNewGame }) {
         );
         
         // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round);
         
         return {
           ...prev,
           players: newPlayers,
           currentPlayerIndex: nextPlayerIndex,
-          round: newRound,
-          actionBlockers: actionBlockers
+          round: newRound
         };
       });
     }
@@ -762,15 +751,14 @@ function GameScreen({ gameData, onNewGame }) {
       };
       
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round);
       
       return {
         ...prev,
         players: newPlayers,
         board: updatedBoard,
         currentPlayerIndex: nextPlayerIndex,
-        round: newRound,
-        actionBlockers: actionBlockers
+        round: newRound
       };
     });
   };
@@ -791,7 +779,7 @@ function GameScreen({ gameData, onNewGame }) {
     }, 1500);
   };
 
-  const handleAutoTurnTransition = (updatedPlayers, currentPlayerIndex, round, prevState, forceRoundEnd = false) => {
+  const handleAutoTurnTransition = (updatedPlayers, currentPlayerIndex, round) => {
     const updatedCurrentPlayer = updatedPlayers[currentPlayerIndex];
 
     // Only transition if current player has no AP left
@@ -799,7 +787,7 @@ function GameScreen({ gameData, onNewGame }) {
       // Check if all other players also have 0 AP.
       const allOtherPlayersDone = updatedPlayers.every((p, index) => {
         if (index === currentPlayerIndex) return true; // Ignore current player
-        return p.ap <= 0 || forceRoundEnd;
+        return p.ap <= 0;
       });
 
       if (allOtherPlayersDone) {
@@ -808,14 +796,12 @@ function GameScreen({ gameData, onNewGame }) {
 
         // Reset ALL players AP and start new round
         const newPlayersState = updatedPlayers.map(p => ({
-          ...p, ap: p.maxAp
+          ...p,
+          ap: p.maxAp
         }));
 
-        // Clean up expired action blockers
-        const activeBlockers = (prevState.actionBlockers || []).filter(blocker => blocker.expiresInRound >= newRound);
-
         // Replace the players array with the new state
-        updatedPlayers.splice(0, updatedPlayers.length, ...newPlayersState); // This is a mutation, be careful
+        updatedPlayers.splice(0, updatedPlayers.length, ...newPlayersState);
 
         // Set next player to 0 (start of new round)
         triggerTurnTransition(0);
@@ -830,7 +816,7 @@ function GameScreen({ gameData, onNewGame }) {
           }, 10);
         }
 
-        return { nextPlayerIndex: 0, newRound: newRound, actionBlockers: activeBlockers }; // Return new state for setGameState
+        return { nextPlayerIndex: 0, newRound: newRound };
       } else {
         // Not all players are done, find the next player with AP
         let nextPlayerIndex = (currentPlayerIndex + 1) % updatedPlayers.length;
@@ -839,12 +825,12 @@ function GameScreen({ gameData, onNewGame }) {
         }
         
         triggerTurnTransition(nextPlayerIndex);
-        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound >= round) };
+        return { nextPlayerIndex: nextPlayerIndex, newRound: round };
       }
     }
 
     // Current player still has AP, no transition needed
-    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound >= round) };
+    return { nextPlayerIndex: currentPlayerIndex, newRound: round };
   };
 
   // Event System
@@ -1051,25 +1037,7 @@ function GameScreen({ gameData, onNewGame }) {
             console.log('All negative effects removed');
             break;
           // Block/Prevent actions would require additional state management
-          case 'block_action': {
-            const newBlocker = {
-              action: effect.action,
-              expiresInRound: newState.round,
-              target: effect.target || 'all_players',
-            };
-            if (newBlocker.target === 'random_hero') {
-              if (newState.players.length > 0) {
-                const randomIndex = Math.floor(Math.random() * newState.players.length);
-                newBlocker.target = newState.players[randomIndex].id;
-                console.log(`Action ${effect.action} blocked for random hero: ${newState.players[randomIndex].name}`);
-              } else {
-                newBlocker.target = 'all_players'; // Fallback
-              }
-            };
-            if (!newState.actionBlockers) newState.actionBlockers = [];
-            newState.actionBlockers.push(newBlocker);
-            break;
-          }
+          case 'block_action':
           case 'block_skills':
           case 'prevent_movement':
           case 'disable_communication':
@@ -1147,14 +1115,7 @@ function GameScreen({ gameData, onNewGame }) {
 
   const handleScout = () => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-
-    const isScoutBlocked = (gameState.actionBlockers || []).some(blocker =>
-      (blocker.action === 'spaehen' || blocker.action === 'discover_and_scout') &&
-      (blocker.target === 'all_players' || blocker.target === currentPlayer.id)
-    );
-
-    if (!currentPlayer.learnedSkills.includes('spaehen') || currentPlayer.ap < 1 || isScoutBlocked) return;
-
+    if (!currentPlayer.learnedSkills.includes('spaehen') || currentPlayer.ap < 1) return;
     if (gameState.tileDeck.length === 0) return;
 
     const [x, y] = currentPlayer.position.split(',').map(Number);
@@ -1203,18 +1164,16 @@ function GameScreen({ gameData, onNewGame }) {
         // Auto-reveal if 2 positions selected
         if (newSelectedPositions.length === 2 || newSelectedPositions.length === scoutingMode.maxSelections) {
           // Immediately reveal tiles
-          const newTileDeck = [...prev.tileDeck];
           const newBoard = { ...prev.board };
           
           newSelectedPositions.forEach(pos => {
-            const newTileId = newTileDeck.pop();
+            const newTileId = prev.tileDeck.pop();
             const [px, py] = pos.split(',').map(Number);
             newBoard[pos] = {
               id: newTileId,
               x: px,
               y: py,
-              resources: getTileResources(newTileId),
-              revealed: true
+              resources: getTileResources(newTileId)
             };
           });
 
@@ -1222,8 +1181,8 @@ function GameScreen({ gameData, onNewGame }) {
             index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
           );
 
-          // Handle automatic turn transition with the correct signature
-          const { nextPlayerIndex, newRound, actionBlockers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+          // Handle automatic turn transition
+          const { nextPlayerIndex, newRound } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round);
 
           return {
             ...prev,
@@ -1232,8 +1191,7 @@ function GameScreen({ gameData, onNewGame }) {
             tileDeck: prev.tileDeck,
             currentPlayerIndex: nextPlayerIndex,
             round: newRound,
-            actionBlockers: actionBlockers,
-            scoutingMode: { // Reset scouting mode
+            scoutingMode: {
               active: false,
               availablePositions: [],
               selectedPositions: [],
@@ -1278,7 +1236,8 @@ function GameScreen({ gameData, onNewGame }) {
         index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
       );
 
-      const { nextPlayerIndex, newRound, actionBlockers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      // Handle automatic turn transition
+      const { nextPlayerIndex, newRound } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round);
 
       return {
         ...prev,
@@ -1287,8 +1246,7 @@ function GameScreen({ gameData, onNewGame }) {
         tileDeck: prev.tileDeck, // tileDeck is already modified by .pop()
         currentPlayerIndex: nextPlayerIndex,
         round: newRound,
-        actionBlockers: actionBlockers,
-        scoutingMode: { // Reset scouting mode
+        scoutingMode: {
           active: false,
           availablePositions: [],
           selectedPositions: [],
@@ -1380,14 +1338,10 @@ function GameScreen({ gameData, onNewGame }) {
     const canBuildFoundation = currentPlayer.position === '4,4' && 
                               currentPlayer.learnedSkills.includes('grundstein_legen') &&
                               currentPlayer.inventory.filter(item => item === 'kristall').length >= 2 &&
-                              currentPlayer.ap > 0;    
-    const isScoutBlocked = (gameState.actionBlockers || []).some(blocker =>
-      (blocker.action === 'spaehen' || blocker.action === 'discover_and_scout') &&
-      (blocker.target === 'all_players' || blocker.target === currentPlayer.id));
+                              currentPlayer.ap > 0;
     const canScout = currentPlayer.learnedSkills.includes('spaehen') && 
                     currentPlayer.ap > 0 && 
-                    gameState.tileDeck.length > 0 &&
-                    !isScoutBlocked;
+                    gameState.tileDeck.length > 0;
     const canLearn = currentTile?.resources?.some(r => r.startsWith('bauplan_')) && 
                     currentPlayer.ap > 0;
 
@@ -1556,37 +1510,30 @@ function GameScreen({ gameData, onNewGame }) {
 
   const handleEndTurn = () => {
       setGameState(prev => {
-        const updatedPlayers = prev.players.map((p, index) => 
-            index === prev.currentPlayerIndex ? { ...p, ap: 0 } : p
-        );
+          const updatedPlayers = prev.players.map((p, index) => 
+              index === prev.currentPlayerIndex ? { ...p, ap: 0 } : p // Set current player's AP to 0 to force transition
+          );
 
-        // Check if this was the last player in the round
-        const isLastPlayerOfRound = updatedPlayers.every(p => p.ap <= 0);
+          // Check if this was the last player in the round
+          const isLastPlayer = prev.currentPlayerIndex === prev.players.length - 1;
 
-        if (isLastPlayerOfRound) {
-            // It's the end of the round.
-            const { nextPlayerIndex, newRound, actionBlockers } = handleAutoTurnTransition(updatedPlayers, prev.currentPlayerIndex, prev.round, prev);
-            return {
-                ...prev,
-                players: updatedPlayers, // This will be reset inside handleAutoTurnTransition
-                currentPlayerIndex: nextPlayerIndex,
-                round: newRound,
-                actionBlockers: actionBlockers
-            };
-        }
+          if (isLastPlayer) {
+              // End of the round, trigger event and start new round
+              const newRound = prev.round + 1;
+              const newPlayersState = updatedPlayers.map(p => ({ ...p, ap: p.maxAp })); // Reset AP for all
+              
+              if (newRound >= 2) {
+                  setTimeout(() => triggerRandomEvent(), 10);
+              }
 
-        // It's not the end of the round, just go to the next player.
-        let nextPlayerIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
-        while (updatedPlayers[nextPlayerIndex].ap <= 0) {
-            nextPlayerIndex = (nextPlayerIndex + 1) % prev.players.length;
-        }
-        triggerTurnTransition(nextPlayerIndex);
-
-        return {
-          ...prev,
-          players: updatedPlayers,
-          currentPlayerIndex: nextPlayerIndex
-        };
+              triggerTurnTransition(0); // Go to first player of the new round
+              return { ...prev, players: newPlayersState, round: newRound, currentPlayerIndex: 0 };
+          } else {
+              // Not the last player, just go to the next one
+              const nextPlayerIndex = (prev.currentPlayerIndex + 1) % prev.players.length;
+              triggerTurnTransition(nextPlayerIndex);
+              return { ...prev, players: updatedPlayers, currentPlayerIndex: nextPlayerIndex };
+          }
       });
   };
 
@@ -1636,8 +1583,8 @@ function GameScreen({ gameData, onNewGame }) {
             padding: '2rem',
             maxWidth: '500px',
             width: '90%',
-            boxShadow: `0 0 30px 5px ${gameState.currentEvent.type === 'negative' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
-            border: gameState.currentEvent.type === 'negative'
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: gameState.currentEvent.effects?.some(e => e.type === 'light_loss' || e.type === 'reduce_ap' || e.type === 'add_obstacle')
               ? '3px solid #ef4444' : '3px solid #10b981'
           }}>
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
@@ -1663,29 +1610,6 @@ function GameScreen({ gameData, onNewGame }) {
               }}>
                 {gameState.currentEvent.description}
               </p>
-
-              {/* Effekt-Information */}
-              <div style={{
-                backgroundColor: 'rgba(0,0,0, 0.2)',
-                border: '1px solid #4b5563',
-                borderRadius: '8px',
-                padding: '0.75rem',
-                marginTop: '1rem'
-              }}>
-                <h4 style={{
-                  color: '#facc15',
-                  fontSize: '0.875rem',
-                  fontWeight: 'bold',
-                  marginBottom: '0.25rem'
-                }}>
-                  Effekt:
-                </h4>
-                <p style={{
-                  color: '#e5e7eb',
-                  fontSize: '0.875rem',
-                  margin: 0
-                }}>{gameState.currentEvent.effectText}</p>
-              </div>
 
               {/* Konter-Information */}
               {eventCounters[gameState.currentEvent.id] && eventCounters[gameState.currentEvent.id] !== '-' && (

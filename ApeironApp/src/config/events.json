@@ -5,6 +5,8 @@
         "id": "fluestern_der_schatten",
         "name": "Flüstern der Schatten",
         "symbol": "🌑",
+        "type": "negative",
+        "effectText": "Das Licht sinkt sofort um 1 zusätzlichen Punkt.",
         "description": "Unheilvolle Stimmen hallen über die Insel und nähren die wachsende Finsternis.",
         "effects": [
           {
@@ -17,6 +19,8 @@
         "id": "dichter_nebel",
         "name": "Dichter Nebel",
         "symbol": "🌫️",
+        "type": "negative",
+        "effectText": "In der nächsten Runde dürfen keine neuen Felder aufgedeckt werden.",
         "description": "Ein undurchdringlicher Nebel legt sich über die Insel und raubt euch die Orientierung.",
         "effects": [
           {
@@ -30,6 +34,8 @@
         "id": "erdrutsch_am_krater",
         "name": "Erdrutsch am Krater",
         "symbol": "🪨",
+        "type": "negative",
+        "effectText": "Platziere ein Geröll-Hindernis auf dem ersten Feld nördlich des Kraters.",
         "description": "Die Berge erzittern und Geröll poltert zum Zentrum.",
         "effects": [
           {
@@ -43,6 +49,8 @@
         "id": "dornenplage_im_osten",
         "name": "Dornenplage im Osten",
         "symbol": "🌿",
+        "type": "negative",
+        "effectText": "Platziere ein Dornenwald-Hindernis auf dem ersten Feld östlich des Kraters.",
         "description": "Über Nacht wuchern dornige Ranken aus dem Waldboden.",
         "effects": [
           {
@@ -56,6 +64,8 @@
         "id": "sturzflut_im_westen",
         "name": "Sturzflut im Westen",
         "symbol": "🌊",
+        "type": "negative",
+        "effectText": "Platziere ein Überflutungs-Hindernis auf dem ersten Feld westlich des Kraters.",
         "description": "Heftige Regenfälle lassen die Flüsse über die Ufer treten.",
         "effects": [
           {
@@ -69,6 +79,8 @@
         "id": "schwere_buerde",
         "name": "Schwere Bürde",
         "symbol": "😔",
+        "type": "negative",
+        "effectText": "Der Held, der am weitesten vom Krater entfernt ist, hat in der nächsten Runde nur 2 AP. Sind mehrere Helden gleich weit entfernt, betrifft es jeden von ihnen.",
         "description": "Die Last der Verantwortung wiegt schwer auf euren Schultern.",
         "effects": [
           {
@@ -83,6 +95,8 @@
         "id": "kristallverlust",
         "name": "Kristallverlust",
         "symbol": "💎",
+        "type": "negative",
+        "effectText": "Der Held mit den meisten Kristallen muss einen auf seinem aktuellen Feld ablegen. Haben mehrere Helden gleich viele Kristalle, betrifft es jeden von ihnen.",
         "description": "In der Eile stolpert ein Held und verliert kostbare Ressourcen.",
         "effects": [
           {
@@ -96,6 +110,8 @@
         "id": "zwietracht",
         "name": "Zwietracht",
         "symbol": "🗣️",
+        "type": "negative",
+        "effectText": "In der nächsten Runde ist keine Kommunikation zwischen den Spielern erlaubt.",
         "description": "Meinungsverschiedenheiten spalten die Gruppe.",
         "effects": [
           {
@@ -108,6 +124,8 @@
         "id": "truegerische_stille",
         "name": "Trügerische Stille",
         "symbol": "🔇",
+        "type": "negative",
+        "effectText": "Das Licht sinkt sofort um 2 Punkte.",
         "description": "Eine unnatürliche Stille senkt sich über die Insel.",
         "effects": [
           {
@@ -120,6 +138,8 @@
         "id": "erschoepfung",
         "name": "Erschöpfung",
         "symbol": "😴",
+        "type": "negative",
+        "effectText": "Ein zufällig gewählter Held muss die nächste Runde aussetzen.",
         "description": "Die andauernde Suche fordert ihren Tribut.",
         "effects": [
           {
@@ -132,6 +152,8 @@
         "id": "verwirrende_vision",
         "name": "Verwirrende Vision",
         "symbol": "👁️",
+        "type": "negative",
+        "effectText": "Ein zufällig gewählter Held kann in der nächsten Runde weder entdecken noch spähen.",
         "description": "Trugbilder täuschen eure Sinne.",
         "effects": [
           {
@@ -146,6 +168,8 @@
         "id": "gierige_schatten",
         "name": "Gierige Schatten",
         "symbol": "👻",
+        "type": "negative",
+        "effectText": "Alle Helden auf dem Krater müssen je einen Kristall dort ablegen (falls vorhanden).",
         "description": "Die Dunkelheit greift nach euren wertvollsten Schätzen.",
         "effects": [
           {
@@ -159,6 +183,8 @@
         "id": "blockade_im_sueden",
         "name": "Blockade im Süden",
         "symbol": "🪨",
+        "type": "negative",
+        "effectText": "Platziere ein Geröll-Hindernis auf dem ersten freien Feld südlich des Kraters.",
         "description": "Ein massiver Felssturz versperrt wichtige Wege.",
         "effects": [
           {
@@ -172,6 +198,8 @@
         "id": "laehmende_kaelte",
         "name": "Lähmende Kälte",
         "symbol": "🧊",
+        "type": "negative",
+        "effectText": "Alle Helden haben in der nächsten Runde einen Aktionspunkt weniger.",
         "description": "Ein eisiger Wind lähmt eure Bewegungen.",
         "effects": [
           {
@@ -186,6 +214,8 @@
         "id": "dunkle_vorahnung",
         "name": "Dunkle Vorahnung",
         "symbol": "🌙",
+        "type": "negative",
+        "effectText": "Das Licht sinkt sofort um 1 Punkt.",
         "description": "Ein Schauer läuft euch über den Rücken - die Finsternis naht.",
         "effects": [
           {
@@ -198,6 +228,8 @@
         "id": "verlockung_der_schatten",
         "name": "Verlockung der Schatten",
         "symbol": "💫",
+        "type": "negative",
+        "effectText": "Keiner der Helden kann in der nächsten Runde Spezialfähigkeiten einsetzen.",
         "description": "Die Dunkelheit flüstert verlockende Lügen.",
         "effects": [
           {
@@ -211,6 +243,8 @@
         "id": "zerrissener_beutel",
         "name": "Zerrissener Beutel",
         "symbol": "🎒",
+        "type": "negative",
+        "effectText": "Ein zufällig gewählter Held muss alle Gegenstände auf seinem Feld ablegen.",
         "description": "Ein Rucksack reißt und wertvolle Gegenstände fallen heraus.",
         "effects": [
           {
@@ -223,6 +257,8 @@
         "id": "wuchernde_wildnis",
         "name": "Wuchernde Wildnis",
         "symbol": "🌲",
+        "type": "negative",
+        "effectText": "Platziere Dornenwald-Hindernisse auf allen Feldern direkt angrenzend zum Krater (N, O, S, W).",
         "description": "Die Natur selbst scheint sich gegen euch zu wenden.",
         "effects": [
           {
@@ -236,6 +272,8 @@
         "id": "echo_der_verzweiflung",
         "name": "Echo der Verzweiflung",
         "symbol": "💀",
+        "type": "negative",
+        "effectText": "Das Licht sinkt sofort um 1 Punkt und ein zufällig gewählter Held hat in der nächsten Runde -1 AP.",
         "description": "Die Schreie vergangener Helden hallen durch die Nacht.",
         "effects": [
           {
@@ -254,6 +292,8 @@
         "id": "falle_der_finsternis",
         "name": "Falle der Finsternis",
         "symbol": "🕷️",
+        "type": "negative",
+        "effectText": "Ein zufällig gewählter Held kann sich in der nächsten Runde nicht bewegen (andere Aktionen möglich).",
         "description": "Dunkle Magie umschlingt einen eurer Gefährten.",
         "effects": [
           {
@@ -269,6 +309,8 @@
         "id": "sternschnuppe",
         "name": "Sternschnuppe",
         "symbol": "⭐",
+        "type": "positive",
+        "effectText": "Das Licht steigt um so viele Punkte wie Helden mitspielen.",
         "description": "Ein heller Stern durchbricht die Dunkelheit und spendet Hoffnung.",
         "effects": [
           {
@@ -281,6 +323,8 @@
         "id": "gluecksfund",
         "name": "Glücksfund",
         "symbol": "💎",
+        "type": "positive",
+        "effectText": "Platziere 2 Kristalle auf dem Krater-Feld.",
         "description": "Zwischen den Felsen glitzert etwas Wertvolles.",
         "effects": [
           {
@@ -295,6 +339,8 @@
         "id": "rueckenwind",
         "name": "Rückenwind",
         "symbol": "💨",
+        "type": "positive",
+        "effectText": "Ein zufällig gewählter Held erhält in der nächsten Runde 2 zusätzliche AP.",
         "description": "Ein günstiger Wind treibt euch voran.",
         "effects": [
           {
@@ -309,6 +355,8 @@
         "id": "moment_der_klarheit",
         "name": "Moment der Klarheit",
         "symbol": "💡",
+        "type": "positive",
+        "effectText": "Das Licht steigt um so viele Punkte wie Helden mitspielen.",
         "description": "Plötzlich wird euch der Weg klar.",
         "effects": [
           {
@@ -321,6 +369,8 @@
         "id": "gemeinsame_staerke",
         "name": "Gemeinsame Stärke",
         "symbol": "💪",
+        "type": "positive",
+        "effectText": "Alle Helden erhalten in der nächsten Runde einen zusätzlichen Aktionspunkt.",
         "description": "Eure Verbundenheit gibt euch neue Kraft.",
         "effects": [
           {
@@ -335,6 +385,8 @@
         "id": "hoffnungsschimmer",
         "name": "Hoffnungsschimmer",
         "symbol": "✨",
+        "type": "positive",
+        "effectText": "Das Licht steigt um 2 Punkte.",
         "description": "Ein warmer Lichtstrahl durchbricht die Wolken.",
         "effects": [
           {
@@ -347,6 +399,8 @@
         "id": "versteckter_schatz",
         "name": "Versteckter Schatz",
         "symbol": "🗝️",
+        "type": "positive",
+        "effectText": "Platziere je 1 Kristall auf allen Feldern direkt angrenzend zum Krater.",
         "description": "Ihr entdeckt einen alten Vorratsbeutel der Erbauer.",
         "effects": [
           {
@@ -361,6 +415,8 @@
         "id": "guenstiges_omen",
         "name": "Günstiges Omen",
         "symbol": "🌟",
+        "type": "positive",
+        "effectText": "Ein zufällig gewählter Held hat in der nächsten Runde einen Aktionspunkt mehr.",
         "description": "Die Zeichen stehen gut für eure Mission.",
         "effects": [
           {
@@ -375,6 +431,8 @@
         "id": "apeirons_segen",
         "name": "Apeirons Segen",
         "symbol": "🔮",
+        "type": "positive",
+        "effectText": "Alle negativen Effekte auf allen Helden werden sofort aufgehoben.",
         "description": "Die Ursubstanz selbst scheint euch zu unterstützen.",
         "effects": [
           {
@@ -387,6 +445,8 @@
         "id": "leuchtfeuer",
         "name": "Leuchtfeuer",
         "symbol": "🔥",
+        "type": "positive",
+        "effectText": "Das Licht steigt um 4 Punkte.",
         "description": "Ein uraltes Leuchtfeuer erwacht zu neuem Leben.",
         "effects": [
           {
@@ -403,6 +463,8 @@
         "id": "zorn_der_sphaere",
         "name": "Zorn der Sphäre",
         "symbol": "☄️",
+        "type": "negative",
+        "effectText": "Das Licht sinkt sofort um 3 Punkte.",
         "description": "Die Sphäre der Dunkelheit pulsiert vor Wut über euren Fortschritt.",
         "effects": [
           {
@@ -415,6 +477,8 @@
         "id": "welle_der_finsternis",
         "name": "Welle der Finsternis",
         "symbol": "🌊",
+        "type": "negative",
+        "effectText": "Die Finsternis breitet sich sofort auf 2 zusätzliche Felder aus (gemäß normalen Regeln).",
         "description": "Eine Woge aus purer Dunkelheit rollt über die Insel.",
         "effects": [
           {
@@ -427,6 +491,8 @@
         "id": "fragment_diebstahl",
         "name": "Fragment-Diebstahl",
         "symbol": "💸",
+        "type": "negative",
+        "effectText": "Alle Helden, die ein Element-Fragment tragen, müssen es auf ihrem Feld ablegen.",
         "description": "Schattenhafte Klauen greifen nach den heiligen Fragmenten.",
         "effects": [
           {
@@ -440,6 +506,8 @@
         "id": "totale_erschoepfung",
         "name": "Totale Erschöpfung",
         "symbol": "😵",
+        "type": "negative",
+        "effectText": "Alle Helden haben in der nächsten Runde nur 2 Aktionspunkte.",
         "description": "Die andauernde Schlacht gegen die Finsternis zehrt an euren Kräften.",
         "effects": [
           {
@@ -454,6 +522,8 @@
         "id": "verlorene_hoffnung",
         "name": "Verlorene Hoffnung",
         "symbol": "💔",
+        "type": "negative",
+        "effectText": "Das Licht sinkt um 2 und ein zufällig gewählter Held setzt die nächste Runde aus.",
         "description": "Der Anblick der wachsenden Finsternis lässt euch verzweifeln.",
         "effects": [
           {
@@ -470,6 +540,8 @@
         "id": "dreifache_blockade",
         "name": "Dreifache Blockade",
         "symbol": "🧱",
+        "type": "negative",
+        "effectText": "Platziere Geröll-Hindernisse auf dem Tor der Weisheit und allen direkt angrenzenden Feldern.",
         "description": "Die Erde bebt und versperrt wichtige Zugänge.",
         "effects": [
           {
@@ -483,6 +555,8 @@
         "id": "dornen_der_verzweiflung",
         "name": "Dornen der Verzweiflung",
         "symbol": "🌹",
+        "type": "negative",
+        "effectText": "Platziere Dornenwald-Hindernisse auf allen Feldern in einem Ring um den Krater (2 Felder Abstand).",
         "description": "Ein Dornenwald, geboren aus Hass, verschlingt die Insel.",
         "effects": [
           {
@@ -496,6 +570,8 @@
         "id": "sintflut_der_traenen",
         "name": "Sintflut der Tränen",
         "symbol": "😭",
+        "type": "negative",
+        "effectText": "Platziere Überflutungs-Hindernisse auf den 4 Feldern diagonal zum Krater (NO, SO, SW, NW).",
         "description": "Die Tränen der gefallenen Helden lassen Flüsse anschwellen.",
         "effects": [
           {
@@ -509,6 +585,8 @@
         "id": "boeser_zauber",
         "name": "Böser Zauber",
         "symbol": "🧙‍♂️",
+        "type": "negative",
+        "effectText": "Alle Helden können in der nächsten Runde keine Spezialfähigkeiten nutzen.",
         "description": "Dunkle Magie blockiert eure angeborenen Talente.",
         "effects": [
           {
@@ -522,6 +600,8 @@
         "id": "schattensturm",
         "name": "Schattensturm",
         "symbol": "🌪️",
+        "type": "negative",
+        "effectText": "Das Licht sinkt um 2 und die Finsternis breitet sich auf 1 zusätzliches Feld aus.",
         "description": "Ein Sturm aus reiner Finsternis fegt über Elyria.",
         "effects": [
           {
@@ -538,6 +618,8 @@
         "id": "kristall_fluch",
         "name": "Kristall-Fluch",
         "symbol": "💀",
+        "type": "negative",
+        "effectText": "Jeder Held muss alle seine Kristalle auf seinem aktuellen Feld ablegen.",
         "description": "Die Kristalle in euren Taschen werden zu schwerer Last.",
         "effects": [
           {
@@ -551,6 +633,8 @@
         "id": "paralyse",
         "name": "Paralyse",
         "symbol": "🥶",
+        "type": "negative",
+        "effectText": "Alle Helden können sich in der nächsten Runde nicht bewegen (andere Aktionen möglich).",
         "description": "Die Macht der Finsternis lähmt eure Körper.",
         "effects": [
           {
@@ -564,6 +648,8 @@
         "id": "verrat_der_elemente",
         "name": "Verrat der Elemente",
         "symbol": "⚡",
+        "type": "negative",
+        "effectText": "Alle Helden, die Element-Fragmente tragen, müssen eines davon ablegen.",
         "description": "Die Elemente selbst scheinen sich gegen euch zu wenden.",
         "effects": [
           {
@@ -578,6 +664,8 @@
         "id": "dunkle_metamorphose",
         "name": "Dunkle Metamorphose",
         "symbol": "🦋",
+        "type": "negative",
+        "effectText": "Die Finsternis breitet sich auf 2 zusätzliche Felder aus (gemäß normalen Regeln).",
         "description": "Die Landschaft selbst wird von Finsternis korrumpiert.",
         "effects": [
           {
@@ -590,6 +678,8 @@
         "id": "verlust_der_orientierung",
         "name": "Verlust der Orientierung",
         "symbol": "🧭",
+        "type": "negative",
+        "effectText": "In der nächsten Runde: Keine Kommunikation erlaubt und alle Helden haben -1 AP.",
         "description": "Die Finsternis verwirrt eure Sinne vollständig.",
         "effects": [
           {
@@ -608,6 +698,8 @@
         "id": "opfer_der_schatten",
         "name": "Opfer der Schatten",
         "symbol": "👥",
+        "type": "negative",
+        "effectText": "Das Licht sinkt sofort um 4 Punkte.",
         "description": "Die Dunkelheit fordert ein schweres Opfer.",
         "effects": [
           {
@@ -620,6 +712,8 @@
         "id": "gebrochene_verbindung",
         "name": "Gebrochene Verbindung",
         "symbol": "🔗",
+        "type": "negative",
+        "effectText": "In der nächsten Runde können Fähigkeiten nicht gelehrt oder gelernt werden.",
         "description": "Die Verbindung zwischen den Helden reißt.",
         "effects": [
           {
@@ -633,6 +727,8 @@
         "id": "tsunami_der_finsternis",
         "name": "Tsunami der Finsternis",
         "symbol": "🌊",
+        "type": "negative",
+        "effectText": "Platziere Überflutungen auf allen Apeiron-Quellen östlich des Kraters.",
         "description": "Eine gewaltige Welle aus Dunkelheit überflutet die Insel.",
         "effects": [
           {
@@ -646,6 +742,8 @@
         "id": "letztes_aufbaeumen",
         "name": "Letztes Aufbäumen",
         "symbol": "💥",
+        "type": "negative",
+        "effectText": "Das Licht sinkt um 2, alle Helden haben in der nächsten Runde -1 AP und ein zufällig gewählter Spieler setzt aus.",
         "description": "Die Sphäre spürt ihre drohende Niederlage und schlägt wild um sich.",
         "effects": [
           {
@@ -668,6 +766,8 @@
         "id": "herz_der_finsternis_pulsiert",
         "name": "Herz der Finsternis pulsiert",
         "symbol": "❤️‍🔥",
+        "type": "negative",
+        "effectText": "Die Finsternis breitet sich sofort auf 3 zusätzliche Felder aus.",
         "description": "Das Herz der Finsternis schlägt schneller und stärker.",
         "effects": [
           {
@@ -682,6 +782,8 @@
         "id": "apeirons_intervention",
         "name": "Apeirons Intervention",
         "symbol": "🌟",
+        "type": "positive",
+        "effectText": "Das Licht steigt um 4 Punkte.",
         "description": "Die Ursubstanz selbst greift ein und drängt die Dunkelheit zurück.",
         "effects": [
           {
@@ -694,6 +796,8 @@
         "id": "reinigendes_feuer",
         "name": "Reinigendes Feuer",
         "symbol": "🔥",
+        "type": "positive",
+        "effectText": "Entferne alle Dornenwald-Hindernisse vom Spielfeld und reinige 2 Finsternis-Felder (die dem Krater nächsten).",
         "description": "Ein heiliges Feuer brennt über die Insel und vernichtet die Verderbnis.",
         "effects": [
           {
@@ -711,6 +815,8 @@
         "id": "welle_der_hoffnung",
         "name": "Welle der Hoffnung",
         "symbol": "🌊",
+        "type": "positive",
+        "effectText": "Das Licht steigt um 2 und alle negativen Effekte auf allen Helden werden aufgehoben.",
         "description": "Eine Woge aus purem Licht rollt über Elyria.",
         "effects": [
           {
@@ -727,6 +833,8 @@
         "id": "geschenk_der_ahnen",
         "name": "Geschenk der Ahnen",
         "symbol": "👴",
+        "type": "positive",
+        "effectText": "Platziere 3 Kristalle auf dem Krater und alle Helden haben in der nächsten Runde +2 AP.",
         "description": "Die Geister der alten Erbauer manifestieren sich und helfen.",
         "effects": [
           {
@@ -747,6 +855,8 @@
         "id": "elementare_harmonie",
         "name": "Elementare Harmonie",
         "symbol": "🌈",
+        "type": "positive",
+        "effectText": "Das Licht steigt um so viele Punkte wie Helden mitspielen × 2.",
         "description": "Die vier Elemente vereinen sich für einen Moment in perfekter Balance.",
         "effects": [
           {
@@ -759,6 +869,8 @@
         "id": "sternenkonstellation",
         "name": "Sternenkonstellation",
         "symbol": "✨",
+        "type": "positive",
+        "effectText": "Das Licht steigt um 3 Punkte.",
         "description": "Die Sterne formen ein uraltes Schutzsymbol am Himmel.",
         "effects": [
           {
@@ -771,6 +883,8 @@
         "id": "durchbruch",
         "name": "Durchbruch",
         "symbol": "💡",
+        "type": "positive",
+        "effectText": "Ein zufällig gewählter Held erhält in der nächsten Runde 2 zusätzliche AP.",
         "description": "Ein Held findet plötzlich die Lösung für ein altes Rätsel.",
         "effects": [
           {
@@ -785,6 +899,8 @@
         "id": "laeuterung",
         "name": "Läuterung",
         "symbol": "🌪️",
+        "type": "positive",
+        "effectText": "Entferne alle Geröll-, Dornenwald- und Überflutungs-Hindernisse vom Spielfeld.",
         "description": "Ein reinigender Sturm fegt alle Hindernisse fort.",
         "effects": [
           {
@@ -796,6 +912,8 @@
         "id": "vereinte_kraft",
         "name": "Vereinte Kraft",
         "symbol": "🤝",
+        "type": "positive",
+        "effectText": "Alle Helden haben in der nächsten Runde +2 Aktionspunkte.",
         "description": "Eure Verbundenheit manifestiert sich als sichtbare Macht.",
         "effects": [
           {
@@ -810,6 +928,8 @@
         "id": "triumph_des_lichts",
         "name": "Triumph des Lichts",
         "symbol": "☀️",
+        "type": "positive",
+        "effectText": "Das Licht steigt um 5 Punkte und reinigt alle Finsternis-Felder angrenzend zum Krater.",
         "description": "Das Licht siegt über die Dunkelheit in einer epischen Schlacht.",
         "effects": [
           {

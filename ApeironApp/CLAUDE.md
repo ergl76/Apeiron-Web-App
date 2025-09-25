@@ -1,18 +1,18 @@
-# <® Apeiron Web App - Claude Context
+# <ï¿½ Apeiron Web App - Claude Context
 
-## =Í Aktueller Status
-**Letzte Session:** 2025-09-25 14:15
+## =ï¿½ Aktueller Status
+**Letzte Session:** 2024-09-26 16:30
 **Sprint:** Core Game Implementation & Event System
-**Fortschritt:** ~45% abgeschlossen
+**Fortschritt:** ~65% abgeschlossen
 **Velocity:** ~3-4 Features/Session
 
-## <² Projektübersicht
+## <ï¿½ Projektï¿½bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
-- **Hauptziel:** Vollständiges digitales Brettspiel mit 2-4 Spielern
+- **Hauptziel:** Vollstï¿½ndiges digitales Brettspiel mit 2-4 Spielern
 - **Kernfeatures:** Heldenbewegung, Ressourcensammlung, Turmbau, Ereignissystem, kooperative Mechaniken
 - **Zielgruppe:** Brettspiel-Enthusiasten, Familien, Kooperativ-Spieler
 
-## <× Tech-Stack
+## <ï¿½ Tech-Stack
 - **Frontend:** React ^19.1.1 + TypeScript ~5.8.3
 - **Styling:** Tailwind CSS ^4.1.12
 - **Build Tool:** Vite ^7.1.2
@@ -27,23 +27,23 @@
 - [x] 2025-09-22 Helden-Bewegung mit Aktionspunkt-System (3 AP/Runde)
 - [x] 2025-09-22 Feldaufdeckung und Sichtbarkeits-Mechaniken
 - [x] 2025-09-22 Inventar-System (2 Slots pro Held)
-- [x] 2025-09-22 Ressourcen-Sammlung (Kristalle, Baupläne)
+- [x] 2025-09-22 Ressourcen-Sammlung (Kristalle, Bauplï¿½ne)
 - [x] 2025-09-22 Spieler-Setup mit Charakterauswahl (2-4 Spieler)
 - [x] 2025-09-22 Dark Theme UI mit responsivem Design
 - [x] 2025-09-22 Umfangreiche Dokumentation (Spielregeln, Ereigniskarten)
 
-## =§ In Arbeit
+## =ï¿½ In Arbeit
 - [ ] **Event-System Implementation** (60% done)
   - Status: Grundstruktur in GameManager.ts vorhanden, Event-Karten definiert
-  - TODO: Event-Trigger-System, UI für Ereignisse, Integration in Spielablauf
-  - Geschätzt: 4-6h verbleibend
+  - TODO: Event-Trigger-System, UI fï¿½r Ereignisse, Integration in Spielablauf
+  - Geschï¿½tzt: 4-6h verbleibend
 
-## =Ë Nächste Schritte (Priorität)
-1. **[HEUTE]** Event-System vollständig implementieren ’ 4h geschätzt
-2. **[MORGEN]** Phase 2 Übergang (Tor der Weisheit) ’ 3h geschätzt
-3. **[DIESE WOCHE]** Spezielle Helden-Fähigkeiten vervollständigen ’ 2h geschätzt
-4. **[DIESE WOCHE]** Gewinn-/Verlust-Bedingungen implementieren ’ 2h geschätzt
-5. **[NÄCHSTE WOCHE]** Turmbau-System Phase 2 ’ 4h geschätzt
+## =ï¿½ Nï¿½chste Schritte (Prioritï¿½t)
+1. **[HEUTE]** Event-System vollstï¿½ndig implementieren ï¿½ 4h geschï¿½tzt
+2. **[MORGEN]** Phase 2 ï¿½bergang (Tor der Weisheit) ï¿½ 3h geschï¿½tzt
+3. **[DIESE WOCHE]** Spezielle Helden-Fï¿½higkeiten vervollstï¿½ndigen ï¿½ 2h geschï¿½tzt
+4. **[DIESE WOCHE]** Gewinn-/Verlust-Bedingungen implementieren ï¿½ 2h geschï¿½tzt
+5. **[Nï¿½CHSTE WOCHE]** Turmbau-System Phase 2 ï¿½ 4h geschï¿½tzt
 6. **[BACKLOG]** UI/UX Verbesserungen und Animationen
 
 ## = Wichtige Dateien
@@ -53,43 +53,50 @@
 - `src/components/GameBoard.tsx` - Spielbrett-Komponente
 - `src/components/GameSetup.tsx` - Spieler-Setup Interface
 - `src/config/` - JSON Konfigurationsdateien (Helden, Ereignisse, Regeln)
-- `docs/spielanleitung.md` - Vollständige Spielregeln (Referenz)
+- `docs/spielanleitung.md` - Vollstï¿½ndige Spielregeln (Referenz)
 - `docs/ereigniskarten.md` - 40 Event-Karten Definitionen
 
-## =Ý Session-Log
+## =ï¿½ Session-Log
+### Session 2025-09-26
+- âœ… Rundenlogik und Event-Trigger korrigiert
+- âœ… Initialisierung des Landschaftskarten-Decks gefixt
+- âœ… UI und Logik des Event-Modals verbessert
+- âœ… Initialisierung des Krater-Feldes korrigiert
+- **Next:** Implementierung der konkreten Event-Effekte
+
 ### Session 2025-09-25
-- =§ CLAUDE.md mit vollständiger Projektanalyse erstellt
+- =ï¿½ CLAUDE.md mit vollstï¿½ndiger Projektanalyse erstellt
 - **Next:** Event-System Implementation basierend auf docs/ereigniskarten.md
 
 ### Session 2025-09-22
 -  Grundlegendes Spiel implementiert
 -  Dokumentation erstellt
-- **Archived:** Erste Spielversion funktionsfähig
+- **Archived:** Erste Spielversion funktionsfï¿½hig
 
-## =¡ Decisions & Learnings
-- **2025-09-22** Hybrid JSX/TSX Ansatz: ApeironGame.jsx als Hauptkomponente, TypeScript für Utils/Types
-- **2025-09-22** Config-basierte Architektur: JSON-Dateien für Spielregeln, flexibel erweiterbar
-- **2025-09-22** Dark Theme First: Bessere Spielatmosphäre für Fantasy-Setting
-- **2025-09-22** Komponenten-Split: GameSetup getrennt von Hauptspiel für bessere UX
+## =ï¿½ Decisions & Learnings
+- **2025-09-22** Hybrid JSX/TSX Ansatz: ApeironGame.jsx als Hauptkomponente, TypeScript fï¿½r Utils/Types
+- **2025-09-22** Config-basierte Architektur: JSON-Dateien fÃ¼r Spielregeln, flexibel erweiterbar
+- **2025-09-22** Dark Theme First: Bessere Spielatmosphï¿½re fï¿½r Fantasy-Setting
+- **2025-09-22** Komponenten-Split: GameSetup getrennt von Hauptspiel fï¿½r bessere UX
 
 ## = Bekannte Issues
-- [ ] **P2:** GameManager.ts nicht vollständig in ApeironGame.jsx integriert
-- [ ] **P2:** Event-System fehlt komplett (kritisch für Spielbalance)
+- [ ] **P2:** GameManager.ts nicht vollstï¿½ndig in ApeironGame.jsx integriert
+- [ ] **P2:** Event-System fehlt komplett (kritisch fï¿½r Spielbalance)
 - [ ] **P2:** Phase 2 Mechaniken nicht implementiert
-- [ ] **P3:** Mobile Optimierung könnte verbessert werden
-- [ ] **P3:** Keine Animationen für Spielerzüge
+- [ ] **P3:** Mobile Optimierung kï¿½nnte verbessert werden
+- [ ] **P3:** Keine Animationen fï¿½r Spielerzï¿½ge
 
-## =Ê Metriken
+## =ï¿½ Metriken
 - **Tests:** 0 (keine Test-Dateien vorhanden)
 - **Coverage:** N/A
 - **Build Size:** ~861 Zeilen Code (src/)
 - **Performance:** Nicht gemessen
-- **Letzter Commit:** ad03484 (docs ergänzt)
+- **Letzter Commit:** ad03484 (docs ergï¿½nzt)
 - **Branch:** master
 
-## <¯ Sprint Goal
-**Diese Woche:** Event-System komplett implementiert, Phase 2 Übergang funktionsfähig
-**Nächste Woche:** Vollständiges Spielerlebnis mit allen Mechaniken
+## <ï¿½ Sprint Goal
+**Diese Woche:** Event-System komplett implementiert, Phase 2 ï¿½bergang funktionsfï¿½hig
+**Nï¿½chste Woche:** Vollstï¿½ndiges Spielerlebnis mit allen Mechaniken
 
 ## =' Quick Commands
 - **Start Dev:** `npm run dev`
@@ -99,4 +106,4 @@
 - **URL:** http://localhost:5173
 
 ---
-*Auto-generated by Claude - 2025-09-25 14:15*
+*Auto-generated by Claude - 2024-09-26 16:30*
