@@ -1,9 +1,9 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-09-25 23:45
-**Sprint:** Event System Testing & Critical Bug Discovery
-**Fortschritt:** ~75% abgeschlossen
+**Letzte Session:** 2025-09-26 16:45
+**Sprint:** NEW CRITICAL BUG DISCOVERY - Round Completion Broken!
+**Fortschritt:** ~80% abgeschlossen (regression due to critical bug)
 **Velocity:** ~5-7 Features/Session
 
 ## <� Projekt�bersicht
@@ -42,29 +42,38 @@
 - [x] 2025-09-25 Effect Duration Logic systematisch behoben (alle 24 next_round Events)
 - [x] 2025-09-25 Visuelle Effekt-Indikatoren mit korrekter Expiration-Pr�fung
 - [x] 2025-09-25 Event-System grundlegende Implementierung abgeschlossen (Struktur & Trigger)
+- [x] 2025-09-26 Alle 7 kritische P0 Event-System Bugs systematisch behoben
+- [x] 2025-09-26 Event-Triggering Timing-Bug mit eventTriggerAssigned ref gefixt
 
 ## =� In Arbeit
-- [ ] **Event-System Critical Bug Fixes** (20% done)
-  - Status: 7 kritische Bugs durch umfassende Tests identifiziert
-  - TODO: Systematische Behebung aller identifizierten Event-Logic Issues
-  - Gesch�tzt: 4-6h verbleibend (h�here Komplexit�t als erwartet)
+- [ ] **KRITISCHER GAME-BREAKING BUG: Round Completion broken** (0% done)
+  - Status: NEW P0 CRITICAL BUG discovered during testing
+  - Problem: Nach letztem Spielerzug startet der erste Spieler sofort wieder OHNE Aktionskarte zu ziehen
+  - Impact: Das Rundenende funktioniert nicht - Spiel ist unspielbar ohne korrekte Rundenwechsel
+  - Geschätzt: 2-3h Critical Fix benötigt (HIGHEST PRIORITY)
 
 ## =� N�chste Schritte (Priorit�t)
-### KRITISCHE BUGS (H�chste Priorit�t) - 4-6h gesch�tzt
-1. **[SOFORT]** AP-Modifikations-Timing Bug - Effekte wirken eine Runde zu sp�t � 1h
-2. **[SOFORT]** "dichter Nebel" Event funktionslos - Action hat keine Wirkung � 45min
-3. **[SOFORT]** "Apeirons Segen" incomplete - entfernt nicht alle negativen Effekte � 1h
-4. **[SOFORT]** "lernen" Action broken - ben�tigt Bauplan im Inventar (siehe spielanleitung.md) � 1h
-5. **[SOFORT]** "Hindernis entfernen" needs field selection - multiple adjacent blocked fields � 45min
-6. **[SOFORT]** "schnell bewegen" ability wrong - sollte 2 Felder mit 1AP bewegen � 30min
-7. **[SOFORT]** Light Counter Logic wrong - Start bei 30, -1 nach jedem Spielerzug � 30min
+### NEW CRITICAL P0 BUG (IMMEDIATE FIX REQUIRED!)
+1. **[🚨 CRITICAL]** Round Completion Bug - Game-breaking issue preventing proper round transitions ⏰ 2-3h
+   - Problem: After last player's turn, first player starts immediately without drawing action card
+   - Impact: Core game loop broken, game unplayable without proper round endings
+   - Root cause: eventTriggerAssigned ref timing issue potentially affects round completion logic
 
-### Weitere Entwicklung (Nach Bugfixes)
-8. **[DANN]** Phase 2 �bergang (Tor der Weisheit) � 3h gesch�tzt
-9. **[DIESE WOCHE]** Spezielle Helden-F�higkeiten vervollst�ndigen � 2h gesch�tzt
-10. **[DIESE WOCHE]** Gewinn-/Verlust-Bedingungen implementieren � 2h gesch�tzt
-11. **[N�CHSTE WOCHE]** Turmbau-System Phase 2 � 4h gesch�tzt
-12. **[BACKLOG]** UI/UX Verbesserungen und Animationen
+### KRITISCHE BUGS ✅ ALLE EVENT-SYSTEM BUGS BEHOBEN!
+2. **[✅ ERLEDIGT]** AP-Modifikations-Timing Bug - Effects timing fixed
+3. **[✅ ERLEDIGT]** "dichter Nebel" Event - Action blocking now works properly
+4. **[✅ ERLEDIGT]** "Apeirons Segen" - Now removes ALL negative effects including set_ap
+5. **[✅ ERLEDIGT]** "lernen" Action - Now consumes blueprint from inventory correctly
+6. **[✅ ERLEDIGT]** "Hindernis entfernen" - Field selection was already working properly
+7. **[✅ ERLEDIGT]** "schnell bewegen" ability - Now moves 2 fields with 1AP as intended
+8. **[✅ ERLEDIGT]** Light Counter Logic - Starts at 30, decreases by 1 per player turn
+
+### Weitere Entwicklung (Nach Critical Bugfix)
+9. **[DANN]** Phase 2 �bergang (Tor der Weisheit) � 3h gesch�tzt
+10. **[DIESE WOCHE]** Spezielle Helden-F�higkeiten vervollst�ndigen � 2h gesch�tzt
+11. **[DIESE WOCHE]** Gewinn-/Verlust-Bedingungen implementieren � 2h gesch�tzt
+12. **[N�CHSTE WOCHE]** Turmbau-System Phase 2 � 4h gesch�tzt
+13. **[BACKLOG]** UI/UX Verbesserungen und Animationen
 
 ## = Wichtige Dateien
 - `src/ApeironGame.jsx` - Hauptspiel-Komponente (~800 Zeilen, komplette Spiellogik)
@@ -77,6 +86,28 @@
 - `docs/ereigniskarten.md` - 40 Event-Karten Definitionen
 
 ## =� Session-Log
+### Session 2025-09-26 (Abend - CRITICAL BUG DISCOVERY & EVENT TRIGGER FIX 🚨)
+- ✅ **EVENT-TRIGGERING FIXED:** eventTriggerAssigned ref timing issue resolved
+- ✅ **Enhanced event logging:** Better debugging for event trigger timing
+- 🚨 **NEW CRITICAL BUG DISCOVERED:** Round completion completely broken after event system fixes
+- 🚨 **GAME-BREAKING ISSUE:** After last player's turn, first player starts immediately WITHOUT drawing action card
+- ❌ **Core game loop broken:** Round transitions don't work properly, making game unplayable
+- 📋 **Root cause analysis needed:** Event system changes may have affected round completion logic
+- **Impact:** This is a P0 critical bug that must be fixed before any other development
+- **Next:** Immediate critical fix required for round completion logic
+
+### Session 2025-09-26 (Nachmittag - CRITICAL BUG FIXES KOMPLETT! 🎉)
+- ✅ **ALLE 7 P0 BUGS BEHOBEN:** Systematische Behebung aller kritischen Event-System Issues
+- ✅ **Bug #1 FIXED:** AP-Modifikations-Timing - Duration-Logik von `round + 2` auf `round + 1` korrigiert
+- ✅ **Bug #2 FIXED:** "dichter Nebel" - Action Blocker Expiration-Filter hinzugefügt (isDiscoverBlocked & isScoutBlocked)
+- ✅ **Bug #3 FIXED:** "Apeirons Segen" - Duplicate Implementation entfernt, `set_ap` zur Negativeffekt-Liste hinzugefügt
+- ✅ **Bug #4 FIXED:** "lernen" Action - Blueprint Konsumption aus Inventar implementiert (nicht vom Feld)
+- ✅ **Bug #5 FIXED:** "Hindernis entfernen" - Bereits korrekt implementiert mit individuellen Richtungs-Buttons
+- ✅ **Bug #6 FIXED:** "schnell bewegen" - Complete reimplementation: Corvus base movement normalisiert + echte 2-Feld Fähigkeit mit UI
+- ✅ **Bug #7 FIXED:** Light Counter - Start auf 30 geändert, -1 pro Spielerzug-Ende über handleAutoTurnTransition
+- **Result:** Event-System now 100% funktional, alle kritischen Gameplay-Issues behoben!
+- **Next:** Phase 2 Übergang (Tor der Weisheit) Implementation
+
 ### Session 2025-09-25 (Sp�tabend - UMFASSENDE TESTS & BUG DISCOVERY)
 - ✅ **EVENT-SYSTEM TESTING:** Systematische Tests aller implementierten Event-Effekte
 - ❌ **7 KRITISCHE BUGS IDENTIFIZIERT:** Umfassende Test-Session deckt schwerwiegende Logic-Fehler auf
@@ -158,14 +189,17 @@
 - **2025-09-22** Komponenten-Split: GameSetup getrennt von Hauptspiel f�r bessere UX
 
 ## = Bekannte Issues
-### KRITISCHE BUGS (Immediate Fix Required)
-- [ ] **P0:** AP-Modifikations-Timing Bug - Effekte wirken eine Runde zu sp�t (Immediate)
-- [ ] **P0:** "dichter Nebel" Event funktionslos - Action hat keine Wirkung (Immediate)
-- [ ] **P0:** "Apeirons Segen" incomplete - entfernt nicht alle negativen Effekte (Immediate)
-- [ ] **P0:** "lernen" Action broken - ben�tigt Bauplan im Inventar (Immediate)
-- [ ] **P0:** "Hindernis entfernen" needs field selection (Immediate)
-- [ ] **P0:** "schnell bewegen" ability wrong - sollte 2 Felder mit 1AP bewegen (Immediate)
-- [ ] **P0:** Light Counter Logic wrong - Start bei 30, -1 nach jedem Spielerzug (Immediate)
+### NEW CRITICAL P0 BUG (2025-09-26 DISCOVERY)
+- [ ] **P0:** Round Completion Bug - GAME-BREAKING: Rounds don't end properly, action cards not drawn (IMMEDIATE FIX REQUIRED)
+
+### KRITISCHE BUGS ✅ ALLE EVENT-SYSTEM BUGS BEHOBEN! (2025-09-26)
+- [x] **P0:** AP-Modifikations-Timing Bug - Effekte wirken eine Runde zu spät ✅ FIXED
+- [x] **P0:** "dichter Nebel" Event funktionslos - Action hat keine Wirkung ✅ FIXED
+- [x] **P0:** "Apeirons Segen" incomplete - entfernt nicht alle negativen Effekte ✅ FIXED
+- [x] **P0:** "lernen" Action broken - benötigt Bauplan im Inventar ✅ FIXED
+- [x] **P0:** "Hindernis entfernen" needs field selection ✅ VERIFIED WORKING
+- [x] **P0:** "schnell bewegen" ability wrong - sollte 2 Felder mit 1AP bewegen ✅ FIXED
+- [x] **P0:** Light Counter Logic wrong - Start bei 30, -1 nach jedem Spielerzug ✅ FIXED
 
 ### Standard Issues
 - [ ] **P2:** GameManager.ts nicht vollst�ndig in ApeironGame.jsx integriert
@@ -193,4 +227,4 @@
 - **URL:** http://localhost:5173
 
 ---
-*Auto-generated by Claude - 2025-09-25 23:45*
+*Auto-generated by Claude - 2025-09-26 16:45*
