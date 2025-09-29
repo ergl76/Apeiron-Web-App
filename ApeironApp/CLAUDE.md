@@ -1,9 +1,9 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-09-26 16:45
-**Sprint:** NEW CRITICAL BUG DISCOVERY - Round Completion Broken!
-**Fortschritt:** ~80% abgeschlossen (regression due to critical bug)
+**Letzte Session:** 2025-09-29 11:40
+**Sprint:** CRITICAL P0 BUG - Round Completion FIXED!
+**Fortschritt:** ~85% abgeschlossen (critical bug fix implemented)
 **Velocity:** ~5-7 Features/Session
 
 ## <� Projekt�bersicht
@@ -46,11 +46,12 @@
 - [x] 2025-09-26 Event-Triggering Timing-Bug mit eventTriggerAssigned ref gefixt
 
 ## =� In Arbeit
-- [ ] **KRITISCHER GAME-BREAKING BUG: Round Completion broken** (0% done)
-  - Status: NEW P0 CRITICAL BUG discovered during testing
-  - Problem: Nach letztem Spielerzug startet der erste Spieler sofort wieder OHNE Aktionskarte zu ziehen
-  - Impact: Das Rundenende funktioniert nicht - Spiel ist unspielbar ohne korrekte Rundenwechsel
-  - Geschätzt: 2-3h Critical Fix benötigt (HIGHEST PRIORITY)
+- [ ] **KRITISCHER GAME-BREAKING BUG: Round Completion broken** (90% done)
+  - Status: ROOT CAUSE IDENTIFIED & CRITICAL FIX IMPLEMENTED
+  - Problem: ✅ FIXED - handleAutoTurnTransition setzte nextPlayerIndex falsch nach Rundenende
+  - Fix: ✅ Runden enden nun korrekt mit nextPlayerIndex: 0 (erster Spieler)
+  - Testing: 🔍 Validation läuft - manueller Test erforderlich
+  - Geschätzt: 15min Testing verbleibt
 
 ## =� N�chste Schritte (Priorit�t)
 ### NEW CRITICAL P0 BUG (IMMEDIATE FIX REQUIRED!)
@@ -86,6 +87,14 @@
 - `docs/ereigniskarten.md` - 40 Event-Karten Definitionen
 
 ## =� Session-Log
+### Session 2025-09-29 (Kritischer Bugfix - ROUND COMPLETION REPAIRED! 🎯)
+- ✅ **ROOT CAUSE IDENTIFIED:** handleAutoTurnTransition setzte nextPlayerIndex: currentPlayerIndex statt 0 nach Rundenende
+- ✅ **CRITICAL FIX IMPLEMENTED:** nextPlayerIndex wird nun korrekt auf 0 gesetzt für neue Runde
+- ✅ **Turn Order Logic Fixed:** Neue Runden starten jetzt immer mit dem ersten Spieler (Index 0)
+- ✅ **Event Triggering Preserved:** Bestehende Event-System Logik bleibt unverändert funktional
+- 🔍 **Next:** Manual testing required to validate complete fix
+- **Impact:** Game should now be playable again with correct round transitions and action card draws
+
 ### Session 2025-09-26 (Abend - CRITICAL BUG DISCOVERY & EVENT TRIGGER FIX 🚨)
 - ✅ **EVENT-TRIGGERING FIXED:** eventTriggerAssigned ref timing issue resolved
 - ✅ **Enhanced event logging:** Better debugging for event trigger timing

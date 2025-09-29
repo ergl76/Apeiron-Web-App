@@ -632,6 +632,10 @@ function GameScreen({ gameData, onNewGame }) {
   const roundCompletionCache = useRef(null);
   // Track if an event trigger has been assigned
   const eventTriggerAssigned = useRef(false);
+  // Track which round already had an event triggered
+  const eventTriggeredForRound = useRef(0);
+  // Global flag to prevent multiple simultaneous triggerRandomEvent calls
+  const isTriggeringEvent = useRef(false);
 
   const [gameState, setGameState] = useState(() => {
     const phase1TileDeck = Object.entries(tilesConfig.phase1).flatMap(([tileId, config]) => {
@@ -672,35 +676,30 @@ function GameScreen({ gameData, onNewGame }) {
   });
 
 
-  // Handle round completion events with useEffect to prevent loops
+  // DISABLED: Handle round completion events with useEffect to prevent loops
+  // NOTE: Events are now triggered directly in handleAutoTurnTransition
+  /*
   useEffect(() => {
     console.log(`🔍 useEffect ROUND CHECK: roundCompleted=${gameState.roundCompleted}, round=${gameState.round}, isEventTriggering=${gameState.isEventTriggering}`);
 
     // Only trigger when roundCompleted becomes true
-    if (gameState.roundCompleted) {
+    if (gameState.roundCompleted && !gameState.isEventTriggering && !gameState.currentEvent) {
       console.log('🎯 useEffect detected round completion - triggering event');
 
-      // Immediately reset flag and trigger event in one update
-      setGameState(prev => {
-        // Double-check conditions to prevent race conditions
-        if (!prev.roundCompleted || prev.isEventTriggering || prev.currentEvent) {
-          console.log('⚠️ useEffect: Conditions changed, aborting event trigger');
-          return prev;
-        }
+      // Reset flag and trigger event
+      setGameState(prev => ({
+        ...prev,
+        roundCompleted: false,
+        isEventTriggering: true
+      }));
 
-        // Trigger event immediately in the same state update
-        setTimeout(() => triggerRandomEvent(), 0);
-
-        return {
-          ...prev,
-          roundCompleted: false,
-          isEventTriggering: true
-        };
-      });
+      // Trigger event directly
+      triggerRandomEvent();
     } else if (gameState.round > 1) {
       console.log(`❌ useEffect: NO event triggered. roundCompleted=${gameState.roundCompleted}, round=${gameState.round}`);
     }
   }, [gameState.roundCompleted]); // Only depend on roundCompleted flag
+  */
 
   const handleTileClick = (position) => {
     // Prevent actions if current player should skip turn
@@ -737,12 +736,12 @@ function GameScreen({ gameData, onNewGame }) {
       const [x, y] = position.split(',').map(Number);
       
       setGameState(prev => {
-        const newPlayers = prev.players.map((player, index) => 
-          index === prev.currentPlayerIndex 
+        const newPlayers = prev.players.map((player, index) =>
+          index === prev.currentPlayerIndex
             ? { ...player, ap: player.ap - 1 }
             : player
         );
-        
+
         // Handle automatic turn transition
         const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
@@ -1014,6 +1013,19 @@ function GameScreen({ gameData, onNewGame }) {
     console.log(`🔄 handleAutoTurnTransition called for round ${round}, currentPlayer ${currentPlayerIndex}`);
     console.log(`📍 Call stack: ${callStack}`);
     const updatedCurrentPlayer = players[currentPlayerIndex];
+
+    // CRITICAL FIX: Only proceed if current player actually has 0 AP
+    if (updatedCurrentPlayer.ap > 0) {
+      console.log(`⏸️ Current player ${updatedCurrentPlayer.name} still has ${updatedCurrentPlayer.ap} AP - NO transition needed`);
+      return {
+        nextPlayerIndex: currentPlayerIndex,
+        newRound: round,
+        actionBlockers: prevState.actionBlockers || [],
+        roundCompleted: false,
+        lightDecrement: 0,
+        updatedPlayers: players
+      };
+    }
     let lightDecrement = 0;
 
     // Only transition if current player has no AP left
@@ -1095,15 +1107,33 @@ function GameScreen({ gameData, onNewGame }) {
         // Note: Round completed - event will be triggered by useEffect
         console.log(`✅ handleAutoTurnTransition RETURNING: roundCompleted=true, newRound=${newRound}, players with new AP:`, newPlayersState.map(p => `${p.name}: ${p.ap}AP`));
 
-        // Assign event trigger to this first handler
-        const shouldTriggerEvent = !eventTriggerAssigned.current;
-        eventTriggerAssigned.current = true;
+        // Assign event trigger to this first handler - but only if no event triggered for this round yet
+        const shouldTriggerEvent = !eventTriggerAssigned.current && eventTriggeredForRound.current < newRound;
+        if (shouldTriggerEvent) {
+          eventTriggerAssigned.current = true;
+          eventTriggeredForRound.current = newRound; // Mark this round as having an event
+        }
 
         // Cache the result for cascaded calls
-        const result = { nextPlayerIndex: 0, newRound: newRound, actionBlockers: activeBlockers, roundCompleted: shouldTriggerEvent, lightDecrement, updatedPlayers: newPlayersState };
+        // Start new round with first player (index 0) after event is resolved
+        const result = {
+          nextPlayerIndex: 0, // Always start new round with first player
+          newRound: newRound,
+          actionBlockers: activeBlockers,
+          roundCompleted: shouldTriggerEvent,
+          lightDecrement,
+          updatedPlayers: newPlayersState
+        };
         roundCompletionCache.current = result;
 
-        console.log(`🎯 FIRST HANDLER - Will trigger event: ${shouldTriggerEvent}! Setting roundCompleted=${shouldTriggerEvent}`);
+        console.log(`🎯 FIRST HANDLER - Will trigger event: ${shouldTriggerEvent}! (Round ${newRound}, already triggered for round: ${eventTriggeredForRound.current}) Setting roundCompleted=${shouldTriggerEvent}`);
+
+        // CRITICAL FIX: Trigger event directly here instead of relying on useEffect
+        if (shouldTriggerEvent) {
+          console.log('🎯 Triggering event DIRECTLY from handleAutoTurnTransition');
+          setTimeout(() => triggerRandomEvent(), 100);
+        }
+
         return result;
       } else {
         // Not all players are done, find the next player with AP
@@ -1162,6 +1192,24 @@ function GameScreen({ gameData, onNewGame }) {
   // Event System
   const triggerRandomEvent = () => {
     console.log('🎯 triggerRandomEvent called');
+
+    // CRITICAL PROTECTION: Prevent multiple simultaneous calls
+    if (isTriggeringEvent.current) {
+      console.warn('❌ triggerRandomEvent blocked - already in progress');
+      return;
+    }
+
+    isTriggeringEvent.current = true;
+
+    // BULLETPROOF FIX: Pre-calculate random values to prevent React StrictMode double execution
+    const randomValues = {
+      index: null,
+      event: null,
+      calculated: false,
+      effectApplied: false,
+      stateAfterEffect: null
+    };
+
     setGameState(prev => {
       // Additional guard: check if already triggering
       if (prev.isEventTriggering && prev.currentEvent) {
@@ -1181,13 +1229,25 @@ function GameScreen({ gameData, onNewGame }) {
         return prev;
       }
 
-      const randomIndex = Math.floor(Math.random() * prev.eventDeck.length);
-      const selectedEvent = prev.eventDeck[randomIndex];
+      // BULLETPROOF: Calculate random values only once, even with React StrictMode
+      if (!randomValues.calculated) {
+        randomValues.index = Math.floor(Math.random() * prev.eventDeck.length);
+        randomValues.event = prev.eventDeck[randomValues.index];
+        randomValues.calculated = true;
+        console.log(`🎲 Triggering event: ${randomValues.event.name} at round ${prev.round}. Deck has ${prev.eventDeck.length} cards left.`);
+      }
 
-      console.log(`🎲 Triggering event: ${selectedEvent.name} at round ${prev.round}. Deck has ${prev.eventDeck.length} cards left.`);
+      const randomIndex = randomValues.index;
+      const selectedEvent = randomValues.event;
 
       // Apply the effect immediately, then show the modal.
-      const stateAfterEffect = applyEventEffect(selectedEvent, prev);
+      // BULLETPROOF: Only apply effect once, even with React StrictMode
+      if (!randomValues.effectApplied) {
+        randomValues.stateAfterEffect = applyEventEffect(selectedEvent, prev);
+        randomValues.effectApplied = true;
+        console.log(`🎮 Event effect applied for: ${selectedEvent.name}`);
+      }
+      const stateAfterEffect = randomValues.stateAfterEffect;
 
       return {
         ...stateAfterEffect,
@@ -1195,6 +1255,11 @@ function GameScreen({ gameData, onNewGame }) {
         eventDeck: prev.eventDeck.filter((_, index) => index !== randomIndex)
       };
     });
+
+    // Reset the trigger flag after state update
+    setTimeout(() => {
+      isTriggeringEvent.current = false;
+    }, 0);
   };
 
   const applyEventEffect = (event, currentState) => {
@@ -2696,7 +2761,12 @@ function GameScreen({ gameData, onNewGame }) {
                 justifyContent: 'center'
               }}>
                 <button
-                  onClick={() => setGameState(prev => ({ ...prev, currentEvent: null, isEventTriggering: false }))}
+                  onClick={() => setGameState(prev => ({
+                    ...prev,
+                    currentEvent: null,
+                    isEventTriggering: false,
+                    currentPlayerIndex: 0  // Start new round with first player
+                  }))}
                   style={{
                     backgroundColor: '#3b82f6',
                     color: 'white',
