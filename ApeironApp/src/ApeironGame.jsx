@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import eventsConfig from './config/events.json';
 import tilesConfig from './config/tiles.json';
+import gameRules from './config/gameRules.json';
 
 // Konter-Informationen aus ereigniskarten.md
 const eventCounters = {
@@ -391,6 +392,40 @@ function GameBoard({ gameState, onTileClick }) {
           <>
             <div style={{ fontSize: '16px' }}>🌋</div>
             <div>Krater</div>
+            {/* Foundation Indicators */}
+            {gameState.tower && gameState.tower.foundations && gameState.tower.foundations.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                bottom: '2px',
+                left: '2px',
+                right: '2px',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '1px'
+              }}>
+                {gameState.tower.foundations.map((foundation, index) => {
+                  const foundationSymbols = {
+                    'erde': '🗿',
+                    'feuer': '🔥',
+                    'wasser': '💧',
+                    'luft': '💨'
+                  };
+                  return (
+                    <div
+                      key={foundation}
+                      style={{
+                        fontSize: '8px',
+                        opacity: 0.9,
+                        textShadow: '0 0 2px rgba(0,0,0,0.8)'
+                      }}
+                      title={`${foundation.charAt(0).toUpperCase() + foundation.slice(1)}-Fundament`}
+                    >
+                      {foundationSymbols[foundation] || '⚪'}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
         
@@ -592,7 +627,8 @@ const getTileSymbol = (tileId) => {
     fluss: '🌊',
     gebirge: '⛰️',
     wald: '🌲',
-    huegel: '⛰️'
+    huegel: '⛰️',
+    tor_der_weisheit: '🚪'
   };
   return symbols[tileId] || '🔍';
 };
@@ -608,7 +644,8 @@ const getTileName = (tileId) => {
     fluss: 'Fluss',
     gebirge: 'Berg',
     wald: 'Wald',
-    huegel: 'Hügel'
+    huegel: 'Hügel',
+    tor_der_weisheit: 'Tor der Weisheit'
   };
   return names[tileId] || tileId;
 };
@@ -645,25 +682,32 @@ function GameScreen({ gameData, onNewGame }) {
 
     return {
       round: 1,
-      light: 30,
+      light: gameRules.light.startValue,
       currentPlayerIndex: 0,
       players: gameData.selectedCharacters.map((heroId, index) => ({
         id: heroId,
         name: heroes[heroId].name,
         position: '4,4',
-        ap: 3,
-        maxAp: 3,
+        ap: gameRules.actionPoints.perTurn,
+        maxAp: gameRules.actionPoints.maxPerTurn,
         inventory: [],
-        maxInventory: 2,
+        maxInventory: gameRules.inventory.maxSlots,
         learnedSkills: heroes[heroId].element === 'earth' ? ['grundstein_legen', 'geroell_beseitigen', 'aufdecken'] :
                       heroes[heroId].element === 'fire' ? ['element_aktivieren', 'dornen_entfernen', 'aufdecken'] :
                       heroes[heroId].element === 'water' ? ['reinigen', 'fluss_freimachen', 'aufdecken'] :
-                      ['spaehen', 'schnell_bewegen', 'aufdecken'] // air/corvus
+                      ['spaehen', 'schnell_bewegen', 'aufdecken'], // air/corvus
+        element: heroes[heroId].element,
+        isMaster: false
       })),
       board: {
         '4,4': { id: 'krater', x: 4, y: 4, resources: [] }
       },
       tower: { foundations: [], activatedElements: [] },
+      torDerWeisheit: {
+        triggered: false,
+        position: null,
+        lightLossAtTrigger: 0
+      },
       isTransitioning: false,
       currentEvent: null,
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
@@ -675,6 +719,10 @@ function GameScreen({ gameData, onNewGame }) {
     };
   });
 
+  // Monitor light level to trigger Tor der Weisheit
+  useEffect(() => {
+    triggerTorDerWeisheit(gameState.light);
+  }, [gameState.light]);
 
   // DISABLED: Handle round completion events with useEffect to prevent loops
   // NOTE: Events are now triggered directly in handleAutoTurnTransition
@@ -1007,6 +1055,154 @@ function GameScreen({ gameData, onNewGame }) {
     }, 1500);
   };
 
+  // Tor der Weisheit System Functions
+  const triggerTorDerWeisheit = (currentLight) => {
+    const lightLoss = gameRules.light.startValue - currentLight;
+    if (lightLoss >= gameRules.light.torDerWeisheitTrigger && !gameState.torDerWeisheit.triggered) {
+      console.log(`🚪 Triggering Tor der Weisheit at light loss: ${lightLoss}`);
+
+      setGameState(prev => {
+        // Draw direction card (simplified to random direction)
+        const directions = ['north', 'east', 'south', 'west'];
+        let attempts = 0;
+        let torPosition = null;
+        let chosenDirection = null;
+
+        // Try each direction until we find a free spot
+        const shuffledDirections = [...directions].sort(() => Math.random() - 0.5);
+        let originalDirection = null;
+
+        for (const direction of shuffledDirections) {
+          attempts++;
+          if (!originalDirection) originalDirection = direction; // Remember first tried direction
+          const position = getTorPlacementPositionFromState(direction, prev.board);
+          if (position) {
+            torPosition = position;
+            chosenDirection = direction;
+            break;
+          }
+        }
+
+        // If no direction worked, use clockwise fallback starting from first attempted direction
+        if (!torPosition && originalDirection) {
+          console.log(`⚠️ No free position found in any random direction, trying clockwise fallback from ${originalDirection}...`);
+
+          // Define clockwise order starting from any direction
+          const getClockwiseOrder = (startDir) => {
+            const directions = ['north', 'east', 'south', 'west'];
+            const startIndex = directions.indexOf(startDir);
+            const clockwise = [];
+            for (let i = 1; i < 4; i++) { // Skip the original direction (i=0)
+              clockwise.push(directions[(startIndex + i) % 4]);
+            }
+            return clockwise;
+          };
+
+          const clockwiseDirections = getClockwiseOrder(originalDirection);
+
+          for (const direction of clockwiseDirections) {
+            const position = getTorPlacementPositionFromState(direction, prev.board);
+            if (position) {
+              torPosition = position;
+              chosenDirection = direction;
+              console.log(`🔄 Clockwise fallback successful: ${direction} -> ${position}`);
+              break;
+            }
+          }
+        }
+
+        // Last resort: force placement on first available adjacent spot
+        if (!torPosition) {
+          console.log(`⚠️ Even clockwise fallback failed, forcing placement on adjacent field...`);
+          const adjacentPositions = [
+            { pos: '4,3', dir: 'north' },  // North of crater
+            { pos: '5,4', dir: 'east' },   // East of crater
+            { pos: '4,5', dir: 'south' },  // South of crater
+            { pos: '3,4', dir: 'west' }    // West of crater
+          ];
+
+          for (const { pos, dir } of adjacentPositions) {
+            const [x, y] = pos.split(',').map(Number);
+            if (x >= 0 && x <= 8 && y >= 0 && y <= 8) {
+              torPosition = pos;
+              chosenDirection = dir;
+              console.log(`🔧 Forcing Tor placement at ${pos} (${dir})`);
+              break;
+            }
+          }
+        }
+
+        if (torPosition) {
+          console.log(`🚪 Tor der Weisheit placed at position: ${torPosition} (direction: ${chosenDirection})`);
+
+          return {
+            ...prev,
+            torDerWeisheit: {
+              triggered: true,
+              position: torPosition,
+              lightLossAtTrigger: lightLoss
+            },
+            board: {
+              ...prev.board,
+              [torPosition]: {
+                id: 'tor_der_weisheit',
+                x: parseInt(torPosition.split(',')[0]),
+                y: parseInt(torPosition.split(',')[1]),
+                resources: []
+              }
+            }
+          };
+        } else {
+          console.log(`❌ Could not place Tor der Weisheit anywhere!`);
+          return prev;
+        }
+      });
+    }
+  };
+
+  const getTorPlacementPositionFromState = (direction, currentBoard) => {
+    const craterX = 4, craterY = 4;
+    let deltaX = 0, deltaY = 0;
+
+    // Set direction deltas
+    switch (direction) {
+      case 'north': deltaX = 0; deltaY = -1; break;
+      case 'east': deltaX = 1; deltaY = 0; break;
+      case 'south': deltaX = 0; deltaY = 1; break;
+      case 'west': deltaX = -1; deltaY = 0; break;
+      default: return null;
+    }
+
+    console.log(`🔍 Searching for Tor placement in direction: ${direction} (delta: ${deltaX}, ${deltaY})`);
+
+    // Search along the direction for the first completely free field
+    for (let step = 1; step <= 4; step++) { // Maximum 4 steps from crater
+      const targetX = craterX + (deltaX * step);
+      const targetY = craterY + (deltaY * step);
+      const position = `${targetX},${targetY}`;
+
+      // Check if position is within bounds
+      if (targetX < 0 || targetX > 8 || targetY < 0 || targetY > 8) {
+        console.log(`❌ Position ${position} is out of bounds at step ${step}`);
+        continue;
+      }
+
+      // Check if position is completely free (no tile exists at all)
+      const existingTile = currentBoard[position];
+      if (!existingTile) {
+        // Position is completely empty - this is perfect for Tor placement
+        console.log(`✅ Found free position ${position} at step ${step} - perfect for Tor`);
+        return position;
+      } else {
+        // Position is occupied
+        console.log(`❌ Position ${position} at step ${step} occupied by: ${existingTile.id || 'unknown'}`);
+      }
+    }
+
+    // No free position found in this direction
+    console.log(`❌ No free position found in direction ${direction} within 4 steps`);
+    return null;
+  };
 
   const handleAutoTurnTransition = (players, currentPlayerIndex, round, prevState) => {
     const callStack = new Error().stack.split('\n').slice(1, 4).map(line => line.trim()).join(' -> ');
@@ -1284,7 +1480,7 @@ function GameScreen({ gameData, onNewGame }) {
             } else if (gainValue === 'player_count_times_2') {
               gainValue = newState.players.length * 2;
             }
-            newState.light = Math.min(30, newState.light + gainValue);
+            newState.light = Math.min(gameRules.light.maxValue, newState.light + gainValue);
             break;
           case 'light_loss':
             newState.light = Math.max(0, newState.light - effect.value);
@@ -1728,32 +1924,71 @@ function GameScreen({ gameData, onNewGame }) {
 
 
 
-  // Special Hero Actions
-  const handleBuildFoundation = () => {
+  // Special Hero Actions - Grundstein legen (Foundation Building)
+  const handleBuildFoundation = (foundationType = null) => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Must be at crater (4,4) and have AP
     if (currentPlayer.position !== '4,4' || currentPlayer.ap < 1) return;
 
+    // Must have 'grundstein_legen' ability (Terra's base skill)
+    if (!currentPlayer.learnedSkills.includes('grundstein_legen')) return;
+
+    // Must have 2 crystals
     const kristallCount = currentPlayer.inventory.filter(item => item === 'kristall').length;
     if (kristallCount < 2) return;
 
-    // Check if player has learned the required foundation building skill for their element
-    const requiredSkill = currentPlayer.id === 'terra' ? 'erde_fundament_bauen' :
-                         currentPlayer.id === 'ignis' ? 'feuer_fundament_bauen' :
-                         currentPlayer.id === 'lyra' ? 'wasser_fundament_bauen' : 'luft_fundament_bauen';
+    // Must have at least one learned foundation building skill
+    const availableBlueprints = currentPlayer.learnedSkills.filter(skill => skill.endsWith('_fundament_bauen'));
+    if (availableBlueprints.length === 0) return;
 
-    if (!currentPlayer.learnedSkills.includes(requiredSkill)) return;
+    // If no specific foundation type provided, try to determine from available blueprints
+    let blueprintToUse = null;
+    let elementToAdd = null;
+
+    if (foundationType) {
+      // Specific foundation type requested
+      const blueprintMap = {
+        'erde': 'erde_fundament_bauen',
+        'feuer': 'feuer_fundament_bauen',
+        'wasser': 'wasser_fundament_bauen',
+        'luft': 'luft_fundament_bauen'
+      };
+      blueprintToUse = blueprintMap[foundationType];
+      elementToAdd = foundationType;
+
+      // Check if player has this specific blueprint skill
+      if (!currentPlayer.learnedSkills.includes(blueprintToUse)) return;
+    } else {
+      // Use first available blueprint
+      blueprintToUse = availableBlueprints[0];
+      const elementMap = {
+        'erde_fundament_bauen': 'erde',
+        'feuer_fundament_bauen': 'feuer',
+        'wasser_fundament_bauen': 'wasser',
+        'luft_fundament_bauen': 'luft'
+      };
+      elementToAdd = elementMap[blueprintToUse];
+    }
+
+    // Check if this foundation already exists
+    if (gameState.tower.foundations.includes(elementToAdd)) return;
 
     setGameState(prev => {
       const newPlayers = prev.players.map((player, index) => {
         if (index === prev.currentPlayerIndex) {
           const newInventory = [...player.inventory];
-          let removed = 0;
-          for (let i = newInventory.length - 1; i >= 0 && removed < 2; i--) {
+
+          // Remove 2 crystals
+          let kristallsRemoved = 0;
+          for (let i = newInventory.length - 1; i >= 0 && kristallsRemoved < 2; i--) {
             if (newInventory[i] === 'kristall') {
               newInventory.splice(i, 1);
-              removed++;
+              kristallsRemoved++;
             }
           }
+
+          // Note: Blueprint is not removed as it's a learned skill, not an inventory item
 
           return {
             ...player,
@@ -1766,10 +2001,20 @@ function GameScreen({ gameData, onNewGame }) {
 
       const newTower = {
         ...prev.tower,
-        foundations: [...(prev.tower.foundations || []), currentPlayer.id === 'terra' ? 'erde' :
-                     currentPlayer.id === 'ignis' ? 'feuer' :
-                     currentPlayer.id === 'lyra' ? 'wasser' : 'luft']
+        foundations: [...(prev.tower.foundations || []), elementToAdd]
       };
+
+      let newPhase = prev.phase;
+      let lightBonus = gameRules.foundations.lightBonusPerFoundation; // +4 Light bonus per foundation
+
+      // Check for Phase 2 transition (all 4 foundations built)
+      if (newTower.foundations.length === 4 && prev.phase === 1) {
+        newPhase = 2;
+        lightBonus += 10; // Additional +10 Light bonus for Phase 2 transition
+        console.log(`🎉 Phase 2 transition! All foundations built, +${gameRules.foundations.lightBonusPerFoundation + 10} total Light bonus`);
+      } else {
+        console.log(`🏗️ Foundation built! +${gameRules.foundations.lightBonusPerFoundation} Light bonus`);
+      }
 
       // Handle automatic turn transition
       const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
@@ -1778,11 +2023,51 @@ function GameScreen({ gameData, onNewGame }) {
         ...prev,
         players: updatedPlayers || newPlayers,
         tower: newTower,
+        phase: newPhase,
         actionBlockers: actionBlockers,
         currentPlayerIndex: nextPlayerIndex,
         round: newRound,
-        light: Math.max(0, prev.light - lightDecrement),
+        light: Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus)),
         roundCompleted: roundCompleted || false
+      };
+    });
+  };
+
+  const handleTorDurchschreiten = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Must be on Tor der Weisheit field and have AP
+    if (currentPlayer.position !== gameState.torDerWeisheit.position || currentPlayer.ap < 1) return;
+
+    // Must not already be a master
+    if (currentPlayer.isMaster) return;
+
+    setGameState(prev => {
+      const newPlayers = prev.players.map((player, index) => {
+        if (index === prev.currentPlayerIndex) {
+          return {
+            ...player,
+            ap: player.ap - 1,
+            isMaster: true,
+            learnedSkills: [...player.learnedSkills, 'lehren']
+          };
+        }
+        return player;
+      });
+
+      // Handle automatic turn transition
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      console.log(`🚪 ${currentPlayer.name} has become a master of ${currentPlayer.element}!`);
+
+      return {
+        ...prev,
+        players: updatedPlayers || newPlayers,
+        currentPlayerIndex: nextPlayerIndex,
+        round: newRound,
+        actionBlockers: actionBlockers || prev.actionBlockers,
+        roundCompleted: roundCompleted,
+        light: Math.max(0, prev.light - lightDecrement)
       };
     });
   };
@@ -2102,6 +2387,69 @@ function GameScreen({ gameData, onNewGame }) {
     });
   };
 
+  const handleMasterLehren = (skillToTeach) => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Must be a master and have the 'lehren' skill
+    if (!currentPlayer.isMaster || !currentPlayer.learnedSkills.includes('lehren') || currentPlayer.ap < 1) return;
+
+    // Get the player's innate skills based on their element
+    const innateSkills = {
+      'earth': ['grundstein_legen', 'geroell_beseitigen'],
+      'fire': ['element_aktivieren', 'dornen_entfernen'],
+      'water': ['reinigen', 'fluss_freimachen'],
+      'air': ['spaehen', 'schnell_bewegen']
+    };
+
+    const playerInnateSkills = innateSkills[currentPlayer.element] || [];
+
+    // Must have the skill to teach (must be an innate skill)
+    if (!playerInnateSkills.includes(skillToTeach)) return;
+
+    setGameState(prev => {
+      // Find all players on the same position
+      const playersOnSamePosition = prev.players.filter(player =>
+        player.position === currentPlayer.position && player.id !== currentPlayer.id
+      );
+
+      if (playersOnSamePosition.length === 0) return prev; // No one to teach
+
+      const newPlayers = prev.players.map((player, index) => {
+        if (index === prev.currentPlayerIndex) {
+          return {
+            ...player,
+            ap: player.ap - 1
+          };
+        }
+        // Teach skill to players on same position who don't have it
+        if (player.position === currentPlayer.position &&
+            player.id !== currentPlayer.id &&
+            !player.learnedSkills.includes(skillToTeach)) {
+          return {
+            ...player,
+            learnedSkills: [...player.learnedSkills, skillToTeach]
+          };
+        }
+        return player;
+      });
+
+      // Handle automatic turn transition
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      console.log(`🎓 ${currentPlayer.name} teaches ${skillToTeach} to ${playersOnSamePosition.length} player(s)`);
+
+      return {
+        ...prev,
+        players: updatedPlayers || newPlayers,
+        currentPlayerIndex: nextPlayerIndex,
+        round: newRound,
+        actionBlockers: actionBlockers || prev.actionBlockers,
+        roundCompleted: roundCompleted || false,
+        light: Math.max(0, prev.light - lightDecrement)
+      };
+    });
+  };
+
   const handleRemoveObstacle = (obstaclePosition, obstacleType) => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     const targetTile = gameState.board[obstaclePosition];
@@ -2198,9 +2546,11 @@ function GameScreen({ gameData, onNewGame }) {
     const canCollect = currentTile?.resources?.length > 0 && 
                       currentPlayer.inventory.length < currentPlayer.maxInventory && 
                       currentPlayer.ap > 0;
+    const availableFoundationBlueprints = currentPlayer.learnedSkills.filter(skill => skill.endsWith('_fundament_bauen'));
     const canBuildFoundation = currentPlayer.position === '4,4' &&
                               currentPlayer.learnedSkills.includes('grundstein_legen') &&
                               currentPlayer.inventory.filter(item => item === 'kristall').length >= 2 &&
+                              availableFoundationBlueprints.length > 0 &&
                               currentPlayer.ap > 0 &&
                               !areSkillsBlocked;    
     const isScoutBlocked = (gameState.actionBlockers || []).some(blocker =>
@@ -2345,27 +2695,73 @@ function GameScreen({ gameData, onNewGame }) {
           📦 Ablegen (1 AP)
         </button>
 
-        {currentPlayer.learnedSkills.includes('grundstein_legen') && (
-          <button 
-            onClick={handleBuildFoundation}
-            disabled={!canBuildFoundation}
-            style={{ 
-              backgroundColor: canBuildFoundation ? '#ca8a04' : '#4b5563',
-              color: canBuildFoundation ? 'white' : '#9ca3af',
-              padding: '10px 12px', 
-              borderRadius: '8px', 
-              border: canBuildFoundation ? '2px solid #eab308' : '2px solid transparent',
-              fontWeight: 'bold', 
-              cursor: canBuildFoundation ? 'pointer' : 'not-allowed',
-              fontSize: '0.8rem',
-              transition: 'all 0.2s ease-in-out',
-              boxShadow: canBuildFoundation ? '0 2px 4px rgba(202, 138, 4, 0.3)' : 'none',
-              transform: canBuildFoundation ? 'translateY(0)' : 'translateY(1px)'
-            }}
-            title={canBuildFoundation ? 'Baue ein Fundament (benötigt 2 Kristalle)' : 'Benötigt Krater-Position und 2 Kristalle'}
-          >
-            🏗️ Fundament (1AP+2💎)
-          </button>
+        {currentPlayer.learnedSkills.includes('grundstein_legen') && availableFoundationBlueprints.length > 0 && currentPlayer.position === '4,4' && (
+          <div style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
+            {availableFoundationBlueprints.length === 1 ? (
+              <button
+                onClick={() => handleBuildFoundation()}
+                disabled={!canBuildFoundation}
+                style={{
+                  backgroundColor: canBuildFoundation ? '#ca8a04' : '#4b5563',
+                  color: canBuildFoundation ? 'white' : '#9ca3af',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: canBuildFoundation ? '2px solid #eab308' : '2px solid transparent',
+                  fontWeight: 'bold',
+                  cursor: canBuildFoundation ? 'pointer' : 'not-allowed',
+                  fontSize: '0.8rem',
+                  transition: 'all 0.2s ease-in-out',
+                  boxShadow: canBuildFoundation ? '0 2px 4px rgba(202, 138, 4, 0.3)' : 'none',
+                  transform: canBuildFoundation ? 'translateY(0)' : 'translateY(1px)',
+                  width: '100%'
+                }}
+                title={canBuildFoundation ? 'Grundstein legen (benötigt Bauplan + 2 Kristalle)' : 'Benötigt Krater-Position, Bauplan und 2 Kristalle'}
+              >
+                🏗️ Grundstein legen (1AP+Bauplan+2💎)
+              </button>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', marginBottom: '4px' }}>
+                  Wähle Bauplan für Fundament:
+                </div>
+                {availableFoundationBlueprints.map(blueprint => {
+                  const elementMap = {
+                    'erde_fundament_bauen': { name: 'Erde', emoji: '🗿', element: 'erde', color: '#ca8a04' },
+                    'feuer_fundament_bauen': { name: 'Feuer', emoji: '🔥', element: 'feuer', color: '#ef4444' },
+                    'wasser_fundament_bauen': { name: 'Wasser', emoji: '💧', element: 'wasser', color: '#3b82f6' },
+                    'luft_fundament_bauen': { name: 'Luft', emoji: '💨', element: 'luft', color: '#10b981' }
+                  };
+                  const foundationInfo = elementMap[blueprint];
+                  const alreadyBuilt = gameState.tower.foundations.includes(foundationInfo.element);
+
+                  if (!foundationInfo) return null;
+
+                  return (
+                    <button
+                      key={blueprint}
+                      onClick={() => handleBuildFoundation(foundationInfo.element)}
+                      disabled={!canBuildFoundation || alreadyBuilt}
+                      style={{
+                        backgroundColor: (canBuildFoundation && !alreadyBuilt) ? foundationInfo.color : '#4b5563',
+                        color: (canBuildFoundation && !alreadyBuilt) ? 'white' : '#9ca3af',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: (canBuildFoundation && !alreadyBuilt) ? `2px solid ${foundationInfo.color}` : '2px solid transparent',
+                        fontWeight: 'bold',
+                        cursor: (canBuildFoundation && !alreadyBuilt) ? 'pointer' : 'not-allowed',
+                        fontSize: '0.75rem',
+                        transition: 'all 0.2s ease-in-out',
+                        opacity: alreadyBuilt ? 0.5 : 1
+                      }}
+                      title={alreadyBuilt ? `${foundationInfo.name}-Fundament bereits gebaut` : `Grundstein für ${foundationInfo.name}-Element legen`}
+                    >
+                      {foundationInfo.emoji} {foundationInfo.name}-Fundament {alreadyBuilt ? '(✓)' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {currentPlayer.learnedSkills.includes('spaehen') && (
@@ -2460,6 +2856,92 @@ function GameScreen({ gameData, onNewGame }) {
             </button>
           );
         })}
+
+        {/* Tor der Weisheit durchschreiten button */}
+        {gameState.torDerWeisheit.triggered &&
+         currentPlayer.position === gameState.torDerWeisheit.position &&
+         !currentPlayer.isMaster &&
+         currentPlayer.ap > 0 && (
+          <button
+            onClick={handleTorDurchschreiten}
+            style={{
+              backgroundColor: '#8b5cf6',
+              color: 'white',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '2px solid #a78bfa',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              gridColumn: '1 / -1',
+              transition: 'all 0.2s ease-in-out',
+              boxShadow: '0 2px 4px rgba(139, 92, 246, 0.3)',
+              marginBottom: '0.5rem'
+            }}
+            title="Durchschreite das Tor der Weisheit und werde Meister deines Elements"
+          >
+            🚪 Tor der Weisheit durchschreiten (1AP)
+          </button>
+        )}
+
+        {/* Master lehren button */}
+        {currentPlayer.isMaster &&
+         currentPlayer.learnedSkills.includes('lehren') &&
+         currentPlayer.ap > 0 &&
+         gameState.players.some(player =>
+           player.position === currentPlayer.position && player.id !== currentPlayer.id
+         ) && (
+          <div style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', marginBottom: '4px' }}>
+              Wähle Fähigkeit zum Lehren:
+            </div>
+            {(() => {
+              const innateSkills = {
+                'earth': [
+                  { skill: 'grundstein_legen', name: 'Grundstein legen', emoji: '🧱' },
+                  { skill: 'geroell_beseitigen', name: 'Geröll beseitigen', emoji: '⛏️' }
+                ],
+                'fire': [
+                  { skill: 'element_aktivieren', name: 'Element aktivieren', emoji: '🔥' },
+                  { skill: 'dornen_entfernen', name: 'Dornen entfernen', emoji: '🌿' }
+                ],
+                'water': [
+                  { skill: 'reinigen', name: 'Reinigen', emoji: '💧' },
+                  { skill: 'fluss_freimachen', name: 'Fluss freimachen', emoji: '🌊' }
+                ],
+                'air': [
+                  { skill: 'spaehen', name: 'Spähen', emoji: '👁️' },
+                  { skill: 'schnell_bewegen', name: 'Schnell bewegen', emoji: '💨' }
+                ]
+              };
+              const playerSkills = innateSkills[currentPlayer.element] || [];
+
+              return playerSkills.map(({ skill, name, emoji }) => (
+                <button
+                  key={skill}
+                  onClick={() => handleMasterLehren(skill)}
+                  style={{
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '2px solid #34d399',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontSize: '0.7rem',
+                    marginRight: '4px',
+                    marginBottom: '4px',
+                    transition: 'all 0.2s ease-in-out',
+                    boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
+                  }}
+                  title={`Lehre ${name} an alle Spieler auf diesem Feld`}
+                >
+                  {emoji} {name} (1AP)
+                </button>
+              ));
+            })()}
+          </div>
+        )}
 
         <button
           onClick={handleEndTurn}
@@ -2826,7 +3308,7 @@ function GameScreen({ gameData, onNewGame }) {
                 style={{ 
                   backgroundColor: '#e5e7eb', 
                   height: '100%', 
-                  width: `${(gameState.light / 30) * 100}%`,
+                  width: `${(gameState.light / gameRules.light.maxValue) * 100}%`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'flex-end',
@@ -3011,7 +3493,12 @@ function GameScreen({ gameData, onNewGame }) {
                         'element_aktivieren': '🔥',
                         'dornen_entfernen': '🌿',
                         'reinigen': '💧',
-                        'fluss_freimachen': '🌊'
+                        'fluss_freimachen': '🌊',
+                        'erde_fundament_bauen': '🗿',
+                        'feuer_fundament_bauen': '🔥',
+                        'wasser_fundament_bauen': '💧',
+                        'luft_fundament_bauen': '💨',
+                        'lehren': '🎓'
                       };
                       return (
                         <span 

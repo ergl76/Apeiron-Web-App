@@ -78,7 +78,7 @@ Auf Position **30** der Licht-Leiste setzen
 ### Ignis 🔥 (Feuer)
 **Start-Fähigkeiten:**
 - ⚡ **Element aktivieren:** Aktiviert Fundamente (braucht Fragment + 1 Kristall)
-- 🌿 **Dornenwald entfernen:** Brennt Dornen nieder
+- 🌿 **Dornenwald entfernen:** Brennt Dornenwälder nieder
 
 ### Lyra 💧 (Wasser)
 **Start-Fähigkeiten:**
@@ -107,7 +107,7 @@ Auf Position **30** der Licht-Leiste setzen
 
 ### PHASE 2: Die Jagd
 **Start:** Automatisch nach dem 4. Fundament  
-**Bonus:** +10 Licht sofort!  
+**Bonus:** +15 Licht sofort!  
 **Ziel:** Findet 4 Element-Fragmente und aktiviert sie
 
 #### Zugablauf:

@@ -1,6 +1,7 @@
 {
   "light": {
-    "maxValue": 20,
+    "maxValue": 30,
+    "startValue": 30,
     "lossPerRound": {
       "phase1": {
         "players2": -1,
@@ -12,13 +13,19 @@
         "players3": -3,
         "players4": -4
       }
-    }
+    },
+    "torDerWeisheitTrigger": 8
   },
   "actionPoints": {
-    "perTurn": 3
+    "perTurn": 3,
+    "maxPerTurn": 3
   },
   "inventory": {
-    "slots": 2
+    "slots": 2,
+    "maxSlots": 2
+  },
+  "foundations": {
+    "lightBonusPerFoundation": 4
   },
   "gateOfWisdom": {
     "appearsAtRound": {
