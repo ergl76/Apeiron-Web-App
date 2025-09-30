@@ -1,10 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-09-29 11:40
-**Sprint:** CRITICAL P0 BUG - Round Completion FIXED!
-**Fortschritt:** ~90% abgeschlossen (foundation building system complete)
+**Letzte Session:** 2025-09-30 14:00
+**Sprint:** FINAL SPRINT - Game Completion + Mobile/Cross-Platform Strategy!
+**Fortschritt:** ~95% abgeschlossen (7 Features fehlen für 100% Spielregel-Konformität)
 **Velocity:** ~5-7 Features/Session
+**Next Focus:** Win/Loss Conditions, Element-Aktivierung, Mobile-First UX/UI
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -47,49 +48,192 @@
 - [x] 2025-09-29 "Grundstein legen" Foundation Building System vollständig implementiert
 - [x] 2025-09-29 Phase 2 Übergang mit automatischem Auslöser bei 4 Fundamenten (+10 Light bonus)
 - [x] 2025-09-29 Foundation Selection UI mit Blueprint-Auswahl und visuellen Indikatoren
+- [x] 2025-09-29 Tor der Weisheit (Gate of Wisdom) System komplett implementiert
+- [x] 2025-09-29 Master-Transformation System für Helden (bei 8 Light Verlust)
+- [x] 2025-09-29 Teaching System - Masters können angeborene Fähigkeiten teilen
+- [x] 2025-09-29 Configurable Game Rules System (gameRules.json) implementiert
+- [x] 2025-09-29 Intelligente Tor-Platzierung mit Clockwise-Fallback Algorithmus
 
 ## =� In Arbeit
-- [ ] **FEATURE: "Grundstein legen" (Foundation Building) COMPLETE** (100% done)
-  - Status: ✅ FULLY IMPLEMENTED - Complete foundation building system with Phase 2 transition
-  - Features: ✅ Blueprint consumption, crystal requirements, element selection UI, visual indicators
-  - Phase Transition: ✅ Automatic Phase 2 transition when all 4 foundations are built (+10 Light bonus)
-  - UI: ✅ Dynamic foundation selection based on available blueprints with visual feedback
-  - Testing: 🔍 Ready for user validation and gameplay testing
+- [ ] **FINAL POLISH: Game Completion & Testing** (90% done)
+  - Status: 🎯 MAJOR SYSTEMS COMPLETE - All core game mechanics implemented
+  - Foundation Building: ✅ Complete with Phase 2 transition
+  - Tor der Weisheit: ✅ Complete with master transformation and teaching system
+  - Game Rules: ✅ Configurable via gameRules.json
+  - Testing: 🔍 Final gameplay validation and polish required
 
 ## =� N�chste Schritte (Priorit�t)
-### NEW CRITICAL P0 BUG (IMMEDIATE FIX REQUIRED!)
-1. **[🚨 CRITICAL]** Round Completion Bug - Game-breaking issue preventing proper round transitions ⏰ 2-3h
-   - Problem: After last player's turn, first player starts immediately without drawing action card
-   - Impact: Core game loop broken, game unplayable without proper round endings
-   - Root cause: eventTriggerAssigned ref timing issue potentially affects round completion logic
 
-### KRITISCHE BUGS ✅ ALLE EVENT-SYSTEM BUGS BEHOBEN!
-2. **[✅ ERLEDIGT]** AP-Modifikations-Timing Bug - Effects timing fixed
-3. **[✅ ERLEDIGT]** "dichter Nebel" Event - Action blocking now works properly
-4. **[✅ ERLEDIGT]** "Apeirons Segen" - Now removes ALL negative effects including set_ap
-5. **[✅ ERLEDIGT]** "lernen" Action - Now consumes blueprint from inventory correctly
-6. **[✅ ERLEDIGT]** "Hindernis entfernen" - Field selection was already working properly
-7. **[✅ ERLEDIGT]** "schnell bewegen" ability - Now moves 2 fields with 1AP as intended
-8. **[✅ ERLEDIGT]** Light Counter Logic - Starts at 30, decreases by 1 per player turn
+### 🎯 **PHASE 1: Spielregel-Konformität (4-6h bis 100%)**
+#### **P0 - KRITISCH (Spielende)** ⏰ 1-2h
+1. **Win/Loss Conditions**
+   - ❌ Sieg: Spiel endet wenn 4. Element aktiviert wurde
+   - ❌ Niederlage: Spiel endet wenn Licht-Marker auf 0 fällt
+   - Status: Nicht implementiert
 
-### Weitere Entwicklung (Nach Foundation Building)
-9. **[✅ ERLEDIGT]** Phase 2 Übergang (Grundstein legen) - Foundation building mit automatischem Phase 2 Übergang implementiert
-10. **[DIESE WOCHE]** Spezielle Helden-F�higkeiten vervollst�ndigen � 2h gesch�tzt
-11. **[DIESE WOCHE]** Gewinn-/Verlust-Bedingungen implementieren � 2h gesch�tzt
-12. **[N�CHSTE WOCHE]** Turmbau-System Phase 2 � 4h gesch�tzt
-13. **[BACKLOG]** UI/UX Verbesserungen und Animationen
+2. **Element-Aktivierung System** ⏰ 2-3h
+   - ❌ Action "Element aktivieren" (1 AP, auf Krater-Feld)
+   - ❌ Benötigt: Fähigkeit + 1 Kristall + Element-Fragment
+   - ❌ Meilenstein-Bonusse bei Aktivierung:
+     - Wasser-Element: +4 Licht
+     - Feuer-Element: +4 Licht
+     - Luft-Element: +1 AP permanent für ALLE Helden
+     - Erd-Element: +1 AP permanent für ALLE Helden
+   - Status: Nicht implementiert
+
+#### **P1 - HOCH (Phase 2 Core Mechanics)** ⏰ 1-3h
+3. **Element-Fragmente im Phase 2 Deck**
+   - ❌ 4 Fragment-Landschaftskarten müssen auffindbar sein
+   - Erd-, Feuer-, Luft-, Wasser-Fragment
+   - Status: Landschaftskarten-Typen vermutlich nicht im Deck
+
+4. **Finsternis-Ausbreitung System (Phase 2)**
+   - ❌ Breitet sich nach **jedem Spielerzug** aus (nicht nur Rundenende)
+   - ❌ Startet vom "Herz der Finsternis" Plättchen
+   - ❌ Uhrzeigersinn-Algorithmus, auch diagonal
+   - ❌ Feld wird umgedreht = "Finsternis" belegt
+   - ❌ Unpassierbar, Gegenstände nicht aufnehmbar
+   - ❌ Krater + Tor der Weisheit sind immun
+
+5. **"Herz der Finsternis" Plättchen**
+   - ❌ Erscheint bei Phase 2 Start via Himmelsrichtungs-Karte
+   - ❌ Wird auf erstes freies Feld neben Krater in gezogener Richtung gelegt
+   - ❌ Ursprung der Verderbnis, nicht betretbar
+
+#### **P2 - MITTEL (Fähigkeiten-Erweiterung)** ⏰ 0.5h
+6. **Heilende Reinigung - Finsternis säubern**
+   - ❌ Kann von Finsternis befallene Felder säubern
+   - Aktuell: Nur negative Effekte von Helden entfernen implementiert
+
+7. **Phase 2 Event-Integration vollständig testen**
+   - ⚠️ `spread_darkness` / `cleanse_darkness` Effekte validieren
+
+### 📱 **PHASE 2: Mobile-First UX/UI Modernisierung (15-20h)**
+#### **Asset-Integration** ⏰ 3-5h
+- [ ] Asset-Ordnerstruktur erstellen (`src/assets/{tiles,heroes,events,ui}/`)
+- [ ] Bild-Import-System für Landschaftskarten aufsetzen
+- [ ] WebP-Konvertierung (falls noch PNG/JPG)
+- [ ] Lazy Loading implementieren
+- [ ] Image Optimization (sharp/vite-plugin-image-optimizer)
+
+#### **Mobile-First Layout** ⏰ 4-6h
+- [ ] Responsive Grid-System (9x9 Desktop, 3x3 scrollbar Mobile)
+- [ ] Touch-Event-Handler (react-use-gesture)
+- [ ] Bottom Sheet UI für Aktionen (statt Sidebar)
+- [ ] Swipe-Gesten für Navigation
+- [ ] Card-basierte Komponenten für Tiles
+
+#### **Visual Polish** ⏰ 3-4h
+- [ ] Card-Flip-Animationen (Feldaufdeckung)
+- [ ] Hero-Bewegungs-Animationen (framer-motion)
+- [ ] Event-Card-Modal (Vollbild auf Mobile)
+- [ ] Glassmorphism UI-Elemente
+- [ ] Parallax-Effekte für Tiefe
+
+#### **Performance** ⏰ 2-3h
+- [ ] Code Splitting (React.lazy)
+- [ ] Virtual Scrolling für große Boards
+- [ ] PWA Caching-Strategie
+- [ ] Lighthouse Score Optimierung
+
+### 🚀 **PHASE 3: iOS + Android Deployment (8-12h)**
+#### **Capacitor Setup** ⏰ 2-3h
+```bash
+npm install @capacitor/core @capacitor/cli
+npm install @capacitor/ios @capacitor/android
+npm install @capacitor/haptics @capacitor/status-bar
+npm install @capacitor/preferences @capacitor/share
+npx cap init
+```
+
+#### **iOS Implementation** ⏰ 4-6h
+- [ ] `npx cap add ios` - iOS Projekt erstellen
+- [ ] Xcode Configuration (Bundle ID, Signing)
+- [ ] App Icons + Splash Screens (1024x1024, 512x512, etc.)
+- [ ] iOS-spezifische Anpassungen (Safe Areas, Notch)
+- [ ] TestFlight Beta Testing
+- [ ] App Store Submission ($99/Jahr)
+
+#### **Android Implementation** ⏰ 2-4h
+- [ ] `npx cap add android` - Android Projekt erstellen
+- [ ] Android Studio Configuration (Package Name, Signing)
+- [ ] App Icons + Splash Screens (adaptive icons)
+- [ ] Android-spezifische Anpassungen (Back Button Handler)
+- [ ] Google Play Internal Testing
+- [ ] Google Play Store Submission ($25 einmalig)
+
+### 📊 **Plattform-Matrix**
+| Plattform | Setup-Zeit | Kosten | Review-Zeit | Reichweite |
+|-----------|-----------|--------|-------------|-----------|
+| **Web (PWA)** | 2-3h | €0 | Sofort | 100% |
+| **iOS** | 4-6h | $99/Jahr | 3-7 Tage | ~55% DE |
+| **Android** | 2-4h | $25 einmalig | 1-3 Tage | ~45% DE |
+
+**Ein Codebase → 3 Plattformen!**
+
+### ✅ ERLEDIGT
+1. **[✅]** Foundation Building System - Vollständig implementiert
+2. **[✅]** Tor der Weisheit System - Master transformation & teaching komplett
+3. **[✅]** Configurable Game Rules - gameRules.json System
+4. **[✅]** Round Completion Bug - Behoben
+5. **[✅]** Alle 7 Event-System Bugs - Systematisch behoben
 
 ## = Wichtige Dateien
-- `src/ApeironGame.jsx` - Hauptspiel-Komponente (~800 Zeilen, komplette Spiellogik)
+- `src/ApeironGame.jsx` - Hauptspiel-Komponente (~1200+ Zeilen, komplette Spiellogik)
 - `src/utils/GameManager.ts` - Game Engine Klasse (teilweise implementiert)
 - `src/types/index.ts` - TypeScript Interface Definitionen
 - `src/components/GameBoard.tsx` - Spielbrett-Komponente
 - `src/components/GameSetup.tsx` - Spieler-Setup Interface
+- `src/config/gameRules.json` - Konfigurierbare Spielregeln und Balance-Parameter
 - `src/config/` - JSON Konfigurationsdateien (Helden, Ereignisse, Regeln)
 - `docs/spielanleitung.md` - Vollst�ndige Spielregeln (Referenz)
 - `docs/ereigniskarten.md` - 40 Event-Karten Definitionen
 
 ## =� Session-Log
+
+### Session 2025-09-30 (PLANNING - Mobile Strategy & Spielregel-Check! 📱)
+- ✅ **SPIELREGEL-ANALYSE:** Vollständiger Abgleich Code vs. docs/spielanleitung.md
+- ✅ **7 FEHLENDE FEATURES IDENTIFIZIERT:** Systematische Gap-Analyse für 100% Konformität
+  - P0: Win/Loss Conditions (1-2h)
+  - P0: Element-Aktivierung System mit Meilenstein-Bonussen (2-3h)
+  - P1: Element-Fragmente im Phase 2 Deck (0.5h)
+  - P1: Finsternis-Ausbreitung nach jedem Spielerzug (1-2h)
+  - P1: "Herz der Finsternis" Plättchen-System (1h)
+  - P2: Heilende Reinigung für Finsternis-Felder (0.5h)
+  - P2: Phase 2 Event-Integration Testing (0.5h)
+- ✅ **MOBILE/CROSS-PLATFORM STRATEGIE:** Capacitor als optimale Lösung identifiziert
+- ✅ **DEPLOYMENT-PLAN:** iOS ($99/Jahr) + Android ($25 einmalig) + PWA (€0)
+- ✅ **UX/UI MODERNISIERUNGS-ROADMAP:** Mobile-First mit bildbasierten Assets
+  - Asset-Integration (3-5h)
+  - Mobile-First Layout mit Touch-Gesten (4-6h)
+  - Visual Polish mit Animationen (3-4h)
+  - Performance-Optimierung (2-3h)
+- ✅ **TECHNOLOGIE-ENTSCHEIDUNGEN:**
+  - react-use-gesture für Touch-Interaktionen
+  - framer-motion für flüssige Animationen
+  - WebP + lazy loading für Bildoptimierung
+  - Bottom Sheet UI-Pattern für Mobile
+- 📋 **CODE-ORGANISATION DISKUTIERT:** Refactoring NICHT empfohlen (erst v1.0, dann v1.1)
+- 🎯 **GESAMTAUFWAND BIS MOBILE RELEASE:** ~30-40h
+  - Phase 1 (Game Completion): 4-6h
+  - Phase 2 (Mobile UX/UI): 15-20h
+  - Phase 3 (iOS/Android): 8-12h
+- **Impact:** Klare Roadmap für vollständige Spielregel-Konformität + Cross-Platform Mobile Apps
+- **Next:** Implementierung der 7 fehlenden Spielregeln-Features (P0 zuerst)
+
+### Session 2025-09-29 (MAJOR FEATURES COMPLETE - Tor der Weisheit & Game Rules! 🎯)
+- ✅ **TOR DER WEISHEIT SYSTEM:** Complete special event implementation für Phase 2 Übergang
+- ✅ **Master Transformation:** Helden werden zu Masters bei 8 Light Verlust (automatic triggering)
+- ✅ **Teaching System:** Masters können angeborene Fähigkeiten an andere Spieler auf gleichem Feld weitergeben
+- ✅ **Intelligent Gate Placement:** Clockwise placement algorithm mit Fallback-Logik für optimale Tor-Positionierung
+- ✅ **Configurable Game Rules:** gameRules.json System implementiert für flexible Balance-Parameter
+- ✅ **Foundation Light Bonuses:** Konfigurierbarer +4 Light Bonus pro gebautem Fundament
+- ✅ **Visual Gate Representation:** Tor der Weisheit wird korrekt auf dem Spielfeld mit 🌟 Symbol dargestellt
+- ✅ **Complete Phase Transition Logic:** Seamless Übergang von Phase 1 zu Phase 2 mit allen Mechaniken
+- 🎯 **Project Status:** ~95% complete - Alle Kernmechaniken des Spiels sind vollständig implementiert!
+- **Impact:** Game now has complete Phase 1 → Phase 2 transition flow with foundation building & master system
+- **Next:** Final win/loss conditions and gameplay polish für 100% completion
+
 ### Session 2025-09-29 (Foundation Building System COMPLETE! 🏗️)
 - ✅ **FEATURE COMPLETE:** "Grundstein legen" (Foundation Building) vollständig implementiert
 - ✅ **Requirements Fixed:** Benötigt jetzt korrekt 'grundstein_legen' Fähigkeit + Bauplan + 2 Kristalle
@@ -206,41 +350,60 @@
 - **Archived:** Erste Spielversion funktionsf�hig
 
 ## =� Decisions & Learnings
+- **2025-09-30** **Cross-Platform mit Capacitor:** Vite + React + Capacitor = optimale Lösung für iOS + Android aus einem Codebase
+- **2025-09-30** **Mobile-First UX/UI:** Bottom Sheet Pattern, Touch-Gesten, bildbasierte Assets, responsive Grid
+- **2025-09-30** **Kein Refactoring vor v1.0:** 3622 Zeilen in ApeironGame.jsx funktional - erst Ship, dann Refactor
+- **2025-09-30** **Deployment-Strategie:** PWA (sofort, €0) → iOS (4-6h, $99/Jahr) → Android (2-4h, $25)
 - **2025-09-22** Hybrid JSX/TSX Ansatz: ApeironGame.jsx als Hauptkomponente, TypeScript f�r Utils/Types
 - **2025-09-22** Config-basierte Architektur: JSON-Dateien für Spielregeln, flexibel erweiterbar
 - **2025-09-22** Dark Theme First: Bessere Spielatmosph�re f�r Fantasy-Setting
 - **2025-09-22** Komponenten-Split: GameSetup getrennt von Hauptspiel f�r bessere UX
 
 ## = Bekannte Issues
-### NEW CRITICAL P0 BUG (2025-09-26 DISCOVERY)
-- [ ] **P0:** Round Completion Bug - GAME-BREAKING: Rounds don't end properly, action cards not drawn (IMMEDIATE FIX REQUIRED)
+### 🚨 **NEUE ISSUES (2025-09-30 Spielregel-Check)**
+#### **P0 - Game Breaking (Spielende fehlt)**
+- [ ] Win/Loss Conditions nicht implementiert (Sieg bei 4 Elementen, Niederlage bei Licht=0)
+- [ ] Element-Aktivierung System komplett fehlend
 
-### KRITISCHE BUGS ✅ ALLE EVENT-SYSTEM BUGS BEHOBEN! (2025-09-26)
-- [x] **P0:** AP-Modifikations-Timing Bug - Effekte wirken eine Runde zu spät ✅ FIXED
-- [x] **P0:** "dichter Nebel" Event funktionslos - Action hat keine Wirkung ✅ FIXED
-- [x] **P0:** "Apeirons Segen" incomplete - entfernt nicht alle negativen Effekte ✅ FIXED
-- [x] **P0:** "lernen" Action broken - benötigt Bauplan im Inventar ✅ FIXED
-- [x] **P0:** "Hindernis entfernen" needs field selection ✅ VERIFIED WORKING
-- [x] **P0:** "schnell bewegen" ability wrong - sollte 2 Felder mit 1AP bewegen ✅ FIXED
-- [x] **P0:** Light Counter Logic wrong - Start bei 30, -1 nach jedem Spielerzug ✅ FIXED
+#### **P1 - High Priority (Phase 2 unvollständig)**
+- [ ] Element-Fragmente nicht im Phase 2 Deck
+- [ ] Finsternis-Ausbreitung System nicht implementiert
+- [ ] "Herz der Finsternis" Plättchen fehlt
 
-### Standard Issues
-- [ ] **P2:** GameManager.ts nicht vollst�ndig in ApeironGame.jsx integriert
-- [ ] **P2:** Phase 2 Mechaniken nicht implementiert
-- [ ] **P3:** Mobile Optimierung k�nnte verbessert werden
-- [ ] **P3:** Keine Animationen f�r Spielerz�ge
+#### **P2 - Medium Priority**
+- [ ] Heilende Reinigung säubert keine Finsternis-Felder
+- [ ] Phase 2 Event-Effekte (spread_darkness/cleanse_darkness) Testing ausstehend
+
+### ✅ ALLE KRITISCHEN BUGS BEHOBEN!
+- [x] **P0:** Round Completion Bug ✅ FIXED (2025-09-29)
+- [x] **P0:** AP-Modifikations-Timing Bug ✅ FIXED (2025-09-26)
+- [x] **P0:** "dichter Nebel" Event funktionslos ✅ FIXED (2025-09-26)
+- [x] **P0:** "Apeirons Segen" incomplete ✅ FIXED (2025-09-26)
+- [x] **P0:** "lernen" Action broken ✅ FIXED (2025-09-26)
+- [x] **P0:** "Hindernis entfernen" needs field selection ✅ VERIFIED WORKING (2025-09-26)
+- [x] **P0:** "schnell bewegen" ability wrong ✅ FIXED (2025-09-26)
+- [x] **P0:** Light Counter Logic wrong ✅ FIXED (2025-09-26)
+
+### Minor Issues (Non-blocking)
+- [ ] **P2:** GameManager.ts nicht vollst�ndig in ApeironGame.jsx integriert (v1.1+ Refactoring)
+- [x] **P2:** Phase 2 Mechaniken ✅ IMPLEMENTED (Foundation Building + Tor der Weisheit)
+- [ ] **P3:** Mobile Optimierung → ROADMAP erstellt (siehe Phase 2)
+- [ ] **P3:** Animationen → ROADMAP erstellt (siehe Visual Polish)
 
 ## =� Metriken
 - **Tests:** 0 (keine Test-Dateien vorhanden)
 - **Coverage:** N/A
-- **Build Size:** ~861 Zeilen Code (src/)
+- **Build Size:** ~3622 Zeilen ApeironGame.jsx + ~680 andere = 4303 total LOC
 - **Performance:** Nicht gemessen
-- **Letzter Commit:** ad03484 (docs erg�nzt)
+- **Letzter Commit:** b67267a (Foundation Building + Tor der Weisheit systems)
 - **Branch:** master
+- **Spielregel-Konformität:** ~95% (7 Features fehlen)
 
 ## <� Sprint Goal
-**Diese Woche:** Event-System komplett implementiert, Phase 2 �bergang funktionsf�hig
-**N�chste Woche:** Vollst�ndiges Spielerlebnis mit allen Mechaniken
+**Aktuelle Woche:** 🎯 PHASE 1 - Game Completion (Win/Loss + Element-Aktivierung) ⏰ 4-6h
+**Nächste 2 Wochen:** 📱 PHASE 2 - Mobile-First UX/UI Modernisierung ⏰ 15-20h
+**Danach:** 🚀 PHASE 3 - iOS + Android Deployment ⏰ 8-12h
+**Ziel v1.0:** Vollständiges Cross-Platform Brettspiel (Web + iOS + Android)
 
 ## =' Quick Commands
 - **Start Dev:** `npm run dev`
@@ -250,4 +413,23 @@
 - **URL:** http://localhost:5173
 
 ---
-*Auto-generated by Claude - 2025-09-26 16:45*
+*Auto-updated by Claude - 2025-09-30 14:00*
+
+## 📚 **Zusätzliche Referenzen für nächste Session**
+
+### Technologie-Dokumentation
+- **Capacitor Docs:** https://capacitorjs.com/docs
+- **react-use-gesture:** https://use-gesture.netlify.app/
+- **framer-motion:** https://www.framer.com/motion/
+- **Vite Image Optimization:** https://github.com/FatehAK/vite-plugin-image-optimizer
+
+### Mobile-First Design Patterns
+- Bottom Sheet UI: https://m3.material.io/components/bottom-sheets
+- Touch Gestures: Tap (Feld auswählen), Drag (Held bewegen), Pinch (Zoom)
+- Responsive Grid: 9x9 Desktop, 3x3 Mobile mit scroll-snap
+
+### Asset-Format Empfehlungen
+- Landschaftskarten: 512x512px WebP (Kompression 80%)
+- Helden-Portraits: 256x256px WebP
+- UI-Icons: 64x64px WebP oder SVG
+- App Icons: 1024x1024px PNG (iOS), Adaptive Icons (Android)

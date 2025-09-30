@@ -1,287 +1,311 @@
-# APEIRON – Der Turm der Elemente
-*Ein kooperatives Abenteuer für 2-4 Spieler | Ab 10 Jahren | 60-90 Minuten*
+# **Apeiron – Der Turm der Elemente**  {#apeiron-–-der-turm-der-elemente}
 
----
+## **Die Geschichte: Eine Welt am Rande der Finsternis**
 
-## 🎯 SPIELZIEL
-Arbeitet als Helden-Team zusammen, um den **Turm der Elemente** zu errichten, bevor die Dunkelheit die Welt verschlingt!
+Apeiron ist unendlich in seinem Umfang und seiner Ausdehnung. Apeiron ist nicht geboren worden, ist unsterblich und existiert ewig. Apeiron ist gegensatz-los \- es umfasst alle Gegensätze in sich. Apeiron ist die Quelle aller Existenz. Es ist die Ursubstanz, aus der alle vier Elemente entstanden sind: Erde, Wasser, Feuer und Luft.
 
-**Ihr gewinnt:** Wenn alle 4 Elemente am Turm aktiviert sind  
-**Ihr verliert:** Wenn das Licht auf 0 fällt
+Aus den Elementen entstanden Welten, in denen Pflanzen und Lebewesen gediehen. Die Wesen mit ihren unterschiedlichen Stärken und Schwächen entwickelten verschiedene spirituelle Glaubensrichtungen, Gemeinschaften und Strukturen. Die großen Völker waren die Minotauren (Erdkraft), die Sirenen (Wassermacht), die Drachen (Feuerkraft) und die Aviari, die Vogelwesen (Luftmacht). Und so wurden aus dem Einen die Vielen.
 
----
+Doch die Unterschiede wurden zur Identifikation und Glorifizierung der eigenen Gemeinschaften emporgehoben. Krieg entbrannte, weil Gegensätze zueinander gezogen wurden, weil die Stärken der Anderen die eigenen Schwächen waren, weil Unterschiede vor die Gemeinsamkeit gestellt wurden.
 
-## 📦 SPIELMATERIAL
+Unzählige Jahre, unzählige Opfer, unbeschreibbares Leid.
 
-### Plättchen & Karten
-- 1 Krater (Startfeld)
-- 34 Landschafts-Karten Phase 1 (verdeckter Nachzugstapel)
-- 26 Landschafts-Karten Phase 2 (verdeckter Nachzugstapel)
-- 1 Tor der Weisheit (Sonderplättchen)
-- 1 Herz der Finsternis (Sonderplättchen)
-- Hindernis-Marker (Geröll, Dornenwald, Überflutung, Finsternis)
+Und auf einmal war sie da \- die Sphäre der Dunkelheit. Zuerst unbemerkt wie ein winzig kleiner Punkt am Firmament. Aber mit jeder feindseligen Tat, mit jedem Akt der Gewalt – ja selbst mit jedem bösen Gedanken – nährte sich die Sphäre, wurde immer größer und mächtiger und verdunkelte die Welt immer weiter und weiter.
 
-### Helden & Marker
-- 4 Heldenkarten mit Figuren
-- Ereigniskarten (Phase 1 & 2)
-- Licht-Leiste (Start: 30)
-- Kristall-Marker
-- Element-Fragmente (4×)
-- Fundament-Marker (4×)
-
----
+Ein greller Lichtstrahl blitzte am Firmament auf, als ein Himmelskörper aus reiner Apeiron-Ursubstanz in die Atmosphäre eindrang und die Sphäre der Dunkelheit durchdrang. Mit einer mächtigen Explosion schlug er inmitten der Insel Elyria ein. Die Fragmente des Sterns wurden über die gesamte Insel verteilt und warten seitdem auf die Helden aller Völker, um daraus den Turm des Friedens und der Einheit zu erbauen. Die Legende besagt, dass es nur gemeinsam möglich ist, den “Turm der Elemente” zu errichten, um die Dunkelheit zu beenden und das Licht wiederzubringen.
 
-## ⚡ SCHNELLSTART (für erfahrene Spieler)
+“Denn nur durch die Vielen kann das Eine zum Höchsten emporgehoben werden und Licht zurück in die Welt gebracht werden.”
 
-1. Krater in die Mitte, Helden darauf
-2. Licht auf 30
-3. Jeder Held: 3 AP/Zug, 2 Inventarplätze
-4. Phase 1 Stapel mischen, Phase 2 beiseitelegen
-5. Los geht's!
+Aber just als der Stern die Sphäre durchdrang, beschleunigte sich ihr Wachstum. Die Zeit, die den Helden bleibt, schwindet mit jedem Tag schneller.
 
----
-
-## 🎮 SPIELAUFBAU (Schritt für Schritt)
-
-### 1. Spielfeld vorbereiten
-```
-        [ ][ ][ ]
-        [ ][K][ ]    K = Krater (Startfeld)
-        [ ][ ][ ]    [ ] = Leere Felder (noch nicht erkundet)
-```
-Platziere nur den **Krater** in der Mitte des Tisches. Um ihn herum ist Platz für weitere Landschafts-Karten, die während des Spiels durch die Aktion "Entdecken" platziert werden.
-
-### 2. Helden wählen
-Jeder Spieler wählt einen Helden und erhält:
-- Heldenkarte
-- Spielfigur (auf Krater stellen)
-- **3 Aktionspunkte** pro Zug
-- **2 Inventarplätze**
-
-### 3. Stapel vorbereiten
-- **Phase 1 Nachzugstapel:** Alle Phase 1 Landschafts-Karten mischen und als verdeckten Stapel bereitlegen
-- **Phase 2 Nachzugstapel:** Alle Phase 2 Landschafts-Karten mischen und separat als verdeckten Stapel bereitlegen
-- **Ereigniskarten:** Nach Phasen trennen und jeweils als verdeckte Stapel bereitlegen
-
-### 4. Licht-Marker
-Auf Position **30** der Licht-Leiste setzen
-
----
-
-## 🦸 DIE HELDEN
-
-### Terra 🗿 (Erde)
-**Start-Fähigkeiten:**
-- ⚒️ **Grundstein legen:** Baut Fundamente (braucht Bauplan + 2 Kristalle)
-- 🪨 **Geröll beseitigen:** Räumt Felsbrocken weg
+Ihr seid die Helden eurer Völker und Hüter der Elemente, ausgestattet mit einzigartigen Fähigkeiten. Nur durch Zusammenarbeit, kluge Entscheidungen und den Mut, unerwarteten Herausforderungen zu trotzen, könnt ihr den Turm vollenden und die Welt retten, bevor die Sphäre der Dunkelheit ewige Nacht bringt und sich immerwährende Hoffnungslosigkeit über die Welt legt.
 
-### Ignis 🔥 (Feuer)
-**Start-Fähigkeiten:**
-- ⚡ **Element aktivieren:** Aktiviert Fundamente (braucht Fragment + 1 Kristall)
-- 🌿 **Dornenwald entfernen:** Brennt Dornenwälder nieder
-
-### Lyra 💧 (Wasser)
-**Start-Fähigkeiten:**
-- ✨ **Heilende Reinigung:** Entfernt negative Effekte & Finsternis
-- 🌊 **Überflutung trockenlegen:** Macht überflutete Gebiete passierbar
-
-### Corvus 🦅 (Luft)
-**Start-Fähigkeiten:**
-- 💨 **Schnell bewegen:** 2 Felder für 1 AP
-- 👁️ **Spähen:** Deckt 2 Felder gleichzeitig auf
-
----
-
-## 🎲 SPIELABLAUF
-
-### PHASE 1: Die Suche
-**Ziel:** Findet 4 Baupläne und baut 4 Fundamente
-
-#### Zugablauf:
-1. **Spielerzug** (3 AP ausgeben)
-2. **Licht sinkt um 1** ⬇️
-3. **Nächster Spieler**
-4. Nach letztem Spieler: **Ereigniskarte ziehen**
-
-> **Wichtig:** Bei Licht 22 (−8 seit Start) erscheint das **Tor der Weisheit**!
-
-### PHASE 2: Die Jagd
-**Start:** Automatisch nach dem 4. Fundament  
-**Bonus:** +15 Licht sofort!  
-**Ziel:** Findet 4 Element-Fragmente und aktiviert sie
-
-#### Zugablauf:
-1. **Spielerzug** (3 AP ausgeben)
-2. **Licht sinkt um 1** ⬇️
-3. **⚠️ FINSTERNIS BREITET SICH AUS**
-4. **Nächster Spieler**
-5. Nach letztem Spieler: **Ereigniskarte ziehen**
-
-#### 🏆 Meilenstein-Boni
-Für jede Aktivierung eines Element-Fragments in Phase 2 erhält das Team sofort einen Bonus:
-
-| Element | Bonus | Effekt |
-|---------|-------|--------|
-| **💧 Wasser** | Segen des Lichts | +3 Licht |
-| **🔥 Feuer** | Segen des Lichts | +3 Licht |
-| **🌍 Erde** | Elementare Kraft | Alle Helden: permanent +1 AP |
-| **💨 Luft** | Elementare Kraft | Alle Helden: permanent +1 AP |
 
-*Diese Boni sind kumulativ und permanent!*
+# **Spielanleitung** {#spielanleitung}
 
----
+## **Spielziel** {#spielziel}
 
-## 🎯 AKTIONEN (je 1 AP)
+**Apeiron** ist ein kooperatives Spiel. Ihr gewinnt oder verliert gemeinsam. Das Ziel ist es, den Turm der Elemente in zwei Phasen zu vollenden:
 
-### Basis-Aktionen (kann jeder)
-| Aktion | Effekt |
-|--------|--------|
-| **Bewegen** | 1 Feld horizontal/vertikal |
-| **Entdecken** | Ziehe eine Karte vom Nachzugstapel und platziere sie auf ein angrenzendes leeres Feld |
-| **Aufnehmen** | Nimm Gegenstand ins Inventar |
-| **Ablegen** | Lege Gegenstand auf aktuelles Feld |
-| **Lernen** | Verbrauche Bauplan/Artefakt → alle am Feld lernen Fähigkeit |
-| **Lehren** | Nach Tor der Weisheit: Gib Start-Fähigkeit weiter |
+1. **Phase 1: Die Suche:** Findet die vier uralten Baupläne, um sie zu erlernen und sammelt Kristalle, um die vier Fundamente zu errichten.  
+2. **Phase 2: Die Jagd:** Sucht die vier Element-Fragmente, um die Fundamente des Turms zu aktivieren, während ihr gegen eine wachsende Finsternis ankämpft, die von der Insel Besitz ergreift.
 
-### Spezial-Aktionen (brauchen Fähigkeit)
-| Aktion | Voraussetzung | Effekt |
-|--------|---------------|--------|
-| **Schnell bewegen** | Fähigkeit | 2 Felder für 1 AP |
-| **Spähen** | Fähigkeit | Ziehe 2 Karten und platziere sie auf 2 angrenzende leere Felder |
-| **Grundstein legen** | Fähigkeit + Bauplan + 2 Kristalle | Fundament bauen (am Krater) |
-| **Element aktivieren** | Fähigkeit + Fragment + 1 Kristall | Fundament aktivieren (am Krater) |
-| **Hindernis beseitigen** | Passende Fähigkeit | Entfernt spezifisches Hindernis |
+**Sieg:** 
 
----
+Ihr gewinnt sofort, wenn das vierte Element am Turm aktiviert wurde\!
 
-## 🌑 DIE FINSTERNIS (Phase 2)
+**Niederlage:**
 
-### Ausbreitung (nach jedem Spielerzug):
-1. Start beim **Herz der Finsternis**
-2. Suche im Uhrzeigersinn das nächste platzierte, nicht-befallene Feld
-3. Drehe es um → wird zu Finsternis
-4. Befallene Felder sind **unpassierbar**
+Ihr verliert sofort, wenn der Licht-Marker auf 0 fällt\!
 
-### Immunität:
-- Krater ✓
-- Tor der Weisheit ✓
-- Leere Felder (noch nicht platzierte Karten) ✓
+## **Spielvorbereitung** {#spielvorbereitung}
 
-### Reinigung:
-Nur durch **Heilende Reinigung** möglich
+1. **Startplättchen:** Platziert das "Krater"-Plättchen in der Mitte des Spielbretts   
+2. **Heldenwahl:** Jeder Spieler wählt einen der vier Helden (Terra, Ignis, Lyra, Corvus) und nimmt sich die entsprechende Heldenkarte sowie eine Spielfigur. Alle Spieler platzieren ihre Figur auf dem Krater-Plättchen.  
+3. **Aktionspunkte (AP):** Jeder Held startet mit 3 Aktionspunkten pro Zug.  
+4. **Inventar:** Jeder Held hat 2 Inventarplätze.  
+5. **Licht-Marker:** Setzt den Licht-Marker auf den Wert 30 der Licht-Leiste.  
+6. **Landschaftskarten:** Mischt alle Landschaftskarten für Phase 1 zu einem verdeckten Stapel. Legt die Karten für Phase 2 separat bereit.  
+7. **Ereigniskarten:** Mischt die entsprechenden Ereigniskarten für Phase 1 und Phase 2 zu zwei separaten, verdeckten Stapeln.
 
----
+## **Hauptbestandteile des Spiels** {#hauptbestandteile-des-spiels}
 
-## 📋 WICHTIGE REGELN
+### **Landschaftskarten**  {#landschaftskarten}
 
-### Inventar
-- Max. 2 Gegenstände pro Held
-- Kristalle & Fragmente belegen Plätze
-- Gelernte Fähigkeiten belegen KEINE Plätze
+Im Laufe des Spiels wird die Insel Elyria Schritt für Schritt von den Helden entdeckt. Dabei werden Landschaftskarten für einen Aktionspunkt vom Nachziehstapel gezogen und vom Spieler aus gesehen \- an einem angrenzenden freien Feld horizontal oder vertikal angelegt.
 
-### Kommunikation
-- Grundsätzlich erlaubt
-- Kann durch Ereignisse verboten werden
-- Plant gemeinsam!
+folgende **Standard-Landschaften** gibt es **in beiden Phasen:**
 
-### Tor der Weisheit
-- Erscheint bei Licht 22 (−8 vom Start)
-- Durchschreiten = Held kann Start-Fähigkeiten lehren
-- Bleibt das ganze Spiel
+* Fluss  
+* Gebirge  
+* Hügel  
+* Wald
 
-### Artefakte
-- Nur im Spiel, wenn entsprechender Held NICHT mitspielt
-- Verleihen die Fähigkeiten des fehlenden Helden
-- Müssen gelernt werden (1 AP)
+**Sowohl in Phase 1 \- wie auch in Phase 2** des Spiels ist es wichtig, **Apeiron Kristalle** zu sammeln, die auf die folgenden beiden Landschaftsfelder platziert werden, sobald sie vom Nachziehstapel gezogen wurden.
 
----
+* Kristallwiese  
+* Kristallhöhle
 
-## 📊 PLÄTTCHEN-ÜBERSICHT
+In der ersten Phase ist es das Ziel die 4 Fundamente des Turms der Elemente zu errichten. Dafür sucht man zuerst die **4 Baupläne,** die aus dem **Nachziehstapel der Phase 1** gezogen werden und platziert sie darauf, um sie später zu lernen.
 
-### Phase 1 (34 Plättchen)
-- **Ressourcen:** 10× Kristallfelder (je 5 Wiese/Höhle)
-- **Landschaft:** 20× (je 5 Fluss/Gebirge/Wald/Hügel)
-- **Baupläne:** 4× (Erde/Wasser/Feuer/Luft)
-- **Special:** 1× Tor der Weisheit, 0-2× Artefakte
+* Bauplan Erde  
+* Bauplan Feuer  
+* Bauplan Wasser  
+* Bauplan Luft
 
-### Phase 2 (26 Plättchen)
-- **Landschaft:** 22× gemischt
-- **Element-Fragmente:** 4× (Hammer/Kelch/Herz/Auge)
+Eine sehr wichtige und **spezielle Landschaftskarte** im Spiel ist das 
 
----
+* Tor der Weisheit
 
-## ❓ HÄUFIGE FRAGEN
+Dieses befindet sich im **Nachziehstapel der Phase 1** und dient den Helden dazu, Meister ihres Elements zu werden, ihre angeborenen Fähigkeiten zu lehren und so an andere Spieler weiterzugeben.
 
-**F: Kann ich Fähigkeiten mehrfach lernen?**  
-A: Nein, jede Fähigkeit nur einmal pro Held.
+Wenn nicht alle 4 Helden mitspielen, wird **für jeden nicht mitspielenden Helden** eine **Artefakt-Landschaftskarte im Nachziehstapel der Phase 1** gemischt. Diese ermöglicht es den Spielern, die Fähigkeiten der fehlenden Helden zu erlernen.
 
-**F: Was passiert bei 0 AP?**  
-A: Der Zug endet, übrige AP verfallen immer.
+* Hammer der Erbauerin  
+* Kelch der Reinigung  
+* Herz des Feuers  
+* Auge des Spähers
 
-**F: Können mehrere Helden dasselbe Fragment tragen?**  
-A: Nein, jedes Fragment existiert nur einmal.
+In der zweiten Phase des Spiels müssen die **4 Element Fragmente** im Nachziehstapel der **Phase 2** gefunden werden, die auf den entsprechenden Landschaftskarten platziert werden.
 
-**F: Kann ich durch Finsternis-Felder gehen?**  
-A: Nein, sie sind komplett blockiert bis gereinigt.
+* Erd Fragment  
+* Feuer Fragment  
+* Luft Fragment  
+* Wasser Fragment
 
-**F: Was wenn der Nachzugstapel leer ist?**  
-A: In Phase 1 unmöglich (34 Karten). In Phase 2 können keine neuen Felder mehr erkundet werden.
+### **Ereigniskarten** {#ereigniskarten}
 
-**F: Sind die Meilenstein-Boni sofort aktiv?**  
-A: Ja! Sobald ein Element aktiviert wird, erhält das Team sofort den entsprechenden Bonus.
+Diese Karten werden am Ende jeder Runde gezogen und beeinflussen das Schicksal der Helden auf positive wie auch negative Weise. 
 
-**F: Kann ich mit 4 oder 5 AP durch Boni agieren?**  
-A: Ja! Die Meilenstein-Boni und manche Ereignisse können AP über 3 erhöhen.
+#### **Mögliche Negative Effekte** {#mögliche-negative-effekte}
 
----
+* **Fortschritt der Dunkelheit:** Die Sphäre rückt eine bestimmte Anzahl von Feldern vor.  
+* **Ressourcenverlust:** Helden müssen Kristalle oder Element-Fragmente abgeben.  
+* **Behinderung der Helden:** Fähigkeiten werden blockiert, Bewegungen eingeschränkt, Aktionspunkte reduziert oder die Kommunikation verboten.  
+* **Hindernisse:** Geröll, Dornenwälder oder Überflutungen blockieren den Weg.
 
-## 🏆 SIEG-STRATEGIEN
+#### **Mögliche Positive Effekte** {#mögliche-positive-effekte}
 
-### Phase 1 Tipps:
-- **Teilt euch auf:** 2 erkunden, 2 sammeln
-- **Priorität:** Baupläne > Kristalle
-- **Tor nutzen:** Sobald es erscheint, Fähigkeiten teilen!
+* **Rückschlag der Dunkelheit:** Die Sphäre wird aufgehalten oder zurückgedrängt.  
+* **Ressourcengewinn:** Helden erhalten Kristalle oder Tauschmöglichkeiten.  
+* **Zusätzliche Aktionen:** Helden erhalten zusätzliche Aktionspunkte.
 
-### Phase 2 Tipps:
-- **Zusammenbleiben:** Finsternis ist gefährlich
-- **Lyra schützen:** Ihre Reinigung ist essentiell
-- **Fragmente sichern:** Bevor Finsternis sie verschlingt
-- **Aktivierungs-Reihenfolge:** Erde/Luft zuerst für +1 AP ist oft klug
-- **Licht-Management:** Wasser/Feuer bei kritischem Licht aktivieren
+## 
 
-### Allgemein:
-- **AP sparen verboten:** Verfallen am Zugende
-- **Kommuniziert:** Plant 2-3 Züge voraus
-- **Flexibel bleiben:** Ereignisse können Pläne zerstören
+## **Spielablauf** {#spielablauf}
 
----
+### **Aktionspunkte (AP)** {#aktionspunkte-(ap)}
 
-## 📝 BEISPIELZUG
+Jeder Held erhält zu Beginn seines Zuges **3 Aktionspunkte** (oder die durch Effekte modifizierte Anzahl). Nicht verbrauchte AP verfallen am Ende des Zuges.
 
-**Situation:** Terra am Krater, 3 AP, 1 Kristall im Inventar
+### **Phase 1: Die Suche** {#phase-1:-die-suche}
 
-1. **AP 1:** Bewegen nach Norden (auf leeres Feld)
-2. **AP 2:** Entdecken - ziehe Karte vom Nachzugstapel → Kristallwiese! Platziere sie östlich
-3. **AP 3:** Bewegen auf die Kristallwiese und Kristall aufnehmen
+Ziel der ersten Phase ist es, alle Baupläne zu finden und diese zu erlernen, damit für jedes Element ein Fundament am Krater errichtet werden kann.
 
-**Licht sinkt um 1**
+In Phase 1 verläuft eine Runde in der folgenden Reihenfolge:
 
-*Nächster Spieler ist dran*
+1. Ein Spieler ist an der Reihe und **gibt seine Aktionspunkte (AP) aus**.  
+2. Wenn der Spieler seinen Zug beendet, **sinkt das Licht sofort um 1**.  
+3. Danach ist der **nächste Spieler** im Uhrzeigersinn an der Reihe.  
+4. Nachdem der letzte Spieler seinen Zug beendet hat, wird eine **Ereigniskarte vom Phase 1 Stapel gezogen und ausgeführt**.
 
----
+#### **Sonderereignis: Das Tor der Weisheit** {#sonderereignis:-das-tor-der-weisheit}
 
-## 🎴 EREIGNISKARTEN-BEISPIELE
+Sobald das Licht seit Spielbeginn um insgesamt 8 Punkte gesunken ist, erscheint das Tor der Weisheit. Eine Himmelsrichtungs-Karte wird gezogen, und das Plättchen wird auf das erste freie, an den Krater angrenzende Feld in dieser Richtung gelegt.
 
-### Phase 1 (gemischt)
-- 😊 "Sternschnuppe" → +2 Licht
-- 😟 "Nebel" → Nächste Runde: Keine Kommunikation
-- 😟 "Erdrutsch" → Geröll auf zufälligem Feld
+Befindet sich nun ein Spieler auf dem Feld “Tor der Weisheit” hat er die Möglichkeit mit 1 AP die Aktion “Tor der Weisheit durchschreiten” auszuführen. Ab diesem Zeitpunkt ist dieser Held Meister seines Elements und hat fortan die Fähigkeit zu “lehren”, um seine angeborenen Fähigkeiten anderen Helden weiterzugeben. (siehe dazu Fähigkeit lehren)
 
-### Phase 2 (intensiver)
-- 😟 "Schattensturm" → 2 zusätzliche Finsternis-Felder
-- 😊 "Lichtblitz" → 1 Finsternis-Feld reinigen
-- 😟 "Verzweiflung" → Alle Helden: −1 AP nächste Runde
+#### **Meilenstein Bonus** {#meilenstein-bonus}
 
----
+**für jedes Fundament**, das am Krater errichtet wird, erhält das Team einen Meilenstein Bonus von **\+4 Lichtpunkten**
 
-*Viel Erfolg bei eurer Mission! Möge das Licht mit euch sein!* ✨
+### **Phasenwechsel & Beginn von Phase 2** {#phasenwechsel-&-beginn-von-phase-2}
+
+Mit dem Bau des vierten Fundaments beginnt Phase 2 und der Spielablauf ändert sich dramatisch:
+
+* Das Team erhält zusätzlich sofort **\+10 Licht** Belohnung  
+* Der Stapel der **Landschaftskarten** wird durch den Stapel von **Phase 2** ersetzt.  
+* Der Stapel der **Ereigniskarten** wird durch den Stapel von **Phase 2** ersetzt.  
+* **Das Herz der Finsternis erscheint:**  
+  Wie zuvor beim Tor der Weisheit wird eine Himmelsrichtungs-Karte gezogen, um die Position für das Plättchen "Herz der Finsternis" zu bestimmen. Es wird auf das erste freie Feld neben dem Krater in der gezogenen Richtung gelegt. Dieses Plättchen ist der Ursprung der Verderbnis und kann nicht betreten werden.
+
+### **Phase 2: Die Jagd auf die Finsternis** {#phase-2:-die-jagd-auf-die-finsternis}
+
+Ab sofort breitet sich die Finsternis nach jedem einzelnen Zug aus. Die neue Reihenfolge ist:
+
+1. Ein **Spieler** ist an der Reihe und **gibt seine AP aus**.  
+2. Das **Licht sinkt um 1\.**  
+3. **Die Finsternis breitet sich aus (siehe unten).**  
+4. Der **nächste Spieler** ist an der Reihe.  
+5. Nachdem der letzte Spieler seinen Zug beendet hat, wird eine **Ereigniskarte vom Phase 2 Stapel gezogen und ausgeführt**.
+
+#### **Die Ausbreitung der Finsternis (Schritt 3 in der zweiten Spielphase)** {#die-ausbreitung-der-finsternis-(schritt-3-in-der-zweiten-spielphase)}
+
+Vom "Herz der Finsternis" ausgehend, sucht das nächstgelegene, bereits entdeckte Landschafts Plättchen im Uhrzeigersinn, das noch nicht von Finsternis erfasst wurde (auch diagonal). Dieses Landschafts-Feld wird umgedreht und ist nun mit "Finsternis" belegt. Das Feld ist nun unpassierbar und Gegenstände, die sich darauf befinden, können nicht mehr aufgenommen werden, bis es durch die Fähigkeit "Heilende Reinigung" gesäubert wird. 
+
+* Ausgangspunkt ist das nördliche Landschafts Plättchen vom Herz der Finsternis aus gesehen (12 Uhr)  
+* unentdeckte, leere Felder werden übersprungen und das darauf folgende gewählt  
+* als das nächstgelegene Feld zählt jenes, das mit der geringsten Anzahl von Bewegungs Schritten vom Ausgangspunkt aus erreichbar wäre   
+* die Landschaften “Krater” sowie “Tor der Weisheit” können nicht von Finsternis befallen werden \- sie werden, so wie unentdeckte Felder, übersprungen
+
+#### **Meilenstein Bonus** {#meilenstein-bonus-1}
+
+Für jede Aktivierung eines Element-Fragments in Phase 2 erhält das Team folgende Meilenstein Bonusse: 
+
+* Bei Aktivierung des **Wasser Elements** erhält das Team **\+4 Licht**  
+* Bei Aktivierung des **Feuer Elements** erhält das Team **\+4 Licht**  
+* **Jeder Held** hat nun permanent **\+1 AP** bei Aktivierung des **Luft Elements**  
+* J**eder Held** hat nun permanent **\+1 AP** bei Aktivierung des **Erd Elements**
+
+## **Aktionen der Helden** {#aktionen-der-helden}
+
+Die Aktionen eines Helden werden nachfolgend Basisaktionen, die jeder Held ausführen kann, und fähigkeitsbasierte Aktionen, die eine spezielle Fähigkeit erfordern, unterteilt.
+
+### **Basisaktionen** {#basisaktionen}
+
+Diese Aktionen kann jeder Held ohne spezielle Fähigkeiten ausführen. Sofern nicht anders angegeben, kostet jede Aktion **1 AP**.
+
+#### **Bewegen** {#bewegen}
+
+* **Kosten:** 1 AP  
+* **Beschreibung:** Bewege deine Heldenfigur auf ein angrenzendes (horizontal oder vertikal), bereits aufgedecktes Feld. Hindernisse können den Weg blockieren.
+
+#### **Entdecken** {#entdecken}
+
+* **Kosten:** 1 AP  
+* **Beschreibung:** Wähle ein verdecktes Feld, das an deine aktuelle Position angrenzt. Ziehe das oberste Landschaftsplättchen vom aktuellen Phasen-Stapel und lege es offen auf das gewählte Feld. Wenn das Plättchen eine Ressource enthält (z.B. Kristall, Bauplan), lege den entsprechenden Marker auf das Plättchen.
+
+#### **Gegenstand aufnehmen** {#gegenstand-aufnehmen}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss sich auf einem Feld mit einem oder mehreren Ressourcen-Markern befinden und mindestens einen freien Inventarplatz haben.  
+* **Beschreibung:** Nimm einen Ressourcen-Marker vom Feld und lege ihn auf einen freien Platz in deinem Inventar.
+
+#### **Gegenstand ablegen** {#gegenstand-ablegen}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss mindestens einen Gegenstand im Inventar haben.  
+* **Beschreibung:** Wähle einen oder mehrere Gegenstände aus deinem Inventar und lege die entsprechenden Marker auf das Feld, auf dem du dich befindest.
+
+#### **Fähigkeit lernen** {#fähigkeit-lernen}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss einen lernbaren Gegenstand im Inventar haben (Artefakt oder Bauplan).  
+* **Beschreibung:** Der Gegenstand wird aus dem Inventar entfernt (verbraucht). **Alle Helden**, die sich auf demselben Feld wie der ausführende Held befinden, erlernen die auf dem Gegenstand angegebene Fähigkeit dauerhaft.
+
+#### **Fähigkeit lehren** {#fähigkeit-lehren}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss das "Tor der Weisheit" durchschritten haben.  
+* **Beschreibung:** Der Held kann eine seiner **angeborenen** (Start-)Fähigkeiten an alle anderen am selben Feld anwesenden Helden weitergeben, die diese noch nicht besitzen.
+
+### **Fähigkeitsbasierte Aktionen** {#fähigkeitsbasierte-aktionen}
+
+Diese Aktionen erfordern eine angeborene oder erlernte Fähigkeit. Die Kosten betragen, sofern nicht anders angegeben, **1 AP**.
+
+#### **Schnell bewegen** {#schnell-bewegen}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss die Fähigkeit "Schnell bewegen" besitzen.  
+* **Beschreibung:** Bewege deine Heldenfigur bis zu zwei Felder weit (horizontal oder vertikal). Hindernisse dürfen dabei nicht durchquert werden.
+
+#### **Spähen** {#spähen}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss die Fähigkeit "Spähen" besitzen.  
+* **Beschreibung:** Decke zwei angrenzende, verdeckte Felder gleichzeitig auf, indem du zwei Landschaftsplättchen vom Stapel ziehst und platzierst.
+
+#### **Grundstein legen** {#grundstein-legen}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss sich auf dem Krater-Feld befinden, die Fähigkeit "Grundstein legen" und den passenden "Bauplan" erlernt haben sowie 2 Kristalle im Inventar besitzen.  
+* **Beschreibung:** Gib 2 Kristalle aus deinem Inventar ab. Lege den Fundament-Marker des entsprechenden Elements auf den Spielplan.
+
+#### **Element aktivieren** {#element-aktivieren}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss sich auf dem Krater-Feld befinden und die Fähigkeit „Element aktivieren“ besitzen. Zudem werden 1 Kristall und das passende Element-Fragment benötigt.  
+* **Beschreibung:** Gib 1 Kristall und das Element-Fragment ab. Das entsprechende Fundament gilt nun als aktiviert. Dies kann mächtige, permanente Boni für das gesamte Team freischalten.
+
+#### **Hindernis beseitigen** {#hindernis-beseitigen}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss sich auf einem an ein Hindernis angrenzenden Feld befinden und die spezifische Fähigkeit zur Beseitigung \- passend zum Hindernis besitzen \- also:  
+  * "Geröll beseitigen" für Geröll  
+  * “Überflutung trockenlegen” für Überflutung  
+  * “Dornenwald entfernen” für Dornenwald und   
+  * “heilende Reinigung” für Finsternis.  
+* **Beschreibung:** Entferne den Hindernis-Marker vom Spielfeld.
+
+#### **Heilende Reinigung** {#heilende-reinigung}
+
+* **Kosten:** 1 AP  
+* **Voraussetzung:** Der Held muss die Fähigkeit "Heilende Reinigung" besitzen.  
+* **Beschreibung:** Reinigt alle Helden auf demselben Feld von finsterer Magie und hebt negative Effekte wie blockierte Fähigkeiten oder erzwungenes Aussetzen auf.
+
+## 
+
+## **Die Helden von Elyria** {#die-helden-von-elyria}
+
+Jeder Held ist ein unverzichtbarer Spezialist mit einer einzigartigen Geschichte und entscheidenden Fähigkeiten.
+
+### **Terra, der Fels in der Brandung** {#terra,-der-fels-in-der-brandung}
+
+Terra ist die Verkörperung von Stärke und Loyalität. Als ehemalige Steinmetzin verließ sie ihre Heimat, um etwas Dauerhaftes zu erschaffen, anstatt das Alte zu zerstören. Ihre Haut gleicht dunklem Granit, durchzogen von moosgrünen Adern. Sie ist der unerschütterliche Anker der Gruppe.
+
+* **Angeborene Fähigkeiten:**  
+  * `Grundstein legen` \- Nur sie kann die schweren Grundsteine des Turms legen. Diese Aktion erfordert einen gelernten Bauplan und die nötigen Kristalle.  
+  * `Geröll beseitigen` \- Kann Felsbrocken und Steinschläge, die den Weg blockieren, aus dem Weg räumen.  
+* **Artefakt: Hammer der Erbauerin**  
+  * Sollte Terra nicht am Spiel teilnehmen, wird dieses Artefakt dem Stapel hinzugefügt. Findet das Team den Hammer, kann jeder Held ihre angeborenen Fähigkeiten nutzen.
+
+### **Ignis, die wandelnde Flamme** {#ignis,-die-wandelnde-flamme}
+
+Impulsiv, leidenschaftlich und voller Optimismus. Als Wächter der Vulkan-Schreine will er ein neues, reines Feuer der Hoffnung entfachen. Seine Schuppen glühen in den Farben von Lava und Gold, und kleine Flammen züngeln aus seinen Mundwinkeln, wenn er spricht.
+
+* **Angeborene Fähigkeiten:**  
+  * `Element aktivieren` \- Nur er kann die Element-Fragmente in den Fundamenten des Turms aktivieren, um ihre Macht freizusetzen.  
+  * `Dornenwald entfernen` \- Kann dichte, unpassierbare Dornenwälder niederbrennen und den Weg freimachen.  
+* **Artefakt: Herz des Feuers**  
+  * Sollte Ignis nicht am Spiel teilnehmen, wird dieses Artefakt dem Stapel hinzugefügt. Findet das Team das Herz, kann jeder Held seine angeborenen Fähigkeiten nutzen.
+
+### **Lyra, die Stimme der Gezeiten** {#lyra,-die-stimme-der-gezeiten}
+
+Weise, anmutig und voller Empathie. Als Sängerin der Gezeiten hörte sie in der Stille nach dem Krieg eine neue Melodie der Hoffnung. Ihre Haut schimmert wie Perlmutt, und sie gleitet mühelos über das Land, als schwimme sie durch Wasser, um die Verderbnis der Welt zu heilen.
+
+* **Angeborene Fähigkeiten:**  
+  * `Heilende Reinigung` \- Kann negative Effekte von Helden entfernen und von Finsternis erfüllte Felder säubern.  
+  * `Überflutung trockenlegen` \- Kann die Strömung eines überfluteten Gewässers beruhigen und das Gebiet wieder passierbar machen.  
+* **Artefakt: Kelch der Reinigung**  
+  * Sollte Lyra nicht am Spiel teilnehmen, wird dieses Artefakt dem Stapel hinzugefügt. Findet das Team den Kelch, kann jeder Held seine angeborenen Fähigkeiten nutzen.
+
+### **Corvus, der stille Beobachter** {#corvus,-der-stille-beobachter}
+
+Scharfsinnig, neugierig und ein Meister der Beobachtung. Als Kundschafter der höchsten Gipfel sah er die Torheit der Trennung und stieg herab, um den Völkern am Boden den Weg zu weisen. Sein Körper ist mit Federn in den Farben von Nacht und Dämmerung bedeckt.
+
+* **Angeborene Fähigkeiten:**  
+  * `Schnell bewegen` \- Kann sich für 1 AP bis zu zwei Felder weit bewegen.  
+  * `Spähen` \- Kann für 1 AP zwei angrenzende, verdeckte Felder gleichzeitig aufdecken.  
+* **Artefakt: Auge des Spähers**  
+  * Sollte Corvus nicht am Spiel teilnehmen, wird dieses Artefakt dem Stapel hinzugefügt. Findet das Team das Auge, kann jeder Held seine angeborenen Fähigkeiten nutzen.
+
