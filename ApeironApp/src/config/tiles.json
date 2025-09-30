@@ -105,6 +105,50 @@
       "symbol": "🖤",
       "description": "Ein Ort voller dunkler Energie",
       "effect": "triggers_dark_event"
+    },
+    "artefakt_terra": {
+      "count": 1,
+      "id": "artefakt_terra",
+      "name": "Hammer der Erbauerin",
+      "type": "artifact",
+      "color": "#ca8a04",
+      "symbol": "🔨",
+      "resource": "artefakt_terra",
+      "hero": "terra",
+      "description": "Terras Artefakt - verleiht ihre Fähigkeiten"
+    },
+    "artefakt_ignis": {
+      "count": 1,
+      "id": "artefakt_ignis",
+      "name": "Herz des Feuers",
+      "type": "artifact",
+      "color": "#ef4444",
+      "symbol": "🔥",
+      "resource": "artefakt_ignis",
+      "hero": "ignis",
+      "description": "Ignis' Artefakt - verleiht seine Fähigkeiten"
+    },
+    "artefakt_lyra": {
+      "count": 1,
+      "id": "artefakt_lyra",
+      "name": "Kelch der Reinigung",
+      "type": "artifact",
+      "color": "#3b82f6",
+      "symbol": "🏺",
+      "resource": "artefakt_lyra",
+      "hero": "lyra",
+      "description": "Lyras Artefakt - verleiht ihre Fähigkeiten"
+    },
+    "artefakt_corvus": {
+      "count": 1,
+      "id": "artefakt_corvus",
+      "name": "Auge des Spähers",
+      "type": "artifact",
+      "color": "#a78bfa",
+      "symbol": "👁️",
+      "resource": "artefakt_corvus",
+      "hero": "corvus",
+      "description": "Corvus' Artefakt - verleiht seine Fähigkeiten"
     }
   },
   "phase2": {

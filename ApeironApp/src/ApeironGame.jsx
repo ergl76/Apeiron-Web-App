@@ -474,8 +474,16 @@ function GameBoard({ gameState, onTileClick }) {
                      resource === 'bauplan_erde' ? 'Bauplan: Erde' :
                      resource === 'bauplan_wasser' ? 'Bauplan: Wasser' :
                      resource === 'bauplan_feuer' ? 'Bauplan: Feuer' :
-                     resource === 'bauplan_luft' ? 'Bauplan: Luft' : resource}>
+                     resource === 'bauplan_luft' ? 'Bauplan: Luft' :
+                     resource === 'artefakt_terra' ? 'Hammer der Erbauerin' :
+                     resource === 'artefakt_ignis' ? 'Herz des Feuers' :
+                     resource === 'artefakt_lyra' ? 'Kelch der Reinigung' :
+                     resource === 'artefakt_corvus' ? 'Auge des Spähers' : resource}>
                 {resource === 'kristall' ? '💎' :
+                 resource === 'artefakt_terra' ? '🔨' :
+                 resource === 'artefakt_ignis' ? '🔥' :
+                 resource === 'artefakt_lyra' ? '🏺' :
+                 resource === 'artefakt_corvus' ? '👁️' :
                  resource.startsWith('bauplan_') ? '📋' : '📦'}
               </div>
             ))}
@@ -611,7 +619,17 @@ const getTileColor = (tileId) => {
     fluss: 'linear-gradient(135deg, #06b6d4, #0891b2)', // Cyan gradient
     gebirge: 'linear-gradient(135deg, #71717a, #52525b)', // Stone gradient
     wald: 'linear-gradient(135deg, #22c55e, #16a34a)', // Forest gradient
-    huegel: 'linear-gradient(135deg, #84cc16, #65a30d)' // Lime gradient
+    huegel: 'linear-gradient(135deg, #84cc16, #65a30d)', // Lime gradient
+    // Artifacts
+    artefakt_terra: 'linear-gradient(135deg, #eab308, #ca8a04)', // Golden (Terra/Earth)
+    artefakt_ignis: 'linear-gradient(135deg, #f87171, #ef4444)', // Red (Ignis/Fire)
+    artefakt_lyra: 'linear-gradient(135deg, #60a5fa, #3b82f6)', // Blue (Lyra/Water)
+    artefakt_corvus: 'linear-gradient(135deg, #c084fc, #a78bfa)', // Purple (Corvus/Air)
+    // Element fragments (Phase 2)
+    element_fragment_erde: 'linear-gradient(135deg, #d97706, #92400e)', // Brown gradient
+    element_fragment_wasser: 'linear-gradient(135deg, #2563eb, #1e40af)', // Deep blue gradient
+    element_fragment_feuer: 'linear-gradient(135deg, #dc2626, #991b1b)', // Deep red gradient
+    element_fragment_luft: 'linear-gradient(135deg, #9333ea, #6b21a8)' // Deep purple gradient
   };
   return colors[tileId] || 'linear-gradient(135deg, #4b5563, #374151)';
 };
@@ -621,14 +639,24 @@ const getTileSymbol = (tileId) => {
     wiese_kristall: '💎',
     hoehle_kristall: '💎',
     bauplan_erde: '📜',
-    bauplan_wasser: '📜', 
+    bauplan_wasser: '📜',
     bauplan_feuer: '📜',
     bauplan_luft: '📜',
     fluss: '🌊',
     gebirge: '⛰️',
     wald: '🌲',
     huegel: '⛰️',
-    tor_der_weisheit: '🚪'
+    tor_der_weisheit: '🚪',
+    // Artifacts
+    artefakt_terra: '🔨',
+    artefakt_ignis: '🔥',
+    artefakt_lyra: '🏺',
+    artefakt_corvus: '👁️',
+    // Element fragments (Phase 2)
+    element_fragment_erde: '🟫',
+    element_fragment_wasser: '🟦',
+    element_fragment_feuer: '🟥',
+    element_fragment_luft: '🟪'
   };
   return symbols[tileId] || '🔍';
 };
@@ -639,13 +667,23 @@ const getTileName = (tileId) => {
     hoehle_kristall: 'Höhle',
     bauplan_erde: 'Erde',
     bauplan_wasser: 'Wasser',
-    bauplan_feuer: 'Feuer', 
+    bauplan_feuer: 'Feuer',
     bauplan_luft: 'Luft',
     fluss: 'Fluss',
     gebirge: 'Berg',
     wald: 'Wald',
     huegel: 'Hügel',
-    tor_der_weisheit: 'Tor der Weisheit'
+    tor_der_weisheit: 'Tor der Weisheit',
+    // Artifacts
+    artefakt_terra: 'Hammer der Erbauerin',
+    artefakt_ignis: 'Herz des Feuers',
+    artefakt_lyra: 'Kelch der Reinigung',
+    artefakt_corvus: 'Auge des Spähers',
+    // Element fragments (Phase 2)
+    element_fragment_erde: 'Erd-Fragment',
+    element_fragment_wasser: 'Wasser-Fragment',
+    element_fragment_feuer: 'Feuer-Fragment',
+    element_fragment_luft: 'Luft-Fragment'
   };
   return names[tileId] || tileId;
 };
@@ -657,7 +695,17 @@ const getTileResources = (tileId) => {
     bauplan_erde: ['bauplan_erde'],
     bauplan_wasser: ['bauplan_wasser'],
     bauplan_feuer: ['bauplan_feuer'],
-    bauplan_luft: ['bauplan_luft']
+    bauplan_luft: ['bauplan_luft'],
+    // Artifacts (only added to deck if heroes are missing)
+    artefakt_terra: ['artefakt_terra'],
+    artefakt_ignis: ['artefakt_ignis'],
+    artefakt_lyra: ['artefakt_lyra'],
+    artefakt_corvus: ['artefakt_corvus'],
+    // Element fragments (Phase 2)
+    element_fragment_erde: ['element_fragment_erde'],
+    element_fragment_wasser: ['element_fragment_wasser'],
+    element_fragment_feuer: ['element_fragment_feuer'],
+    element_fragment_luft: ['element_fragment_luft']
   };
   return resourceTiles[tileId] || [];
 };
@@ -677,11 +725,24 @@ function GameScreen({ gameData, onNewGame }) {
   const [gameState, setGameState] = useState(() => {
     const phase1TileDeck = Object.entries(tilesConfig.phase1).flatMap(([tileId, config]) => {
       if (tileId === 'herz_finster') return [];
+      // Skip artifact tiles in initial deck creation (they will be added based on missing heroes)
+      if (tileId.startsWith('artefakt_')) return [];
       return Array(config.count).fill(tileId);
     });
 
+    // Add artifacts for missing heroes
+    const allHeroes = ['terra', 'ignis', 'lyra', 'corvus'];
+    const missingHeroes = allHeroes.filter(heroId =>
+      !gameData.selectedCharacters.includes(heroId)
+    );
+
+    // Add one artifact card per missing hero
+    const artifacts = missingHeroes.map(heroId => `artefakt_${heroId}`);
+    const completeDeck = [...phase1TileDeck, ...artifacts];
+
     return {
       round: 1,
+      phase: 1,
       light: gameRules.light.startValue,
       currentPlayerIndex: 0,
       players: gameData.selectedCharacters.map((heroId, index) => ({
@@ -697,7 +758,8 @@ function GameScreen({ gameData, onNewGame }) {
                       heroes[heroId].element === 'water' ? ['reinigen', 'fluss_freimachen', 'aufdecken'] :
                       ['spaehen', 'schnell_bewegen', 'aufdecken'], // air/corvus
         element: heroes[heroId].element,
-        isMaster: false
+        isMaster: false,
+        artifactSkills: [] // Track skills learned via artifacts (cannot be taught)
       })),
       board: {
         '4,4': { id: 'krater', x: 4, y: 4, resources: [] }
@@ -712,7 +774,7 @@ function GameScreen({ gameData, onNewGame }) {
       currentEvent: null,
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
       scoutingMode: { active: false, availablePositions: [], selectedPositions: [], maxSelections: 2 },
-      tileDeck: phase1TileDeck.sort(() => Math.random() - 0.5),
+      tileDeck: completeDeck.sort(() => Math.random() - 0.5),
       actionBlockers: [],
       isEventTriggering: false,
       roundCompleted: false
@@ -780,10 +842,12 @@ function GameScreen({ gameData, onNewGame }) {
 
     if (!tile && gameState.tileDeck.length > 0 && currentPlayer.ap > 0 && isAdjacentToPlayer && !isDiscoverBlocked) {
       // Discover new tile
-      const newTileId = gameState.tileDeck.pop();
-      const [x, y] = position.split(',').map(Number);
-      
       setGameState(prev => {
+        // Draw tile from deck
+        const newTileDeck = [...prev.tileDeck];
+        const newTileId = newTileDeck.pop();
+        const [x, y] = position.split(',').map(Number);
+
         const newPlayers = prev.players.map((player, index) =>
           index === prev.currentPlayerIndex
             ? { ...player, ap: player.ap - 1 }
@@ -793,7 +857,7 @@ function GameScreen({ gameData, onNewGame }) {
         // Handle automatic turn transition
         const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-        console.log(`📝 handleTileClick SETTING STATE: roundCompleted=${roundCompleted}, newRound=${newRound}, from round ${prev.round}`);
+        console.log(`📝 handleTileClick DISCOVERED: ${newTileId} at ${position}. Deck size: ${newTileDeck.length}. Round: ${newRound}`);
         return {
           ...prev,
           board: {
@@ -805,6 +869,7 @@ function GameScreen({ gameData, onNewGame }) {
               resources: getTileResources(newTileId)
             }
           },
+          tileDeck: newTileDeck,
           players: updatedPlayers || newPlayers,
           currentPlayerIndex: nextPlayerIndex,
           round: newRound,
@@ -1939,7 +2004,7 @@ function GameScreen({ gameData, onNewGame }) {
     if (kristallCount < 2) return;
 
     // Must have at least one learned foundation building skill
-    const availableBlueprints = currentPlayer.learnedSkills.filter(skill => skill.endsWith('_fundament_bauen'));
+    const availableBlueprints = currentPlayer.learnedSkills.filter(skill => skill.startsWith('kenntnis_bauplan_'));
     if (availableBlueprints.length === 0) return;
 
     // If no specific foundation type provided, try to determine from available blueprints
@@ -1949,10 +2014,10 @@ function GameScreen({ gameData, onNewGame }) {
     if (foundationType) {
       // Specific foundation type requested
       const blueprintMap = {
-        'erde': 'erde_fundament_bauen',
-        'feuer': 'feuer_fundament_bauen',
-        'wasser': 'wasser_fundament_bauen',
-        'luft': 'luft_fundament_bauen'
+        'erde': 'kenntnis_bauplan_erde',
+        'feuer': 'kenntnis_bauplan_feuer',
+        'wasser': 'kenntnis_bauplan_wasser',
+        'luft': 'kenntnis_bauplan_luft'
       };
       blueprintToUse = blueprintMap[foundationType];
       elementToAdd = foundationType;
@@ -1963,10 +2028,10 @@ function GameScreen({ gameData, onNewGame }) {
       // Use first available blueprint
       blueprintToUse = availableBlueprints[0];
       const elementMap = {
-        'erde_fundament_bauen': 'erde',
-        'feuer_fundament_bauen': 'feuer',
-        'wasser_fundament_bauen': 'wasser',
-        'luft_fundament_bauen': 'luft'
+        'kenntnis_bauplan_erde': 'erde',
+        'kenntnis_bauplan_feuer': 'feuer',
+        'kenntnis_bauplan_wasser': 'wasser',
+        'kenntnis_bauplan_luft': 'luft'
       };
       elementToAdd = elementMap[blueprintToUse];
     }
@@ -2006,12 +2071,21 @@ function GameScreen({ gameData, onNewGame }) {
 
       let newPhase = prev.phase;
       let lightBonus = gameRules.foundations.lightBonusPerFoundation; // +4 Light bonus per foundation
+      let newTileDeck = prev.tileDeck;
 
       // Check for Phase 2 transition (all 4 foundations built)
       if (newTower.foundations.length === 4 && prev.phase === 1) {
         newPhase = 2;
         lightBonus += 10; // Additional +10 Light bonus for Phase 2 transition
+
+        // Replace tile deck with Phase 2 deck (from tiles.json)
+        const phase2TileDeck = Object.entries(tilesConfig.phase2).flatMap(([tileId, config]) => {
+          return Array(config.count).fill(tileId);
+        });
+        newTileDeck = phase2TileDeck.sort(() => Math.random() - 0.5);
+
         console.log(`🎉 Phase 2 transition! All foundations built, +${gameRules.foundations.lightBonusPerFoundation + 10} total Light bonus`);
+        console.log(`🃏 Phase 2 deck created with ${newTileDeck.length} tiles`);
       } else {
         console.log(`🏗️ Foundation built! +${gameRules.foundations.lightBonusPerFoundation} Light bonus`);
       }
@@ -2024,6 +2098,7 @@ function GameScreen({ gameData, onNewGame }) {
         players: updatedPlayers || newPlayers,
         tower: newTower,
         phase: newPhase,
+        tileDeck: newTileDeck,
         actionBlockers: actionBlockers,
         currentPlayerIndex: nextPlayerIndex,
         round: newRound,
@@ -2153,11 +2228,13 @@ function GameScreen({ gameData, onNewGame }) {
           // Handle automatic turn transition with the correct signature
           const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
+          console.log(`🔍 SCOUTING COMPLETE: Revealed ${newSelectedPositions.length} tiles. Deck size: ${newTileDeck.length}`);
+
           return {
             ...prev,
             board: newBoard,
             players: updatedPlayers || newPlayers,
-            tileDeck: prev.tileDeck,
+            tileDeck: newTileDeck,
             currentPlayerIndex: nextPlayerIndex,
             round: newRound,
             actionBlockers: actionBlockers,
@@ -2325,19 +2402,19 @@ function GameScreen({ gameData, onNewGame }) {
       const blueprintToUse = availableBlueprints[0];
       let foundationSkill = '';
 
-      // Each blueprint teaches the ability to build the corresponding foundation at the crater
+      // Each blueprint teaches the knowledge skill (matches skills.json IDs)
       switch (blueprintToUse) {
         case 'bauplan_erde':
-          foundationSkill = 'erde_fundament_bauen';
+          foundationSkill = 'kenntnis_bauplan_erde';
           break;
         case 'bauplan_wasser':
-          foundationSkill = 'wasser_fundament_bauen';
+          foundationSkill = 'kenntnis_bauplan_wasser';
           break;
         case 'bauplan_feuer':
-          foundationSkill = 'feuer_fundament_bauen';
+          foundationSkill = 'kenntnis_bauplan_feuer';
           break;
         case 'bauplan_luft':
-          foundationSkill = 'luft_fundament_bauen';
+          foundationSkill = 'kenntnis_bauplan_luft';
           break;
       }
 
@@ -2387,6 +2464,104 @@ function GameScreen({ gameData, onNewGame }) {
     });
   };
 
+  const handleLearnArtifact = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Check if player has artifacts in inventory and has AP
+    const availableArtifacts = currentPlayer.inventory.filter(item =>
+      item.startsWith('artefakt_')
+    );
+    if (availableArtifacts.length === 0 || currentPlayer.ap < 1) return;
+
+    setGameState(prev => {
+      const artifactToUse = availableArtifacts[0];
+      const heroId = artifactToUse.replace('artefakt_', '');
+
+      // Map hero IDs to their innate skills
+      const heroSkillsMap = {
+        'terra': ['grundstein_legen', 'geroell_beseitigen'],
+        'ignis': ['element_aktivieren', 'dornen_entfernen'],
+        'lyra': ['reinigen', 'fluss_freimachen'],
+        'corvus': ['spaehen', 'schnell_bewegen']
+      };
+
+      // Get innate skills from the artifact's hero
+      const artifactSkills = heroSkillsMap[heroId] || [];
+
+      console.log(`📚 Learning artifact for hero: ${heroId}, skills:`, artifactSkills);
+      console.log(`📍 Current player position: ${currentPlayer.position}`);
+      console.log(`👥 All players:`, prev.players.map(p => `${p.name}@${p.position}`));
+
+      // Find all players on the same position
+      const playersOnSamePosition = prev.players.filter(
+        player => player.position === currentPlayer.position
+      );
+
+      console.log(`✨ Players on same position (${currentPlayer.position}):`, playersOnSamePosition.map(p => p.name));
+
+      const newPlayers = prev.players.map(player => {
+        if (player.position === currentPlayer.position) {
+          // Add artifact skills to learned skills (avoid duplicates)
+          const newSkills = artifactSkills.filter(
+            skill => !player.learnedSkills.includes(skill)
+          );
+          const updatedSkills = [...player.learnedSkills, ...newSkills];
+
+          console.log(`🎓 ${player.name}: adding ${newSkills.length} new skills:`, newSkills);
+          console.log(`   Before:`, player.learnedSkills);
+          console.log(`   After:`, updatedSkills);
+
+          // Mark these skills as artifact-learned (cannot be taught)
+          const updatedArtifactSkills = [
+            ...(player.artifactSkills || []),
+            ...newSkills
+          ];
+
+          let updatedInventory = player.inventory;
+          let updatedAp = player.ap;
+
+          // If this is the current player, consume the artifact and spend AP
+          if (player.id === currentPlayer.id) {
+            updatedInventory = [...player.inventory];
+            const artifactIndex = updatedInventory.findIndex(
+              item => item === artifactToUse
+            );
+            if (artifactIndex !== -1) {
+              updatedInventory.splice(artifactIndex, 1);
+            }
+            updatedAp = player.ap - 1;
+            console.log(`💰 ${player.name}: Artifact consumed, AP: ${player.ap} -> ${updatedAp}`);
+          }
+
+          return {
+            ...player,
+            learnedSkills: updatedSkills,
+            artifactSkills: updatedArtifactSkills,
+            inventory: updatedInventory,
+            ap: updatedAp
+          };
+        }
+        return player;
+      });
+
+      // Handle automatic turn transition
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement,
+              roundCompleted, updatedPlayers } = handleAutoTurnTransition(
+        newPlayers, prev.currentPlayerIndex, prev.round, prev
+      );
+
+      return {
+        ...prev,
+        players: updatedPlayers || newPlayers,
+        currentPlayerIndex: nextPlayerIndex,
+        round: newRound,
+        actionBlockers: actionBlockers,
+        light: Math.max(0, prev.light - lightDecrement),
+        roundCompleted: roundCompleted || false
+      };
+    });
+  };
+
   const handleMasterLehren = (skillToTeach) => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
@@ -2402,6 +2577,12 @@ function GameScreen({ gameData, onNewGame }) {
     };
 
     const playerInnateSkills = innateSkills[currentPlayer.element] || [];
+
+    // IMPORTANT: Cannot teach artifact-learned skills
+    if (currentPlayer.artifactSkills && currentPlayer.artifactSkills.includes(skillToTeach)) {
+      console.log('❌ Cannot teach artifact-learned skills:', skillToTeach);
+      return;
+    }
 
     // Must have the skill to teach (must be an innate skill)
     if (!playerInnateSkills.includes(skillToTeach)) return;
@@ -2546,7 +2727,7 @@ function GameScreen({ gameData, onNewGame }) {
     const canCollect = currentTile?.resources?.length > 0 && 
                       currentPlayer.inventory.length < currentPlayer.maxInventory && 
                       currentPlayer.ap > 0;
-    const availableFoundationBlueprints = currentPlayer.learnedSkills.filter(skill => skill.endsWith('_fundament_bauen'));
+    const availableFoundationBlueprints = currentPlayer.learnedSkills.filter(skill => skill.startsWith('kenntnis_bauplan_'));
     const canBuildFoundation = currentPlayer.position === '4,4' &&
                               currentPlayer.learnedSkills.includes('grundstein_legen') &&
                               currentPlayer.inventory.filter(item => item === 'kristall').length >= 2 &&
@@ -2562,7 +2743,8 @@ function GameScreen({ gameData, onNewGame }) {
                     gameState.tileDeck.length > 0 &&
                     !isScoutBlocked &&
                     !areSkillsBlocked;
-    const canLearn = currentPlayer.inventory.some(item => item.startsWith('bauplan_')) &&
+    const canLearn = (currentPlayer.inventory.some(item => item.startsWith('bauplan_')) ||
+                     currentPlayer.inventory.some(item => item.startsWith('artefakt_'))) &&
                     currentPlayer.ap > 0 &&
                     !areSkillsBlocked;
     
@@ -2726,10 +2908,10 @@ function GameScreen({ gameData, onNewGame }) {
                 </div>
                 {availableFoundationBlueprints.map(blueprint => {
                   const elementMap = {
-                    'erde_fundament_bauen': { name: 'Erde', emoji: '🗿', element: 'erde', color: '#ca8a04' },
-                    'feuer_fundament_bauen': { name: 'Feuer', emoji: '🔥', element: 'feuer', color: '#ef4444' },
-                    'wasser_fundament_bauen': { name: 'Wasser', emoji: '💧', element: 'wasser', color: '#3b82f6' },
-                    'luft_fundament_bauen': { name: 'Luft', emoji: '💨', element: 'luft', color: '#10b981' }
+                    'kenntnis_bauplan_erde': { name: 'Erde', emoji: '🗿', element: 'erde', color: '#ca8a04' },
+                    'kenntnis_bauplan_feuer': { name: 'Feuer', emoji: '🔥', element: 'feuer', color: '#ef4444' },
+                    'kenntnis_bauplan_wasser': { name: 'Wasser', emoji: '💧', element: 'wasser', color: '#3b82f6' },
+                    'kenntnis_bauplan_luft': { name: 'Luft', emoji: '💨', element: 'luft', color: '#10b981' }
                   };
                   const foundationInfo = elementMap[blueprint];
                   const alreadyBuilt = gameState.tower.foundations.includes(foundationInfo.element);
@@ -2804,15 +2986,29 @@ function GameScreen({ gameData, onNewGame }) {
         )}
 
         {canLearn && (
-          <button 
-            onClick={handleLearn}
-            style={{ 
+          <button
+            onClick={() => {
+              // Check if we have artifacts or blueprints
+              const hasArtifacts = currentPlayer.inventory.some(item =>
+                item.startsWith('artefakt_')
+              );
+              const hasBlueprints = currentPlayer.inventory.some(item =>
+                item.startsWith('bauplan_')
+              );
+
+              if (hasArtifacts) {
+                handleLearnArtifact();
+              } else if (hasBlueprints) {
+                handleLearn();
+              }
+            }}
+            style={{
               backgroundColor: '#8b5cf6',
               color: 'white',
-              padding: '10px 12px', 
-              borderRadius: '8px', 
+              padding: '10px 12px',
+              borderRadius: '8px',
               border: '2px solid #a78bfa',
-              fontWeight: 'bold', 
+              fontWeight: 'bold',
               cursor: 'pointer',
               fontSize: '0.8rem',
               transition: 'all 0.2s ease-in-out',
@@ -2820,7 +3016,11 @@ function GameScreen({ gameData, onNewGame }) {
               gridColumn: '1 / -1',
               marginBottom: '0.5rem'
             }}
-            title="Lerne Fähigkeiten von verfügbaren Bauplänen (alle Spieler auf diesem Feld)"
+            title={
+              currentPlayer.inventory.some(item => item.startsWith('artefakt_'))
+                ? 'Artefakt lernen (1 AP) - ALLE Spieler am selben Feld lernen die Fähigkeiten'
+                : 'Bauplan lernen (1 AP) - ALLE Spieler am selben Feld lernen die Fähigkeit'
+            }
           >
             📚 Lernen (1 AP)
           </button>
@@ -3217,6 +3417,10 @@ function GameScreen({ gameData, onNewGame }) {
                     title={`${item} ablegen`}
                   >
                     {item === 'kristall' ? '💎' :
+                     item === 'artefakt_terra' ? '🔨' :
+                     item === 'artefakt_ignis' ? '🔥' :
+                     item === 'artefakt_lyra' ? '🏺' :
+                     item === 'artefakt_corvus' ? '👁️' :
                      item.startsWith('bauplan_') ? '📜' :
                      '🎁'} {item}
                   </button>
@@ -3362,6 +3566,9 @@ function GameScreen({ gameData, onNewGame }) {
                     <div style={{ fontSize: '0.7rem', color: '#d1d5db' }}>
                       AP: {player.ap}/{player.maxAp}
                     </div>
+                    <div style={{ fontSize: '0.7rem', color: '#a78bfa', marginLeft: 'auto' }}>
+                      Skills: {player.learnedSkills.length}
+                    </div>
                   </div>
                   
                   {/* Active Effects */}
@@ -3455,19 +3662,28 @@ function GameScreen({ gameData, onNewGame }) {
                             transition: 'all 0.2s ease-in-out',
                             boxShadow: isEmpty ? 'inset 0 2px 4px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.2)'
                           }}
-                          title={isEmpty ? 'Leerer Inventar-Slot' : 
+                          title={isEmpty ? 'Leerer Inventar-Slot' :
                                 item === 'kristall' ? 'Apeiron-Kristall' :
                                 item === 'bauplan_erde' ? 'Bauplan: Erde' :
                                 item === 'bauplan_wasser' ? 'Bauplan: Wasser' :
                                 item === 'bauplan_feuer' ? 'Bauplan: Feuer' :
                                 item === 'bauplan_luft' ? 'Bauplan: Luft' :
+                                item === 'artefakt_terra' ? 'Hammer der Erbauerin' :
+                                item === 'artefakt_ignis' ? 'Herz des Feuers' :
+                                item === 'artefakt_lyra' ? 'Kelch der Reinigung' :
+                                item === 'artefakt_corvus' ? 'Auge des Spähers' :
                                 item}
                         >
                           {isEmpty ? (
                             <div style={{ width: '8px', height: '8px', backgroundColor: '#6b7280', borderRadius: '2px' }}></div>
                           ) : (
                             <span style={{ color: 'white', fontWeight: 'bold' }}>
-                              {item === 'kristall' ? '💎' : item.startsWith('bauplan_') ? '📋' : '📦'}
+                              {item === 'kristall' ? '💎' :
+                               item === 'artefakt_terra' ? '🔨' :
+                               item === 'artefakt_ignis' ? '🔥' :
+                               item === 'artefakt_lyra' ? '🏺' :
+                               item === 'artefakt_corvus' ? '👁️' :
+                               item.startsWith('bauplan_') ? '📋' : '📦'}
                             </span>
                           )}
                         </div>
@@ -3475,46 +3691,106 @@ function GameScreen({ gameData, onNewGame }) {
                     })}
                   </div>
                   
-                  {/* Skills indicator */}
-                  <div style={{ 
-                    fontSize: '0.75rem', 
-                    color: '#fbbf24', 
-                    marginTop: '6px',
-                    display: 'flex',
-                    gap: '4px',
-                    flexWrap: 'wrap'
-                  }}>
-                    {player.learnedSkills.filter(skill => skill !== 'aufdecken').map((skill, index) => {
-                      const skillEmojis = {
-                        'grundstein_legen': '🧱',
-                        'geroell_beseitigen': '⛏️',
-                        'spaehen': '👁️',
-                        'schnell_bewegen': '💨',
-                        'element_aktivieren': '🔥',
-                        'dornen_entfernen': '🌿',
-                        'reinigen': '💧',
-                        'fluss_freimachen': '🌊',
-                        'erde_fundament_bauen': '🗿',
-                        'feuer_fundament_bauen': '🔥',
-                        'wasser_fundament_bauen': '💧',
-                        'luft_fundament_bauen': '💨',
-                        'lehren': '🎓'
-                      };
-                      return (
-                        <span 
-                          key={skill}
-                          style={{
-                            backgroundColor: 'rgba(251, 191, 36, 0.2)',
-                            padding: '2px 4px',
-                            borderRadius: '3px',
-                            fontSize: '0.7rem'
-                          }}
-                          title={skill.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        >
-                          {skillEmojis[skill] || '⚡'}
-                        </span>
+                  {/* Skills indicator - Split into Abilities and Knowledge */}
+                  <div style={{ marginTop: '6px' }}>
+                    {/* Abilities (Real Skills) */}
+                    {(() => {
+                      const abilities = player.learnedSkills.filter(skill =>
+                        skill !== 'aufdecken' && !skill.startsWith('kenntnis_bauplan_')
                       );
-                    })}
+
+                      if (abilities.length === 0) return null;
+
+                      return (
+                        <div style={{ marginBottom: '4px' }}>
+                          <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginBottom: '2px' }}>
+                            Fähigkeiten:
+                          </div>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#fbbf24',
+                            display: 'flex',
+                            gap: '4px',
+                            flexWrap: 'wrap'
+                          }}>
+                            {abilities.map((skill) => {
+                              const skillEmojis = {
+                                'grundstein_legen': '🧱',
+                                'geroell_beseitigen': '⛏️',
+                                'spaehen': '👁️',
+                                'schnell_bewegen': '💨',
+                                'element_aktivieren': '🔥',
+                                'dornen_entfernen': '🌿',
+                                'reinigen': '💧',
+                                'fluss_freimachen': '🌊',
+                                'lehren': '🎓'
+                              };
+                              return (
+                                <span
+                                  key={skill}
+                                  style={{
+                                    backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                                    padding: '2px 4px',
+                                    borderRadius: '3px',
+                                    fontSize: '0.7rem'
+                                  }}
+                                  title={skill.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                >
+                                  {skillEmojis[skill] || '⚡'}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Knowledge (Foundation Building) */}
+                    {(() => {
+                      const knowledge = player.learnedSkills.filter(skill =>
+                        skill.startsWith('kenntnis_bauplan_')
+                      );
+
+                      if (knowledge.length === 0) return null;
+
+                      return (
+                        <div>
+                          <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginBottom: '2px' }}>
+                            Wissen:
+                          </div>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#a78bfa',
+                            display: 'flex',
+                            gap: '4px',
+                            flexWrap: 'wrap'
+                          }}>
+                            {knowledge.map((skill) => {
+                              const knowledgeEmojis = {
+                                'kenntnis_bauplan_erde': '🗿',
+                                'kenntnis_bauplan_feuer': '🔥',
+                                'kenntnis_bauplan_wasser': '💧',
+                                'kenntnis_bauplan_luft': '💨'
+                              };
+                              return (
+                                <span
+                                  key={skill}
+                                  style={{
+                                    backgroundColor: 'rgba(167, 139, 250, 0.2)',
+                                    padding: '2px 4px',
+                                    borderRadius: '3px',
+                                    fontSize: '0.7rem'
+                                  }}
+                                  title={skill.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                >
+                                  {knowledgeEmojis[skill] || '📚'}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );
