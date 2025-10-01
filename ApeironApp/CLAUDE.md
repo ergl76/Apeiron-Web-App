@@ -72,12 +72,13 @@
 - [x] 2025-10-01 Artefakte-Platzierung auf Tor der Weisheit beim Phase-Wechsel
 
 ## =� In Arbeit
-- [ ] **FINAL POLISH: Game Completion & Testing** (90% done)
-  - Status: 🎯 MAJOR SYSTEMS COMPLETE - All core game mechanics implemented
-  - Foundation Building: ✅ Complete with Phase 2 transition
-  - Tor der Weisheit: ✅ Complete with master transformation and teaching system
-  - Game Rules: ✅ Configurable via gameRules.json
-  - Testing: 🔍 Final gameplay validation and polish required
+- [ ] **TESTING: Herz der Finsternis System** (Implementation complete, testing pending)
+  - Status: ⚠️ IMPLEMENTATION COMPLETE - Gameplay validation erforderlich
+  - Herz der Finsternis Platzierung: ✅ Implementiert, ⚠️ Testing offen
+  - Spiral-Algorithmus Ausbreitung: ✅ Implementiert, ⚠️ Testing offen
+  - Movement/Resource Blockierung: ✅ Implementiert, ⚠️ Testing offen
+  - Modal-Sequenz: ✅ Implementiert, ⚠️ Testing offen
+  - Validation: 🔍 Vollständiger Durchspielen von Phase 1 → Phase 2 → Finsternis erforderlich
 
 ## =� N�chste Schritte (Priorit�t)
 
@@ -203,9 +204,13 @@ npx cap init
 8. **[✅]** Phase 2 Tile Deck - Automatischer Wechsel bei 4 Fundamenten
 9. **[✅]** Element-Fragmente - Im Phase 2 Deck integriert
 10. **[✅]** tileDeck Bug - Immutable Updates korrekt implementiert
+11. **[✅]** Phase 2 Transition Modal - Epische Erfolgsmeldung beim Phasenübergang
+12. **[✅]** Element-Aktivierung System - Vollständig mit configurable bonuses
+13. **[✅]** Herz der Finsternis System - Platzierung + Spiral-Algorithmus (763 Zeilen Code)
+14. **[⚠️]** Herz der Finsternis Testing - Implementation complete, Gameplay-Test ausstehend
 
 ## = Wichtige Dateien
-- `src/ApeironGame.jsx` - Hauptspiel-Komponente (~1200+ Zeilen, komplette Spiellogik)
+- `src/ApeironGame.jsx` - Hauptspiel-Komponente (~5400+ Zeilen nach Herz der Finsternis, komplette Spiellogik)
 - `src/utils/GameManager.ts` - Game Engine Klasse (teilweise implementiert)
 - `src/types/index.ts` - TypeScript Interface Definitionen
 - `src/components/GameBoard.tsx` - Spielbrett-Komponente
@@ -259,6 +264,11 @@ npx cap init
   - Element-Fragmente: ✅
   - Darkness Spreading: ✅
 - **Impact:** Das gruseligste und komplexeste Feature des Spiels ist DONE! 763 neue Zeilen.
+- ⚠️ **TESTING AUSSTEHEND:** Vollständiger Gameplay-Test von Phase 2 Übergang bis Finsternis-Ausbreitung erforderlich
+  - Herz der Finsternis Platzierung testen
+  - Spiral-Algorithmus Ausbreitung verifizieren
+  - Movement/Resource Blockierung validieren
+  - Modal-Sequenz (Phase Transition → Heart Announcement) prüfen
 - **Next:** Win/Loss Conditions (P0 - Kritisch für Spielende)
 
 ### Session 2025-10-01 (Abend - PHASE 2 ÜBERGANGS-MODAL! 🌟)
