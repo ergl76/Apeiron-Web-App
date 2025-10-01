@@ -459,7 +459,7 @@ npx cap init
 ## =� Metriken
 - **Tests:** 0 (keine Test-Dateien vorhanden)
 - **Coverage:** N/A
-- **Build Size:** ~3700 Zeilen ApeironGame.jsx + ~680 andere = 4380 total LOC
+- **Build Size:** ~4179 Zeilen ApeironGame.jsx + ~680 andere = 4859 total LOC
 - **Performance:** Nicht gemessen
 - **Letzter Commit:** Phase 2 Übergangs-Modal mit epischer Erfolgsmeldung
 - **Branch:** master
