@@ -387,6 +387,20 @@ function GameBoard({ gameState, onTileClick }) {
         onClick={() => onTileClick(position)}
         style={tileStyle}
       >
+        {/* Debug: Show coordinates on every tile */}
+        <div style={{
+          position: 'absolute',
+          top: '2px',
+          left: '2px',
+          fontSize: '8px',
+          color: '#9ca3af',
+          fontWeight: 'bold',
+          zIndex: 1000,
+          textShadow: '0 0 2px black'
+        }}>
+          {position}
+        </div>
+
         {/* Krater */}
         {isKrater && (
           <>
@@ -815,7 +829,7 @@ function GameScreen({ gameData, onNewGame }) {
         artifactSkills: [] // Track skills learned via artifacts (cannot be taught)
       })),
       board: {
-        '4,4': { id: 'krater', x: 4, y: 4, resources: [] }
+        '4,4': { id: 'krater', x: 4, y: 4, resources: [], revealed: true }
       },
       tower: { foundations: [], activatedElements: [] },
       torDerWeisheit: {
@@ -922,7 +936,12 @@ function GameScreen({ gameData, onNewGame }) {
         );
 
         // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+        // Apply darkness spread if needed
+        const updatedDarkTiles = nextDarkPos
+          ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+          : prev.herzDerFinsternis.darkTiles || [];
 
         console.log(`📝 handleTileClick DISCOVERED: ${newTileId} at ${position}. Deck size: ${newTileDeck.length}. Round: ${newRound}`);
         return {
@@ -933,11 +952,16 @@ function GameScreen({ gameData, onNewGame }) {
               id: newTileId,
               x,
               y,
-              resources: getTileResources(newTileId)
+              resources: getTileResources(newTileId),
+              revealed: true
             }
           },
           tileDeck: newTileDeck,
           players: updatedPlayers || newPlayers,
+          herzDerFinsternis: {
+            ...prev.herzDerFinsternis,
+            darkTiles: updatedDarkTiles
+          },
           currentPlayerIndex: nextPlayerIndex,
           round: newRound,
           actionBlockers: actionBlockers,
@@ -978,9 +1002,14 @@ function GameScreen({ gameData, onNewGame }) {
             ? { ...player, position, ap: player.ap - 1 }
             : player
         );
-        
+
         // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+        // Apply darkness spread if needed
+        const updatedDarkTiles = nextDarkPos
+          ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+          : prev.herzDerFinsternis.darkTiles || [];
 
         return {
           ...prev,
@@ -989,7 +1018,11 @@ function GameScreen({ gameData, onNewGame }) {
           round: newRound,
           actionBlockers: actionBlockers,
           light: Math.max(0, prev.light - lightDecrement),
-          roundCompleted: roundCompleted || false
+          roundCompleted: roundCompleted || false,
+          herzDerFinsternis: {
+            ...prev.herzDerFinsternis,
+            darkTiles: updatedDarkTiles
+          }
         };
       });
     }
@@ -1049,7 +1082,12 @@ function GameScreen({ gameData, onNewGame }) {
         }
       };
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -1060,7 +1098,11 @@ function GameScreen({ gameData, onNewGame }) {
         actionBlockers: actionBlockers,
         light: Math.max(0, prev.light - lightDecrement),
         currentEvent: null, // Close any selection modal
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -1092,7 +1134,12 @@ function GameScreen({ gameData, onNewGame }) {
         }
       };
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -1103,7 +1150,11 @@ function GameScreen({ gameData, onNewGame }) {
         actionBlockers: actionBlockers,
         light: Math.max(0, prev.light - lightDecrement),
         currentEvent: null, // Close the selection modal
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -1174,7 +1225,12 @@ function GameScreen({ gameData, onNewGame }) {
       };
       
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -1184,7 +1240,11 @@ function GameScreen({ gameData, onNewGame }) {
         round: newRound,
         actionBlockers: actionBlockers,
         light: Math.max(0, prev.light - lightDecrement),
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -1298,7 +1358,8 @@ function GameScreen({ gameData, onNewGame }) {
                 id: 'tor_der_weisheit',
                 x: parseInt(torPosition.split(',')[0]),
                 y: parseInt(torPosition.split(',')[1]),
-                resources: []
+                resources: [],
+                revealed: true
               }
             }
           };
@@ -1369,7 +1430,8 @@ function GameScreen({ gameData, onNewGame }) {
         actionBlockers: prevState.actionBlockers || [],
         roundCompleted: false,
         lightDecrement: 0,
-        updatedPlayers: players
+        updatedPlayers: players,
+        spreadDarkness: false
       };
     }
     let lightDecrement = 0;
@@ -1379,13 +1441,12 @@ function GameScreen({ gameData, onNewGame }) {
       // Player completed their turn - decrease light by 1
       lightDecrement = 1;
 
-      // Phase 2: Spread darkness after every player turn
-      if (prevState.phase === 2 && prevState.herzDerFinsternis.triggered) {
-        console.log('☠️ Player turn completed in Phase 2 - triggering darkness spread');
-        // Use setTimeout to ensure state update happens after turn transition
-        setTimeout(() => {
-          spreadDarkness();
-        }, 100);
+      // Phase 2: Calculate darkness spread position
+      const shouldSpreadDarkness = prevState.phase === 2 && prevState.herzDerFinsternis.triggered;
+      const nextDarkPos = shouldSpreadDarkness ? calculateNextDarknessPosition(prevState) : null;
+
+      if (shouldSpreadDarkness && nextDarkPos) {
+        console.log(`☠️ Player turn completed in Phase 2 - darkness will spread to ${nextDarkPos}`);
       }
 
       // Check if all other players also have 0 AP.
@@ -1477,7 +1538,8 @@ function GameScreen({ gameData, onNewGame }) {
           actionBlockers: activeBlockers,
           roundCompleted: shouldTriggerEvent,
           lightDecrement,
-          updatedPlayers: newPlayersState
+          updatedPlayers: newPlayersState,
+          nextDarkPos: nextDarkPos
         };
         roundCompletionCache.current = result;
 
@@ -1519,7 +1581,7 @@ function GameScreen({ gameData, onNewGame }) {
             if (!nextHasSkip) {
               // Found a player who can take a turn
               triggerTurnTransition(skipNextIndex);
-              return { nextPlayerIndex: skipNextIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players };
+              return { nextPlayerIndex: skipNextIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, nextDarkPos };
             }
 
             // This player also needs to skip
@@ -1536,12 +1598,12 @@ function GameScreen({ gameData, onNewGame }) {
         }
 
         triggerTurnTransition(nextPlayerIndex);
-        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players };
+        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, nextDarkPos };
       }
     }
 
     // Current player still has AP, no transition needed
-    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players };
+    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, nextDarkPos: null };
   };
 
   // Event System
@@ -2193,7 +2255,12 @@ function GameScreen({ gameData, onNewGame }) {
       console.log(`🏗️ Foundation built! +${lightBonus} Light bonus`);
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -2203,7 +2270,11 @@ function GameScreen({ gameData, onNewGame }) {
         currentPlayerIndex: nextPlayerIndex,
         round: newRound,
         light: Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus)),
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -2372,8 +2443,13 @@ function GameScreen({ gameData, onNewGame }) {
       console.log(`✨ Bonus: ${bonusText}`);
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } =
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } =
         handleAutoTurnTransition(finalPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -2383,7 +2459,11 @@ function GameScreen({ gameData, onNewGame }) {
         currentPlayerIndex: nextPlayerIndex,
         round: newRound,
         light: Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus)),
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -2500,111 +2580,111 @@ function GameScreen({ gameData, onNewGame }) {
     });
   };
 
-  // Spread Darkness - Spiral algorithm expanding from Herz der Finsternis
-  const spreadDarkness = () => {
-    if (!gameState.herzDerFinsternis.triggered || !gameState.herzDerFinsternis.position) {
-      return; // Heart not yet placed
+  // Helper function to calculate next darkness position (pure function, no state update)
+  const calculateNextDarknessPosition = (currentState) => {
+    if (!currentState.herzDerFinsternis.triggered || !currentState.herzDerFinsternis.position) {
+      return null; // Heart not yet placed
     }
 
-    setGameState(prev => {
-      const heartPos = prev.herzDerFinsternis.position;
-      const [heartX, heartY] = heartPos.split(',').map(Number);
-      const kraterPos = '4,4';
-      const torPos = prev.torDerWeisheit.position;
+    const heartPos = currentState.herzDerFinsternis.position;
+    const [heartX, heartY] = heartPos.split(',').map(Number);
+    const kraterPos = '4,4';
+    const torPos = currentState.torDerWeisheit.position;
+    const currentDarkTiles = currentState.herzDerFinsternis.darkTiles || [];
 
-      // Find all revealed tiles
-      const revealedTiles = Object.entries(prev.board)
-        .filter(([pos, tile]) => tile.revealed && pos !== heartPos)
-        .map(([pos]) => pos);
-
-      // Already dark tiles
-      const currentDarkTiles = prev.herzDerFinsternis.darkTiles || [];
-
-      // Calculate angle and distance for each revealed tile from heart
-      const tilesWithMetrics = revealedTiles.map(pos => {
-        const [x, y] = pos.split(',').map(Number);
-        const dx = x - heartX;
-        const dy = y - heartY;
-
-        // Calculate angle in degrees (0° = North, 90° = East, 180° = South, 270° = West)
-        // atan2 returns angle from -π to π, we convert to 0-360°
-        let angle = Math.atan2(dx, -dy) * (180 / Math.PI); // Note: -dy for North=0°
-        if (angle < 0) angle += 360;
-
-        // Calculate Manhattan distance (not Euclidean for grid movement)
-        const distance = Math.abs(dx) + Math.abs(dy);
-
-        return {
-          pos,
-          angle,
-          distance,
-          isDark: currentDarkTiles.includes(pos)
-        };
-      });
-
-      // Sort by:
-      // 1. Angle (clockwise from 0° = North)
-      // 2. Distance (shorter distance first for tiles at same angle)
-      const sortedTiles = tilesWithMetrics.sort((a, b) => {
-        if (Math.abs(a.angle - b.angle) < 1) {
-          // Same angle (within 1° tolerance) - sort by distance
-          return a.distance - b.distance;
-        }
-        // Different angles - sort clockwise
-        return a.angle - b.angle;
-      });
-
-      // Find next tile to darken
-      // We want the first tile that is NOT yet dark
-      const nextTileTodarken = sortedTiles.find(tile => !tile.isDark);
-
-      if (!nextTileTodarken) {
-        console.log('☠️ All revealed tiles are already dark!');
-        return prev; // No changes needed
+    // Helper function to check if a position is valid and suitable for darkness
+    const canBeDarkened = (pos, debugInfo = false) => {
+      if (!pos) {
+        if (debugInfo) console.log(`  ❌ ${pos}: position is null/undefined`);
+        return false;
       }
 
-      const targetPos = nextTileTodarken.pos;
+      const tile = currentState.board[pos];
+      if (!tile) {
+        if (debugInfo) console.log(`  ❌ ${pos}: tile does not exist in board`);
+        return false;
+      }
 
-      // Check immunity: Krater and Tor der Weisheit are immune
-      if (targetPos === kraterPos || targetPos === torPos) {
-        console.log(`🛡️ ${targetPos} is immune to darkness!`);
-        // Skip this tile, try next one
-        const nextNonImmuneTile = sortedTiles.find(tile =>
-          !tile.isDark &&
-          tile.pos !== kraterPos &&
-          tile.pos !== torPos
-        );
+      // Must be revealed
+      if (!tile.revealed) {
+        if (debugInfo) console.log(`  ⏸️ ${pos}: not revealed (tile: ${tile.id})`);
+        return false;
+      }
 
-        if (!nextNonImmuneTile) {
-          console.log('☠️ No more tiles to darken (all remaining are immune)!');
-          return prev;
-        }
+      // Must not already be dark
+      if (currentDarkTiles.includes(pos)) {
+        if (debugInfo) console.log(`  ⏸️ ${pos}: already dark`);
+        return false;
+      }
 
-        // Darken the next non-immune tile
-        const updatedDarkTiles = [...currentDarkTiles, nextNonImmuneTile.pos];
-        console.log(`☠️ Darkness spreads to ${nextNonImmuneTile.pos} (angle: ${nextNonImmuneTile.angle.toFixed(1)}°, distance: ${nextNonImmuneTile.distance})`);
+      // Must not be Krater or Tor der Weisheit
+      if (pos === kraterPos || pos === torPos) {
+        if (debugInfo) console.log(`  ⏸️ ${pos}: is Krater or Tor der Weisheit`);
+        return false;
+      }
 
-        return {
-          ...prev,
-          herzDerFinsternis: {
-            ...prev.herzDerFinsternis,
-            darkTiles: updatedDarkTiles
+      // Must not be the heart itself
+      if (pos === heartPos) {
+        if (debugInfo) console.log(`  ⏸️ ${pos}: is Herz der Finsternis itself`);
+        return false;
+      }
+
+      if (debugInfo) console.log(`  ✅ ${pos}: CAN BE DARKENED (tile: ${tile.id})`);
+      return true;
+    };
+
+    // Helper function to get positions in a ring at given distance, starting from North, clockwise
+    const getRingPositions = (distance) => {
+      const positions = [];
+
+      for (let dx = -distance; dx <= distance; dx++) {
+        for (let dy = -distance; dy <= distance; dy++) {
+          // Check if Chebyshev distance matches (max of |dx| and |dy|)
+          if (Math.max(Math.abs(dx), Math.abs(dy)) === distance) {
+            const x = heartX + dx;
+            const y = heartY + dy;
+            const pos = `${x},${y}`;
+
+            // Calculate angle: 0° = North, 90° = East, 180° = South, 270° = West
+            let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
+            if (angle < 0) angle += 360;
+
+            positions.push({ pos, angle, x, y });
           }
-        };
+        }
       }
 
-      // Darken the target tile
-      const updatedDarkTiles = [...currentDarkTiles, targetPos];
-      console.log(`☠️ Darkness spreads to ${targetPos} (angle: ${nextTileTodarken.angle.toFixed(1)}°, distance: ${nextTileTodarken.distance})`);
+      // Sort by angle (clockwise from North)
+      positions.sort((a, b) => a.angle - b.angle);
 
-      return {
-        ...prev,
-        herzDerFinsternis: {
-          ...prev.herzDerFinsternis,
-          darkTiles: updatedDarkTiles
+      return positions.map(p => p.pos);
+    };
+
+    // Try rings starting from distance 1 (ALWAYS start from ring 1!)
+    const maxDistance = 10; // reasonable upper limit
+
+    console.log(`☠️ Starting darkness spread check. Herz at ${heartPos}, already dark tiles:`, currentDarkTiles);
+
+    for (let distance = 1; distance <= maxDistance; distance++) {
+      const ringPositions = getRingPositions(distance);
+
+      console.log(`☠️ Checking ring at distance ${distance}, ${ringPositions.length} positions:`, ringPositions);
+
+      // Check each position in clockwise order
+      for (const pos of ringPositions) {
+        if (canBeDarkened(pos, true)) {
+          // Found the first valid position!
+          console.log(`☠️ ✅ Darkness will spread to ${pos} (ring ${distance})`);
+          return pos;
         }
-      };
-    });
+      }
+
+      console.log(`☠️ Ring ${distance} complete - no valid position found, trying next ring...`);
+    }
+
+    // If we reach here, no suitable tile was found
+    console.log('☠️ ❌ No suitable tile found for darkness spread (all checked tiles are blocked)');
+    return null;
   };
 
   const handleTorDurchschreiten = () => {
@@ -2630,7 +2710,12 @@ function GameScreen({ gameData, onNewGame }) {
       });
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       console.log(`🚪 ${currentPlayer.name} has become a master of ${currentPlayer.element}!`);
 
@@ -2641,7 +2726,11 @@ function GameScreen({ gameData, onNewGame }) {
         round: newRound,
         actionBlockers: actionBlockers || prev.actionBlockers,
         roundCompleted: roundCompleted,
-        light: Math.max(0, prev.light - lightDecrement)
+        light: Math.max(0, prev.light - lightDecrement),
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -2725,7 +2814,12 @@ function GameScreen({ gameData, onNewGame }) {
           );
 
           // Handle automatic turn transition with the correct signature
-          const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+          const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+          // Apply darkness spread if needed
+          const updatedDarkTiles = nextDarkPos
+            ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+            : prev.herzDerFinsternis.darkTiles || [];
 
           console.log(`🔍 SCOUTING COMPLETE: Revealed ${newSelectedPositions.length} tiles. Deck size: ${newTileDeck.length}`);
 
@@ -2744,7 +2838,11 @@ function GameScreen({ gameData, onNewGame }) {
               selectedPositions: [],
               maxSelections: 2
             },
-            roundCompleted: roundCompleted || false
+            roundCompleted: roundCompleted || false,
+            herzDerFinsternis: {
+              ...prev.herzDerFinsternis,
+              darkTiles: updatedDarkTiles
+            }
           };
         }
         
@@ -2784,7 +2882,12 @@ function GameScreen({ gameData, onNewGame }) {
         index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
       );
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -2801,7 +2904,11 @@ function GameScreen({ gameData, onNewGame }) {
           selectedPositions: [],
           maxSelections: 2
         },
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -2872,7 +2979,12 @@ function GameScreen({ gameData, onNewGame }) {
           : player
       );
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -2881,7 +2993,11 @@ function GameScreen({ gameData, onNewGame }) {
         round: newRound,
         actionBlockers: actionBlockers,
         light: Math.max(0, prev.light - lightDecrement),
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -2949,7 +3065,12 @@ function GameScreen({ gameData, onNewGame }) {
       });
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -2958,7 +3079,11 @@ function GameScreen({ gameData, onNewGame }) {
         round: newRound,
         actionBlockers: actionBlockers,
         light: Math.max(0, prev.light - lightDecrement),
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -3114,7 +3239,12 @@ function GameScreen({ gameData, onNewGame }) {
       });
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      // Apply darkness spread if needed
+      const updatedDarkTiles = nextDarkPos
+        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       console.log(`🎓 ${currentPlayer.name} teaches ${skillToTeach} to ${playersOnSamePosition.length} player(s)`);
 
@@ -3125,7 +3255,11 @@ function GameScreen({ gameData, onNewGame }) {
         round: newRound,
         actionBlockers: actionBlockers || prev.actionBlockers,
         roundCompleted: roundCompleted || false,
-        light: Math.max(0, prev.light - lightDecrement)
+        light: Math.max(0, prev.light - lightDecrement),
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };
@@ -3133,32 +3267,37 @@ function GameScreen({ gameData, onNewGame }) {
   const handleRemoveObstacle = (obstaclePosition, obstacleType) => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     const targetTile = gameState.board[obstaclePosition];
-  
+
     const skillMap = {
       'geroell': 'geroell_beseitigen',
       'dornenwald': 'dornen_entfernen',
       'ueberflutung': 'fluss_freimachen'
     };
-  
+
     const requiredSkill = skillMap[obstacleType];
-  
+
     // Check if player is adjacent to the obstacle
     const [playerX, playerY] = currentPlayer.position.split(',').map(Number);
     const [obstacleX, obstacleY] = obstaclePosition.split(',').map(Number);
     const isAdjacent = Math.abs(playerX - obstacleX) + Math.abs(playerY - obstacleY) === 1;
-  
+
     if (isAdjacent && currentPlayer.ap > 0 && targetTile?.obstacle === obstacleType && currentPlayer.learnedSkills.includes(requiredSkill)) {
       setGameState(prev => {
         const newBoard = { ...prev.board };
         const { [obstaclePosition]: tileToUpdate, ...restOfBoard } = newBoard;
         const { obstacle, ...restOfTile } = tileToUpdate;
         newBoard[obstaclePosition] = restOfTile;
-  
+
         const newPlayers = prev.players.map((player, index) =>
           index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
         );
-  
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+        // Apply darkness spread if needed
+        const updatedDarkTiles = nextDarkPos
+          ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+          : prev.herzDerFinsternis.darkTiles || [];
 
         return {
           ...prev,
@@ -3167,9 +3306,68 @@ function GameScreen({ gameData, onNewGame }) {
           currentPlayerIndex: nextPlayerIndex,
           round: newRound,
           actionBlockers: actionBlockers,
-          light: Math.max(0, prev.light - lightDecrement)
+          light: Math.max(0, prev.light - lightDecrement),
+          herzDerFinsternis: {
+            ...prev.herzDerFinsternis,
+            darkTiles: updatedDarkTiles
+          }
         };
       });
+    }
+  };
+
+  const handleHeilendeReinigung = (darknessPosition) => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Check if player has the "reinigen" skill
+    if (!currentPlayer.learnedSkills.includes('reinigen')) {
+      console.log('❌ Player does not have "reinigen" skill');
+      return;
+    }
+
+    // Check if player is adjacent to the darkness (only cardinal directions: N, E, S, W)
+    const [playerX, playerY] = currentPlayer.position.split(',').map(Number);
+    const [darkX, darkY] = darknessPosition.split(',').map(Number);
+    const isAdjacent = Math.abs(playerX - darkX) + Math.abs(playerY - darkY) === 1; // Manhattan distance = 1
+
+    // Check if position is actually dark
+    const isDark = gameState.herzDerFinsternis.darkTiles?.includes(darknessPosition);
+
+    if (isAdjacent && currentPlayer.ap > 0 && isDark) {
+      setGameState(prev => {
+        // Remove darkness from this position
+        const updatedDarkTilesAfterRemoval = (prev.herzDerFinsternis.darkTiles || []).filter(pos => pos !== darknessPosition);
+
+        const newPlayers = prev.players.map((player, index) =>
+          index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
+        );
+
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+        // Apply darkness spread if needed (but AFTER we removed one)
+        const updatedDarkTiles = nextDarkPos
+          ? [...updatedDarkTilesAfterRemoval, nextDarkPos]
+          : updatedDarkTilesAfterRemoval;
+
+        console.log(`💧 Heilende Reinigung: Darkness removed from ${darknessPosition}`);
+
+        return {
+          ...prev,
+          players: updatedPlayers || newPlayers,
+          currentPlayerIndex: nextPlayerIndex,
+          round: newRound,
+          actionBlockers: actionBlockers,
+          light: Math.max(0, prev.light - lightDecrement),
+          herzDerFinsternis: {
+            ...prev.herzDerFinsternis,
+            darkTiles: updatedDarkTiles
+          }
+        };
+      });
+    } else {
+      if (!isAdjacent) console.log('❌ Not adjacent to darkness field');
+      if (!isDark) console.log('❌ Target position is not dark');
+      if (currentPlayer.ap <= 0) console.log('❌ No AP left');
     }
   };
 
@@ -3249,8 +3447,11 @@ function GameScreen({ gameData, onNewGame }) {
     
     // Obstacle Removal Actions - Check adjacent tiles
     const adjacentObstacles = [];
+    const adjacentDarkness = [];
+
     if (currentPlayer.ap > 0) {
       const [x, y] = currentPlayer.position.split(',').map(Number);
+      // Only cardinal directions (N, E, S, W) for obstacle/darkness removal
       const adjacentPositions = {
         'Norden': `${x},${y-1}`,
         'Osten': `${x+1},${y}`,
@@ -3260,6 +3461,8 @@ function GameScreen({ gameData, onNewGame }) {
 
       for (const [direction, pos] of Object.entries(adjacentPositions)) {
         const adjacentTile = gameState.board[pos];
+
+        // Check for obstacles
         if (adjacentTile?.obstacle) {
           const obstacleType = adjacentTile.obstacle;
           const skillMap = {
@@ -3274,6 +3477,16 @@ function GameScreen({ gameData, onNewGame }) {
               direction: direction
             });
           }
+        }
+
+        // Check for darkness (Phase 2) - also only cardinal directions
+        if (gameState.herzDerFinsternis.darkTiles?.includes(pos) &&
+            currentPlayer.learnedSkills.includes('reinigen') &&
+            !areSkillsBlocked) {
+          adjacentDarkness.push({
+            position: pos,
+            direction: direction
+          });
         }
       }
     }
@@ -3614,6 +3827,32 @@ function GameScreen({ gameData, onNewGame }) {
               title={`Entferne ${obstacle.type} im ${obstacle.direction}`}
             >
               {obstacleInfo.icon} {obstacleInfo.text} im {obstacle.direction} (1 AP)
+            </button>
+          );
+        })}
+
+        {/* Darkness Removal Buttons (Heilende Reinigung) */}
+        {adjacentDarkness.map(darkness => {
+          return (
+            <button
+              key={darkness.position}
+              onClick={() => handleHeilendeReinigung(darkness.position)}
+              style={{
+                backgroundColor: '#7c3aed',
+                color: 'white',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '2px solid #a78bfa',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                gridColumn: '1 / -1',
+                marginBottom: '0.5rem',
+                boxShadow: '0 0 8px rgba(124, 58, 237, 0.4)'
+              }}
+              title={`Entferne Finsternis im ${darkness.direction} mit Heilender Reinigung`}
+            >
+              💧 Heilende Reinigung im {darkness.direction} (1 AP)
             </button>
           );
         })}

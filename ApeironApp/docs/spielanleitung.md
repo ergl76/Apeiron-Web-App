@@ -161,12 +161,16 @@ Ab sofort breitet sich die Finsternis nach jedem einzelnen Zug aus. Die neue Rei
 
 #### **Die Ausbreitung der Finsternis (Schritt 3 in der zweiten Spielphase)** {#die-ausbreitung-der-finsternis-(schritt-3-in-der-zweiten-spielphase)}
 
-Vom "Herz der Finsternis" ausgehend, sucht das nächstgelegene, bereits entdeckte Landschafts Plättchen im Uhrzeigersinn, das noch nicht von Finsternis erfasst wurde (auch diagonal). Dieses Landschafts-Feld wird umgedreht und ist nun mit "Finsternis" belegt. Das Feld ist nun unpassierbar und Gegenstände, die sich darauf befinden, können nicht mehr aufgenommen werden, bis es durch die Fähigkeit "Heilende Reinigung" gesäubert wird. 
-
-* Ausgangspunkt ist das nördliche Landschafts Plättchen vom Herz der Finsternis aus gesehen (12 Uhr)  
-* unentdeckte, leere Felder werden übersprungen und das darauf folgende gewählt  
-* als das nächstgelegene Feld zählt jenes, das mit der geringsten Anzahl von Bewegungs Schritten vom Ausgangspunkt aus erreichbar wäre   
-* die Landschaften “Krater” sowie “Tor der Weisheit” können nicht von Finsternis befallen werden \- sie werden, so wie unentdeckte Felder, übersprungen
+Startpunkt: Beginne mit dem Feld direkt nördlich vom "Herz der Finsternis"
+Prüfung im Uhrzeigersinn: Gehe im direkten Ring (Abstand 1) um das Herz herum und prüfe jedes Feld:
+Ist bereits Finsternis? → Überspringe, gehe zum nächsten Feld
+Ist unentdeckt? → Überspringe, gehe zum nächsten Feld
+Ist "Tor der Weisheit"? → Überspringe, gehe zum nächsten Feld
+Ist "Krater"/Startfeld? → Überspringe, gehe zum nächsten Feld
+Erstes geeignetes Feld: Das erste Feld, bei dem KEINE der Bedingungen zutrifft (also ein entdecktes, normales Landschaftsfeld ohne Finsternis), wird zu Finsternis
+Wenn Ring voll: Falls alle Felder im Ring 1 ungeeignet sind, wiederhole die Prüfung im Ring mit Abstand 2, dann Abstand 3, usw.
+Effekt: Das betroffene Feld wird umgedreht, ist unpassierbar, Items darauf sind nicht mehr erreichbar (bis "Heilende Reinigung" es säubert)
+Zusammengefasst: Pro Spielerzug breitet sich die Finsternis auf genau EIN Feld aus - das erste geeignete Feld im Uhrzeigersinn, beginnend bei Nord, im kleinstmöglichen Ring um das Herz. 
 
 #### **Meilenstein Bonus** {#meilenstein-bonus-1}
 

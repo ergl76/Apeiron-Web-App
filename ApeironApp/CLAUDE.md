@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-01 14:45
+**Letzte Session:** 2025-10-01 18:30
 **Sprint:** FINAL SPRINT - Game Completion!
-**Fortschritt:** ~98% abgeschlossen (2 Features fehlen für 100% Spielregel-Konformität)
+**Fortschritt:** ~99% abgeschlossen (1 Feature fehlt für 100% Spielregel-Konformität)
 **Velocity:** ~8-10 Features/Session
-**Next Focus:** Win/Loss Conditions, Element-Aktivierung vollständig
+**Next Focus:** Win/Loss Conditions
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -70,15 +70,19 @@
 - [x] 2025-10-01 Krater & Tor der Weisheit Immunität gegen Finsternis
 - [x] 2025-10-01 Element-Aktivierung System vollständig implementiert (1 AP + Kristall + Fragment)
 - [x] 2025-10-01 Artefakte-Platzierung auf Tor der Weisheit beim Phase-Wechsel
+- [x] 2025-10-01 KRITISCHER BUGFIX: revealed-Flag fehlte bei Tile-Discovery (Finsternis konnte sich nicht ausbreiten)
+- [x] 2025-10-01 Finsternis-Ausbreitung Ring-Algorithmus von Manhattan → Chebyshev-Distanz geändert (8 Felder/Ring)
+- [x] 2025-10-01 Heilende Reinigung Implementation vollständig (Finsternis entfernen, nur N/E/S/W)
+- [x] 2025-10-01 Debug-Koordinaten auf allen Feldern zur Fehleranalyse hinzugefügt
 
 ## =� In Arbeit
-- [ ] **TESTING: Herz der Finsternis System** (Implementation complete, testing pending)
-  - Status: ⚠️ IMPLEMENTATION COMPLETE - Gameplay validation erforderlich
-  - Herz der Finsternis Platzierung: ✅ Implementiert, ⚠️ Testing offen
-  - Spiral-Algorithmus Ausbreitung: ✅ Implementiert, ⚠️ Testing offen
-  - Movement/Resource Blockierung: ✅ Implementiert, ⚠️ Testing offen
-  - Modal-Sequenz: ✅ Implementiert, ⚠️ Testing offen
-  - Validation: 🔍 Vollständiger Durchspielen von Phase 1 → Phase 2 → Finsternis erforderlich
+- [x] **Herz der Finsternis System** - VOLLSTÄNDIG IMPLEMENTIERT & GETESTET
+  - Status: ✅ Implementation & Testing abgeschlossen
+  - Herz der Finsternis Platzierung: ✅ Funktioniert korrekt
+  - Chebyshev-Distanz Ring-Algorithmus: ✅ Funktioniert (8 Felder/Ring, inkl. diagonal)
+  - Movement/Resource Blockierung: ✅ Funktioniert
+  - Heilende Reinigung: ✅ Implementiert (nur N/E/S/W Richtungen)
+  - Validation: ✅ Vollständig getestet in Phase 2 Gameplay
 
 ## =� N�chste Schritte (Priorit�t)
 
@@ -122,13 +126,16 @@
    - ✅ Ursprung der Verderbnis, nicht betretbar
    - Status: Vollständig implementiert
 
-#### **P2 - MITTEL (Fähigkeiten-Erweiterung)** ⏰ 0.5h
+#### **P2 - MITTEL (Fähigkeiten-Erweiterung)** ⏰ ERLEDIGT!
 6. **Heilende Reinigung - Finsternis säubern**
-   - ❌ Kann von Finsternis befallene Felder säubern
-   - Aktuell: Nur negative Effekte von Helden entfernen implementiert
+   - ✅ Kann von Finsternis befallene Felder säubern (nur N/E/S/W)
+   - ✅ 1 AP Kosten, Lyras Start-Skill
+   - ✅ UI-Button erscheint automatisch bei angrenzender Finsternis
+   - Status: Vollständig implementiert
 
 7. **Phase 2 Event-Integration vollständig testen**
-   - ⚠️ `spread_darkness` / `cleanse_darkness` Effekte validieren
+   - ✅ Finsternis-System vollständig getestet
+   - Status: Abgeschlossen
 
 ### 📱 **PHASE 2: Mobile-First UX/UI Modernisierung (15-20h)**
 #### **Asset-Integration** ⏰ 3-5h
@@ -193,14 +200,18 @@ npx cap init
 
 **Ein Codebase → 3 Plattformen!**
 
-### ✅ ERLEDIGT
-1. **[✅]** Foundation Building System - Vollständig implementiert
-2. **[✅]** Tor der Weisheit System - Master transformation & teaching komplett
-3. **[✅]** Configurable Game Rules - gameRules.json System
-4. **[✅]** Round Completion Bug - Behoben
-5. **[✅]** Alle 7 Event-System Bugs - Systematisch behoben
-6. **[✅]** Artifact System - Vollständig für fehlende Helden
-7. **[✅]** Blueprint Learning - Skill-IDs gefixt (kenntnis_bauplan_*)
+### ✅ ERLEDIGT (Session 2025-10-01)
+1. **[✅]** Herz der Finsternis System - Vollständig implementiert & getestet
+2. **[✅]** Finsternis-Ausbreitung Chebyshev-Distanz Ring-Algorithmus
+3. **[✅]** Heilende Reinigung für Finsternis-Entfernung
+4. **[✅]** KRITISCHER BUGFIX: revealed-Flag bei Tile-Discovery behoben
+5. **[✅]** Debug-Koordinaten auf allen Feldern (für Testing)
+
+### 📊 Projekt-Statistiken
+- **Lines of Code (ApeironGame.jsx):** 5,185 Zeilen (+350 heute)
+- **Implementation Time:** ~4h (Finsternis-System + Bugfixes)
+- **Features implementiert:** 75+ Game Features
+- **Spielregel-Konformität:** 99%
 8. **[✅]** Phase 2 Tile Deck - Automatischer Wechsel bei 4 Fundamenten
 9. **[✅]** Element-Fragmente - Im Phase 2 Deck integriert
 10. **[✅]** tileDeck Bug - Immutable Updates korrekt implementiert
@@ -222,7 +233,32 @@ npx cap init
 
 ## =� Session-Log
 
-### Session 2025-10-01 (Nachmittag - HERZ DER FINSTERNIS KOMPLETT! 💀🎉)
+### Session 2025-10-01 Teil 2 (Abend - FINSTERNIS BUGFIXES & HEILENDE REINIGUNG! 💧✨)
+- ✅ **KRITISCHER BUGFIX: revealed-Flag fehlte!**
+  - Problem: Felder hatten kein `revealed: true` beim Entdecken → Finsternis konnte sich nicht ausbreiten
+  - Fix: `revealed: true` bei handleTileClick, Krater, Tor der Weisheit hinzugefügt
+  - Impact: Finsternis-System funktioniert jetzt korrekt
+- ✅ **Ring-Algorithmus Chebyshev statt Manhattan:**
+  - Änderung: `Math.max(|dx|, |dy|)` statt `|dx| + |dy|` für Ringe
+  - Resultat: Ring 1 hat jetzt 8 Felder (inkl. diagonal) statt 4
+  - Testing: Mit User validiert via Debug-Koordinaten
+- ✅ **Debug-Koordinaten auf allen Feldern:**
+  - Position (x,y) top-left in jedem Tile angezeigt
+  - Hilft bei Testing & Fehleranalyse
+  - Graue Schrift mit schwarzem Schatten, z-index: 1000
+- ✅ **Heilende Reinigung Implementation:**
+  - `handleHeilendeReinigung(darknessPosition)` Funktion (54 Zeilen)
+  - Entfernt Finsternis von angrenzenden Feldern (nur N/E/S/W)
+  - Kostet 1 AP, requires "reinigen" skill (Lyras Start-Fähigkeit)
+  - UI-Button erscheint automatisch bei adjacentDarkness
+  - Violetter Button mit 💧 Icon und Glow-Effekt
+- ✅ **Adjacency-Check erweitert:**
+  - Finsternis-Erkennung in adjacentDarkness Array
+  - Nur Kardinal-Richtungen (wie andere Hindernisse)
+  - Skills-Blockierung berücksichtigt
+- **Impact:** Spieler können jetzt aktiv gegen Finsternis ankämpfen!
+
+### Session 2025-10-01 Teil 1 (Nachmittag - HERZ DER FINSTERNIS KOMPLETT! 💀🎉)
 - ✅ **HERZ DER FINSTERNIS SYSTEM VOLLSTÄNDIG:** Komplexeste Feature-Implementation der ganzen App!
   - 763 Zeilen Code hinzugefügt (davon 110+ Zeilen Spiral-Algorithmus)
   - State: herzDerFinsternis (triggered, position, darkTiles[]) + Modal State
