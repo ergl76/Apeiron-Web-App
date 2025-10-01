@@ -1,10 +1,10 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-01 18:30
-**Sprint:** FINAL SPRINT - Game Completion!
+**Letzte Session:** 2025-10-02 19:45
+**Sprint:** UI/UX Polish & Visual Enhancements
 **Fortschritt:** ~99% abgeschlossen (1 Feature fehlt für 100% Spielregel-Konformität)
-**Velocity:** ~8-10 Features/Session
+**Velocity:** ~12-15 UI Features/Session
 **Next Focus:** Win/Loss Conditions
 
 ## <� Projekt�bersicht
@@ -74,6 +74,22 @@
 - [x] 2025-10-01 Finsternis-Ausbreitung Ring-Algorithmus von Manhattan → Chebyshev-Distanz geändert (8 Felder/Ring)
 - [x] 2025-10-01 Heilende Reinigung Implementation vollständig (Finsternis entfernen, nur N/E/S/W)
 - [x] 2025-10-01 Debug-Koordinaten auf allen Feldern zur Fehleranalyse hinzugefügt
+- [x] 2025-10-02 UI-Modernisierung: Element-Fragmente Icons angepasst (🟨🟦🟩🟥 statt alte Farben)
+- [x] 2025-10-02 Helden-Farben auf Element-Schema umgestellt (Corvus Gelb, Terra Grün, etc.)
+- [x] 2025-10-02 Helden-Größe auf 1.5× skaliert (18px statt 12px) für bessere Sichtbarkeit
+- [x] 2025-10-02 Pulsing-Animation für aktiven Spieler implementiert (2s infinite, hero-farbig)
+- [x] 2025-10-02 Z-Index Hierarchy korrigiert (Items über Finsternis, Helden oberste Layer)
+- [x] 2025-10-02 Multi-Item Layout mit dynamischer Skalierung (1-5+ Items alle sichtbar)
+- [x] 2025-10-02 Element-Fragmente Icons in Inventar-Anzeige ergänzt
+- [x] 2025-10-02 Debug-Koordinaten entfernt (saubere UI)
+- [x] 2025-10-02 Fähigkeiten-Anzahl-Anzeige auf Helden-Tafel entfernt (kompaktere UI)
+- [x] 2025-10-02 Tor der Weisheit Episches Erscheinungs-Modal implementiert (⛩️ blau/weiß Theme)
+- [x] 2025-10-02 Tor der Weisheit Feld-Styling: Helles pulsierendes Overlay mit ⛩️ Symbol
+- [x] 2025-10-02 Sanfte Pulsing-Animationen für Tor (pulseGate 3s, gateGlow 2s)
+- [x] 2025-10-02 Hero-Layout auf 2×2 Grid umgestellt (statt horizontal) für 4 Spieler
+- [x] 2025-10-02 Helden auf Feld zentriert mit 6px Gap für sichtbares Pulsing
+- [x] 2025-10-02 Hero-spezifische Pulsing-Farben (jeder Held pulsiert in seiner Element-Farbe)
+- [x] 2025-10-02 Weiße Borders & 3D-Schatten-Effekte für alle Helden (drop-shadow + box-shadow)
 
 ## =� In Arbeit
 - [x] **Herz der Finsternis System** - VOLLSTÄNDIG IMPLEMENTIERT & GETESTET
@@ -221,7 +237,7 @@ npx cap init
 14. **[⚠️]** Herz der Finsternis Testing - Implementation complete, Gameplay-Test ausstehend
 
 ## = Wichtige Dateien
-- `src/ApeironGame.jsx` - Hauptspiel-Komponente (~5400+ Zeilen nach Herz der Finsternis, komplette Spiellogik)
+- `src/ApeironGame.jsx` - Hauptspiel-Komponente (~5470 Zeilen nach UI-Modernisierung, komplette Spiellogik)
 - `src/utils/GameManager.ts` - Game Engine Klasse (teilweise implementiert)
 - `src/types/index.ts` - TypeScript Interface Definitionen
 - `src/components/GameBoard.tsx` - Spielbrett-Komponente
@@ -232,6 +248,84 @@ npx cap init
 - `docs/ereigniskarten.md` - 40 Event-Karten Definitionen
 
 ## =� Session-Log
+
+### Session 2025-10-02 (UI/UX MODERNISIERUNG KOMPLETT! 🎨✨)
+- ✅ **UI-MODERNISIERUNG VOLLSTÄNDIG:** 18 Features in einer Session implementiert!
+  - ~350 Zeilen Code geändert/hinzugefügt in ApeironGame.jsx
+  - Fokus: Visual Polish, Consistency, User Experience
+- ✅ **ELEMENT-FRAGMENTE FARBSCHEMA:**
+  - Icons angepasst: 🟨 Luft (Gelb), 🟦 Wasser (Blau), 🟩 Erde (Grün), 🟥 Feuer (Rot)
+  - Konsistent auf Spielfeld + Inventar
+  - Mapping zu Helden-Farben etabliert
+- ✅ **HELDEN-FARBEN ELEMENT-SCHEMA:**
+  - Terra: #ca8a04 → #22c55e (Grün)
+  - Corvus: #a78bfa → #eab308 (Gelb)
+  - Ignis: #ef4444 (Rot) - unverändert
+  - Lyra: #3b82f6 (Blau) - unverändert
+- ✅ **HELDEN-DARSTELLUNG 1.5× GRÖßER:**
+  - Hero Circle: 12px → 18px
+  - Font Size: 8px → 10px
+  - Bessere Sichtbarkeit auf dem Spielfeld
+- ✅ **PULSING-ANIMATION FÜR AKTIVEN SPIELER:**
+  - @keyframes pulseHero mit Scale 1.0 → 1.1
+  - 2s infinite ease-in-out
+  - Hero-spezifische Farben (jeder pulsiert in seiner Element-Farbe)
+  - Dynamische inline @keyframes mit heroColor
+- ✅ **Z-INDEX HIERARCHY KORRIGIERT:**
+  - Finsternis Overlay: z-index 5
+  - Items (Kristalle, Fragmente): z-index 10 (über Finsternis!)
+  - Obstacles: z-index 8
+  - Helden: z-index 20 (oberste Layer)
+- ✅ **MULTI-ITEM LAYOUT:**
+  - Dynamische Skalierung: 1 Item (20px), 2 Items (16px), 3-4 Items (14px), 5+ (12px)
+  - Flex Layout mit flexWrap für beliebig viele Items
+  - maxWidth: 90% verhindert Overflow
+- ✅ **INVENTAR-ANZEIGE ERGÄNZT:**
+  - Element-Fragmente Icons hinzugefügt (🟨🟦🟩🟥)
+  - Tooltips für alle Items inkl. Fragmente
+  - Border-Farben angepasst
+- ✅ **DEBUG-KOORDINATEN ENTFERNT:**
+  - Saubere UI ohne (x,y) Debug-Anzeige
+  - ~15 Zeilen Code entfernt
+- ✅ **SKILLS-ANZAHL ENTFERNT:**
+  - "Skills: X" von Helden-Tafel entfernt
+  - Kompaktere Player-Info
+  - Skills werden weiterhin detailliert unten angezeigt
+- ✅ **TOR DER WEISHEIT EPISCHES MODAL:**
+  - ~180 Zeilen blau/weißes Modal
+  - ⛩️ Tor-Symbol mit Animation
+  - Position-Anzeige + Story-Text
+  - Erklärung: Durchschreiten, Lehren, Immunität, Artefakte
+  - Zitat: "Durch Weisheit wird das Licht bewahrt..."
+- ✅ **TOR DER WEISHEIT FELD-STYLING:**
+  - Helles Overlay: radial-gradient weiß/hellblau
+  - Border: 3px solid #3b82f6 (blau)
+  - Box-Shadow: Blauer Glow (innen + außen)
+  - ⛩️ Symbol mit gateGlow Animation
+- ✅ **SANFTE PULSING-ANIMATIONEN FÜR TOR:**
+  - @keyframes pulseGate: scale 1.0 → 1.05 (nur 5% statt 15%)
+  - Duration: 3s (langsamer als Herz der Finsternis)
+  - @keyframes gateGlow: drop-shadow 12px → 20px
+  - Ruhig und erhaben (im Kontrast zu bedrohlicher Finsternis)
+- ✅ **HERO-LAYOUT 2×2 GRID:**
+  - display: grid statt flex
+  - gridTemplateColumns: repeat(2, 18px)
+  - Max 2 Spalten → perfekt für 4 Spieler
+- ✅ **HELDEN ZENTRIERT + MEHR ABSTAND:**
+  - Position: top: 50%, left: 50%, transform: translate(-50%, -50%)
+  - Gap: 2px → 6px (3× größer)
+  - Pulsing-Animation kommt jetzt voll zur Geltung
+- ✅ **HERO-SPEZIFISCHE PULSING-FARBEN:**
+  - Dynamische @keyframes pro Hero
+  - Terra pulsiert in Grün, Ignis in Rot, etc.
+  - box-shadow mit heroColor statt generischem Weiß
+- ✅ **WEIßE BORDERS & 3D-SCHATTEN:**
+  - Border: 2px solid white (für alle Helden)
+  - boxShadow Basis: 0 2px 4px rgba(0,0,0,0.3)
+  - filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2))
+  - Aktiver Held: Zusätzlicher Farbglow + tieferer Schatten
+  - Animierter Schatten beim Pulsing (4px → 6px)
+- **Impact:** UI ist jetzt modern, konsistent und visuell ansprechend! Tor der Weisheit hat epische Einführung!
 
 ### Session 2025-10-01 Teil 2 (Abend - FINSTERNIS BUGFIXES & HEILENDE REINIGUNG! 💧✨)
 - ✅ **KRITISCHER BUGFIX: revealed-Flag fehlte!**

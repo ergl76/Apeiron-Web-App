@@ -142,16 +142,7 @@
     }
   },
   "phase2": {
-      "herz_finster": {
-      "count": 1,
-      "id": "herz_finster",
-      "name": "Herz der Finsternis",
-      "type": "dark",
-      "color": "#1f2937",
-      "symbol": "🖤",
-      "description": "Ein Ort voller dunkler Energie",
-      "effect": "triggers_dark_event"
-    },
+    
     "wald": {
       "count": 4,
       "id": "wald",

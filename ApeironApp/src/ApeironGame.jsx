@@ -76,36 +76,36 @@ const eventCounters = {
 
 // Game Data
 const heroes = {
-  terra: { 
-    id: 'terra', 
-    name: 'Terra', 
+  terra: {
+    id: 'terra',
+    name: 'Terra',
     element: 'earth',
     description: 'Meisterin der Erde und des Bauens',
-    color: '#ca8a04',
+    color: '#22c55e', // Green (Erde/Earth)
     image: 'https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/8410058b-302a-4384-93f0-5847b85e05d0.jpg'
   },
-  ignis: { 
-    id: 'ignis', 
-    name: 'Ignis', 
+  ignis: {
+    id: 'ignis',
+    name: 'Ignis',
     element: 'fire',
     description: 'Herr des Feuers und der Aktivierung',
-    color: '#ef4444',
+    color: '#ef4444', // Red (Feuer/Fire) - unchanged
     image: 'https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/05b13824-2c6f-443b-87b6-14fdd1f9d45e.jpg'
   },
-  lyra: { 
-    id: 'lyra', 
-    name: 'Lyra', 
+  lyra: {
+    id: 'lyra',
+    name: 'Lyra',
     element: 'water',
     description: 'Hüterin des Wassers und der Reinigung',
-    color: '#3b82f6',
+    color: '#3b82f6', // Blue (Wasser/Water) - unchanged
     image: 'https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/e7e9549f-b983-4a60-b6a2-632b71900a68.jpg'
   },
-  corvus: { 
-    id: 'corvus', 
-    name: 'Corvus', 
+  corvus: {
+    id: 'corvus',
+    name: 'Corvus',
     element: 'air',
     description: 'Späher der Lüfte und schneller Beweger',
-    color: '#a78bfa',
+    color: '#eab308', // Yellow (Luft/Air)
     image: 'https://storage.googleapis.com/gemini-prod-us-west1-409905595311/images/b0559c5d-24e5-4f7f-a63e-a74092d63428.jpg'
   }
 };
@@ -387,20 +387,6 @@ function GameBoard({ gameState, onTileClick }) {
         onClick={() => onTileClick(position)}
         style={tileStyle}
       >
-        {/* Debug: Show coordinates on every tile */}
-        <div style={{
-          position: 'absolute',
-          top: '2px',
-          left: '2px',
-          fontSize: '8px',
-          color: '#9ca3af',
-          fontWeight: 'bold',
-          zIndex: 1000,
-          textShadow: '0 0 2px black'
-        }}>
-          {position}
-        </div>
-
         {/* Krater */}
         {isKrater && (
           <>
@@ -475,32 +461,49 @@ function GameBoard({ gameState, onTileClick }) {
             justifyContent: 'center',
             alignItems: 'center',
             gap: '2px',
-            zIndex: 2
+            maxWidth: '90%',
+            zIndex: 10 // Above darkness overlay (z-index: 5)
           }}>
-            {tile.resources.map((resource, index) => (
-              <div key={index} style={{
-                fontSize: tile.resources.length === 1 ? '20px' : '14px',
-                lineHeight: '1',
-                filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
-                cursor: 'pointer'
-              }}
-              title={resource === 'kristall' ? 'Apeiron-Kristall' :
-                     resource === 'bauplan_erde' ? 'Bauplan: Erde' :
-                     resource === 'bauplan_wasser' ? 'Bauplan: Wasser' :
-                     resource === 'bauplan_feuer' ? 'Bauplan: Feuer' :
-                     resource === 'bauplan_luft' ? 'Bauplan: Luft' :
-                     resource === 'artefakt_terra' ? 'Hammer der Erbauerin' :
-                     resource === 'artefakt_ignis' ? 'Herz des Feuers' :
-                     resource === 'artefakt_lyra' ? 'Kelch der Reinigung' :
-                     resource === 'artefakt_corvus' ? 'Auge des Spähers' : resource}>
-                {resource === 'kristall' ? '💎' :
-                 resource === 'artefakt_terra' ? '🔨' :
-                 resource === 'artefakt_ignis' ? '🔥' :
-                 resource === 'artefakt_lyra' ? '🏺' :
-                 resource === 'artefakt_corvus' ? '👁️' :
-                 resource.startsWith('bauplan_') ? '📋' : '📦'}
-              </div>
-            ))}
+            {tile.resources.map((resource, index) => {
+              // Dynamic sizing based on item count
+              const itemCount = tile.resources.length;
+              const fontSize = itemCount === 1 ? '20px' :
+                              itemCount === 2 ? '16px' :
+                              itemCount <= 4 ? '14px' : '12px';
+
+              return (
+                <div key={index} style={{
+                  fontSize,
+                  lineHeight: '1',
+                  filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
+                  cursor: 'pointer'
+                }}
+                title={resource === 'kristall' ? 'Apeiron-Kristall' :
+                       resource === 'bauplan_erde' ? 'Bauplan: Erde' :
+                       resource === 'bauplan_wasser' ? 'Bauplan: Wasser' :
+                       resource === 'bauplan_feuer' ? 'Bauplan: Feuer' :
+                       resource === 'bauplan_luft' ? 'Bauplan: Luft' :
+                       resource === 'artefakt_terra' ? 'Hammer der Erbauerin' :
+                       resource === 'artefakt_ignis' ? 'Herz des Feuers' :
+                       resource === 'artefakt_lyra' ? 'Kelch der Reinigung' :
+                       resource === 'artefakt_corvus' ? 'Auge des Spähers' :
+                       resource === 'element_fragment_erde' ? 'Erd-Fragment' :
+                       resource === 'element_fragment_wasser' ? 'Wasser-Fragment' :
+                       resource === 'element_fragment_feuer' ? 'Feuer-Fragment' :
+                       resource === 'element_fragment_luft' ? 'Luft-Fragment' : resource}>
+                  {resource === 'kristall' ? '💎' :
+                   resource === 'artefakt_terra' ? '🔨' :
+                   resource === 'artefakt_ignis' ? '🔥' :
+                   resource === 'artefakt_lyra' ? '🏺' :
+                   resource === 'artefakt_corvus' ? '👁️' :
+                   resource === 'element_fragment_erde' ? '🟩' :
+                   resource === 'element_fragment_wasser' ? '🟦' :
+                   resource === 'element_fragment_feuer' ? '🟥' :
+                   resource === 'element_fragment_luft' ? '🟨' :
+                   resource.startsWith('bauplan_') ? '📋' : '📦'}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -508,32 +511,61 @@ function GameBoard({ gameState, onTileClick }) {
         {heroesOnTile.length > 0 && (
           <div style={{
             position: 'absolute',
-            top: '2px',
-            right: '2px',
-            display: 'flex',
-            gap: '1px'
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 18px)', // Max 2 columns
+            gap: '6px', // More space for pulse animation
+            zIndex: 20
           }}>
-            {heroesOnTile.map(hero => (
-              <div
-                key={hero.id}
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  backgroundColor: heroes[hero.id].color,
-                  border: gameState.currentPlayerIndex === gameState.players.indexOf(hero) ? '2px solid #facc15' : '1px solid #000',
-                  fontSize: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}
-                title={hero.name}
-              >
-                {hero.name[0]}
-              </div>
-            ))}
+            {heroesOnTile.map(hero => {
+              const isActivePlayer = gameState.currentPlayerIndex === gameState.players.indexOf(hero);
+              const heroColor = heroes[hero.id].color;
+
+              return (
+                <div
+                  key={hero.id}
+                  style={{
+                    width: '18px', // 1.5× larger (was 12px)
+                    height: '18px',
+                    borderRadius: '50%',
+                    backgroundColor: heroColor,
+                    border: '2px solid white',
+                    fontSize: '10px', // 1.25× larger (was 8px)
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    zIndex: 20, // Always on top
+                    animation: isActivePlayer ? `pulseHero-${hero.id} 2s ease-in-out infinite` : 'none',
+                    boxShadow: isActivePlayer
+                      ? `0 0 8px ${heroColor}, 0 4px 8px rgba(0, 0, 0, 0.4)`
+                      : '0 2px 4px rgba(0, 0, 0, 0.3)',
+                    filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))'
+                  }}
+                  title={hero.name}
+                >
+                  {hero.name[0]}
+                  {/* Inline keyframe animation for hero-specific color */}
+                  {isActivePlayer && (
+                    <style>{`
+                      @keyframes pulseHero-${hero.id} {
+                        0%, 100% {
+                          transform: scale(1);
+                          box-shadow: 0 0 8px ${heroColor}, 0 4px 8px rgba(0, 0, 0, 0.4);
+                        }
+                        50% {
+                          transform: scale(1.1);
+                          box-shadow: 0 0 16px ${heroColor}, 0 0 24px ${heroColor}, 0 6px 12px rgba(0, 0, 0, 0.5);
+                        }
+                      }
+                    `}</style>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -542,7 +574,8 @@ function GameBoard({ gameState, onTileClick }) {
           <div style={{
             position: 'absolute',
             fontSize: '24px',
-            filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))'
+            filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
+            zIndex: 8 // Below items but above darkness
           }}>
             {tile.obstacle === 'geroell' ? '🪨' : tile.obstacle === 'dornenwald' ? '🌿' : tile.obstacle === 'ueberflutung' ? '🌊' : '🚧'}
           </div>
@@ -561,7 +594,7 @@ function GameBoard({ gameState, onTileClick }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10,
+            zIndex: 5, // Below items (z-index: 10) but above background
             animation: 'pulseDarkness 3s ease-in-out infinite',
             pointerEvents: 'none' // Allow clicks to pass through to underlying tile
           }}>
@@ -571,6 +604,34 @@ function GameBoard({ gameState, onTileClick }) {
               opacity: 0.9
             }}>
               ☠️
+            </div>
+          </div>
+        )}
+
+        {/* Tor der Weisheit Marker */}
+        {gameState.torDerWeisheit.position === position && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(224, 242, 254, 0.9) 50%, rgba(191, 219, 254, 0.85) 100%)',
+            border: '3px solid #3b82f6',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 11,
+            animation: 'pulseGate 3s ease-in-out infinite',
+            pointerEvents: 'none',
+            boxShadow: '0 0 30px rgba(59, 130, 246, 0.5), inset 0 0 20px rgba(59, 130, 246, 0.2)'
+          }}>
+            <div style={{
+              fontSize: '40px',
+              filter: 'drop-shadow(0 0 12px rgba(59, 130, 246, 0.8))',
+              animation: 'gateGlow 2s ease-in-out infinite'
+            }}>
+              ⛩️
             </div>
           </div>
         )}
@@ -719,11 +780,11 @@ const getTileSymbol = (tileId) => {
     artefakt_ignis: '🔥',
     artefakt_lyra: '🏺',
     artefakt_corvus: '👁️',
-    // Element fragments (Phase 2)
-    element_fragment_erde: '🟫',
-    element_fragment_wasser: '🟦',
-    element_fragment_feuer: '🟥',
-    element_fragment_luft: '🟪'
+    // Element fragments (Phase 2) - Color-coded squares matching hero elements
+    element_fragment_erde: '🟩', // Green (Terra)
+    element_fragment_wasser: '🟦', // Blue (Lyra)
+    element_fragment_feuer: '🟥', // Red (Ignis)
+    element_fragment_luft: '🟨' // Yellow (Corvus)
   };
   return symbols[tileId] || '🔍';
 };
@@ -844,6 +905,10 @@ function GameScreen({ gameData, onNewGame }) {
       },
       herzDerFinsternisModal: {
         show: false
+      },
+      torDerWeisheitModal: {
+        show: false,
+        position: null
       },
       isTransitioning: false,
       currentEvent: null,
@@ -1351,6 +1416,10 @@ function GameScreen({ gameData, onNewGame }) {
               triggered: true,
               position: torPosition,
               lightLossAtTrigger: lightLoss
+            },
+            torDerWeisheitModal: {
+              show: true,
+              position: torPosition
             },
             board: {
               ...prev.board,
@@ -4489,6 +4558,187 @@ function GameScreen({ gameData, onNewGame }) {
         </div>
       )}
 
+      {/* Tor der Weisheit Modal */}
+      {gameState.torDerWeisheitModal.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10001,
+            animation: 'fadeIn 0.5s ease-out'
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #ffffff 100%)',
+              border: '3px solid #3b82f6',
+              borderRadius: '16px',
+              maxWidth: '700px',
+              width: '90%',
+              padding: '2rem',
+              boxShadow: '0 0 60px rgba(59, 130, 246, 0.4), inset 0 0 30px rgba(59, 130, 246, 0.1)',
+              animation: 'scaleIn 0.5s ease-out, pulseGate 3s ease-in-out infinite',
+              color: '#1e3a8a'
+            }}
+          >
+            {/* Header with gate symbol */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{
+                fontSize: '4rem',
+                marginBottom: '0.5rem',
+                filter: 'drop-shadow(0 0 20px rgba(59, 130, 246, 0.6))',
+                animation: 'gateGlow 2s ease-in-out infinite'
+              }}>
+                ⛩️
+              </div>
+              <div style={{
+                fontSize: '1.8rem',
+                fontWeight: 'bold',
+                color: '#1e40af',
+                letterSpacing: '0.1em',
+                textShadow: '0 0 20px rgba(59, 130, 246, 0.3)'
+              }}>
+                DAS TOR DER WEISHEIT ERSCHEINT
+              </div>
+            </div>
+
+            {/* Position Info */}
+            {gameState.torDerWeisheitModal.position && (
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '2px solid #3b82f6',
+                borderRadius: '8px',
+                padding: '1rem',
+                margin: '1.5rem 0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '1.1rem', color: '#2563eb', marginBottom: '0.5rem' }}>
+                  ⛩️ Das Tor materialisiert sich bei:
+                </div>
+                <div style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 'bold',
+                  color: '#1e40af',
+                  fontFamily: 'monospace',
+                  letterSpacing: '0.2em'
+                }}>
+                  {gameState.torDerWeisheitModal.position}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#60a5fa', marginTop: '0.5rem' }}>
+                  (Ein Ort des Lichts und der Transformation)
+                </div>
+              </div>
+            )}
+
+            {/* Description */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.8)',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                fontSize: '1rem',
+                color: '#1e3a8a',
+                lineHeight: '1.6',
+                marginBottom: '1rem'
+              }}>
+                Als das Licht zu schwinden drohte, öffnete sich ein Portal zwischen den Welten.
+                Das <strong>Tor der Weisheit</strong> - ein uraltes Artefakt der Götter - gewährt denjenigen,
+                die es durchschreiten, die Erleuchtung der Meisterschaft.
+              </div>
+
+              {/* Benefits */}
+              <div style={{
+                background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
+                borderRadius: '8px',
+                padding: '1rem',
+                marginTop: '1rem'
+              }}>
+                <div style={{
+                  fontWeight: 'bold',
+                  color: '#1e40af',
+                  marginBottom: '0.75rem',
+                  fontSize: '1.1rem'
+                }}>
+                  ✨ Was euch erwartet:
+                </div>
+
+                <div style={{ fontSize: '0.95rem', color: '#1e3a8a', lineHeight: '1.8' }}>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    🎯 <strong>Durchschreiten (1 AP):</strong> Werde zum <strong style={{ color: '#7c3aed' }}>Meister</strong>
+                  </div>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    📚 <strong>Lehren (1 AP):</strong> Teile deine <strong>angeborenen Fähigkeiten</strong> mit Gefährten am selben Feld
+                  </div>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    🌟 <strong>Immunität:</strong> Das Tor ist immun gegen Finsternis
+                  </div>
+                  <div>
+                    💎 <strong>Artefakte:</strong> Unentdeckte Artefakte erscheinen hier bei Phase 2
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quote */}
+            <div style={{
+              fontStyle: 'italic',
+              textAlign: 'center',
+              color: '#64748b',
+              fontSize: '0.95rem',
+              marginBottom: '1.5rem',
+              padding: '1rem',
+              background: 'rgba(100, 116, 139, 0.05)',
+              borderRadius: '8px'
+            }}>
+              "Durch Weisheit wird das Licht bewahrt, durch Meisterschaft wird es weitergegeben."
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setGameState(prev => ({
+                ...prev,
+                torDerWeisheitModal: { show: false, position: null }
+              }))}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+              }}
+            >
+              ⛩️ VERSTANDEN - WEITER SPIELEN
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Herz der Finsternis Modal */}
       {gameState.herzDerFinsternisModal.show && (
         <div
@@ -4800,9 +5050,6 @@ function GameScreen({ gameData, onNewGame }) {
                     <div style={{ fontSize: '0.7rem', color: '#d1d5db' }}>
                       AP: {player.ap}/{player.maxAp}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#a78bfa', marginLeft: 'auto' }}>
-                      Skills: {player.learnedSkills.length}
-                    </div>
                   </div>
                   
                   {/* Active Effects */}
@@ -4906,6 +5153,10 @@ function GameScreen({ gameData, onNewGame }) {
                                 item === 'artefakt_ignis' ? 'Herz des Feuers' :
                                 item === 'artefakt_lyra' ? 'Kelch der Reinigung' :
                                 item === 'artefakt_corvus' ? 'Auge des Spähers' :
+                                item === 'element_fragment_erde' ? 'Erd-Fragment' :
+                                item === 'element_fragment_wasser' ? 'Wasser-Fragment' :
+                                item === 'element_fragment_feuer' ? 'Feuer-Fragment' :
+                                item === 'element_fragment_luft' ? 'Luft-Fragment' :
                                 item}
                         >
                           {isEmpty ? (
@@ -4917,6 +5168,10 @@ function GameScreen({ gameData, onNewGame }) {
                                item === 'artefakt_ignis' ? '🔥' :
                                item === 'artefakt_lyra' ? '🏺' :
                                item === 'artefakt_corvus' ? '👁️' :
+                               item === 'element_fragment_erde' ? '🟩' :
+                               item === 'element_fragment_wasser' ? '🟦' :
+                               item === 'element_fragment_feuer' ? '🟥' :
+                               item === 'element_fragment_luft' ? '🟨' :
                                item.startsWith('bauplan_') ? '📋' : '📦'}
                             </span>
                           )}
@@ -5151,6 +5406,34 @@ function GameScreen({ gameData, onNewGame }) {
           50% {
             opacity: 0.95;
             border-color: #991b1b;
+          }
+        }
+        @keyframes pulseGate {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.5), inset 0 0 20px rgba(59, 130, 246, 0.2);
+          }
+          50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.7), inset 0 0 30px rgba(59, 130, 246, 0.3);
+          }
+        }
+        @keyframes gateGlow {
+          0%, 100% {
+            filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.8));
+          }
+          50% {
+            filter: drop-shadow(0 0 20px rgba(59, 130, 246, 1));
+          }
+        }
+        @keyframes pulseHero {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+          }
+          50% {
+            transform: scale(1.1);
+            box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
           }
         }
       `}</style>
