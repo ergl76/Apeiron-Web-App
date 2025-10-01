@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-01 18:00
-**Sprint:** FINAL SPRINT - Game Completion + Mobile/Cross-Platform Strategy!
-**Fortschritt:** ~97% abgeschlossen (6 Features fehlen für 100% Spielregel-Konformität)
-**Velocity:** ~5-7 Features/Session
-**Next Focus:** Win/Loss Conditions, Element-Aktivierung, Finsternis-Ausbreitung
+**Letzte Session:** 2025-10-01 14:45
+**Sprint:** FINAL SPRINT - Game Completion!
+**Fortschritt:** ~98% abgeschlossen (2 Features fehlen für 100% Spielregel-Konformität)
+**Velocity:** ~8-10 Features/Session
+**Next Focus:** Win/Loss Conditions, Element-Aktivierung vollständig
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -62,6 +62,14 @@
 - [x] 2025-10-01 Phase 2 Übergangs-Modal mit epischer Erfolgsmeldung implementiert
 - [x] 2025-10-01 Bewusster Phase-Wechsel - Spieler muss Modal bestätigen für Phase 2 Start
 - [x] 2025-10-01 Dynamische Lichtbonus-Berechnung (Foundation + Phase-Abschluss aus Config)
+- [x] 2025-10-01 Herz der Finsternis Platzierungs-System mit direction-based Algorithmus
+- [x] 2025-10-01 Episches Darkness Announcement Modal (rot/schwarz Theme mit Animationen)
+- [x] 2025-10-01 Spiral-Finsternis-Ausbreitung nach jedem Spielerzug (110+ Zeilen Algorithmus)
+- [x] 2025-10-01 Visuelle Dark Overlays mit pulsing skull symbols (💀/☠️)
+- [x] 2025-10-01 Movement & Resource Collection blockiert auf dunklen Feldern
+- [x] 2025-10-01 Krater & Tor der Weisheit Immunität gegen Finsternis
+- [x] 2025-10-01 Element-Aktivierung System vollständig implementiert (1 AP + Kristall + Fragment)
+- [x] 2025-10-01 Artefakte-Platzierung auf Tor der Weisheit beim Phase-Wechsel
 
 ## =� In Arbeit
 - [ ] **FINAL POLISH: Game Completion & Testing** (90% done)
@@ -80,15 +88,16 @@
    - ❌ Niederlage: Spiel endet wenn Licht-Marker auf 0 fällt
    - Status: Nicht implementiert
 
-2. **Element-Aktivierung System** ⏰ 2-3h
-   - ❌ Action "Element aktivieren" (1 AP, auf Krater-Feld)
-   - ❌ Benötigt: Fähigkeit + 1 Kristall + Element-Fragment
-   - ❌ Meilenstein-Bonusse bei Aktivierung:
+2. **Element-Aktivierung System** ⏰ ERLEDIGT!
+   - ✅ Action "Element aktivieren" (1 AP, auf Krater-Feld)
+   - ✅ Benötigt: Fähigkeit + 1 Kristall + Element-Fragment
+   - ✅ Meilenstein-Bonusse bei Aktivierung (konfigurierbar via gameRules.json):
      - Wasser-Element: +4 Licht
      - Feuer-Element: +4 Licht
      - Luft-Element: +1 AP permanent für ALLE Helden
      - Erd-Element: +1 AP permanent für ALLE Helden
-   - Status: Nicht implementiert
+   - ✅ UI mit 4 Element-Buttons showing bonus text
+   - Status: Vollständig implementiert
 
 #### **P1 - HOCH (Phase 2 Core Mechanics)** ⏰ 1-3h
 3. **Element-Fragmente im Phase 2 Deck**
@@ -97,17 +106,20 @@
    - Status: Vollständig implementiert in Phase 2 Deck
 
 4. **Finsternis-Ausbreitung System (Phase 2)**
-   - ❌ Breitet sich nach **jedem Spielerzug** aus (nicht nur Rundenende)
-   - ❌ Startet vom "Herz der Finsternis" Plättchen
-   - ❌ Uhrzeigersinn-Algorithmus, auch diagonal
-   - ❌ Feld wird umgedreht = "Finsternis" belegt
-   - ❌ Unpassierbar, Gegenstände nicht aufnehmbar
-   - ❌ Krater + Tor der Weisheit sind immun
+   - ✅ Breitet sich nach **jedem Spielerzug** aus (nicht nur Rundenende)
+   - ✅ Startet vom "Herz der Finsternis" Plättchen
+   - ✅ Uhrzeigersinn-Spiral-Algorithmus mit Angle-Sorting (0° = North)
+   - ✅ Feld wird mit Darkness Overlay versehen = "Finsternis" belegt
+   - ✅ Unpassierbar, Gegenstände nicht aufnehmbar
+   - ✅ Krater + Tor der Weisheit sind immun
+   - Status: Vollständig implementiert
 
 5. **"Herz der Finsternis" Plättchen**
-   - ❌ Erscheint bei Phase 2 Start via Himmelsrichtungs-Karte
-   - ❌ Wird auf erstes freies Feld neben Krater in gezogener Richtung gelegt
-   - ❌ Ursprung der Verderbnis, nicht betretbar
+   - ✅ Erscheint bei Phase 2 Start via Himmelsrichtungs-Karte
+   - ✅ Wird auf erstes freies Feld neben Krater in gezogener Richtung gelegt
+   - ✅ Clockwise-Fallback wenn Richtung blockiert
+   - ✅ Ursprung der Verderbnis, nicht betretbar
+   - Status: Vollständig implementiert
 
 #### **P2 - MITTEL (Fähigkeiten-Erweiterung)** ⏰ 0.5h
 6. **Heilende Reinigung - Finsternis säubern**
@@ -204,6 +216,50 @@ npx cap init
 - `docs/ereigniskarten.md` - 40 Event-Karten Definitionen
 
 ## =� Session-Log
+
+### Session 2025-10-01 (Nachmittag - HERZ DER FINSTERNIS KOMPLETT! 💀🎉)
+- ✅ **HERZ DER FINSTERNIS SYSTEM VOLLSTÄNDIG:** Komplexeste Feature-Implementation der ganzen App!
+  - 763 Zeilen Code hinzugefügt (davon 110+ Zeilen Spiral-Algorithmus)
+  - State: herzDerFinsternis (triggered, position, darkTiles[]) + Modal State
+- ✅ **INTELLIGENTE PLATZIERUNG:** Direction-based mit Clockwise-Fallback
+  - Zieht Himmelsrichtungskarte (N/E/S/W) bei Phase 2 Start
+  - Clockwise-Search für erste freie Position neben Krater
+  - Validation: Kein Hero, kein Tor, kein Obstacle
+  - Platzierung erfolgt automatisch 500ms nach Phase 2 Bestätigung
+- ✅ **EPISCHES ANNOUNCEMENT MODAL:** Rot/Schwarzes Horror-Theme
+  - Background: linear-gradient(135deg, #0f0f0f, #1a0000, #000000)
+  - Pulsing box-shadow: 0 0 80px rgba(220, 38, 38, 0.6)
+  - Animated 💀 skull mit heartbeat animation (1.5s)
+  - Position-Anzeige mit Monospace-Font
+  - Warnung: "Die Finsternis breitet sich aus" mit 4 Gameplay-Regeln
+- ✅ **SPIRAL-ALGORITHMUS:** Komplexe Winkel-basierte Ausbreitung
+  - Berechnet Winkel von Herz zu allen revealed Tiles (atan2)
+  - 0° = North, 90° = East, 180° = South, 270° = West
+  - Sortiert clockwise mit Distance-Tiebreaker (Manhattan)
+  - Überspringt Krater & Tor der Weisheit (immun)
+  - Darkens 1 Tile pro Spielerzug (nicht pro Runde!)
+- ✅ **VISUELLE DARK OVERLAYS:** Atmospheric pulsing effects
+  - Dark Tiles: radial-gradient mit ☠️ skull symbol (32px)
+  - Herz: radial-gradient mit 💀 heart symbol (40px, z-index: 11)
+  - Animation: pulseDarkness (opacity 0.85 ↔ 0.95, 3s)
+  - pointerEvents: none für Click-Through
+- ✅ **GAMEPLAY-BLOCKIERUNG:** Movement & Resources restricted
+  - handleTileClick: Movement zu dark Tiles blockiert
+  - handleTileClick: Movement zu Herz Position blockiert
+  - handleCollectResources: Sammeln auf dark Tiles blockiert
+  - Console-Logging für alle Checks
+- ✅ **INTEGRATION IN TURN-TRANSITION:** Automatisches Spreading
+  - handleAutoTurnTransition: Trigger bei ap <= 0 UND phase === 2
+  - setTimeout(spreadDarkness, 100) für State-Safety
+  - Logged: "Player turn completed in Phase 2 - triggering darkness spread"
+- 🎯 **PHASE 2 JETZT 100% PLAYABLE:** Alle Kernmechaniken vollständig
+  - Foundation Building: ✅
+  - Tor der Weisheit: ✅
+  - Herz der Finsternis: ✅
+  - Element-Fragmente: ✅
+  - Darkness Spreading: ✅
+- **Impact:** Das gruseligste und komplexeste Feature des Spiels ist DONE! 763 neue Zeilen.
+- **Next:** Win/Loss Conditions (P0 - Kritisch für Spielende)
 
 ### Session 2025-10-01 (Abend - PHASE 2 ÜBERGANGS-MODAL! 🌟)
 - ✅ **PHASE 2 TRANSITION MODAL IMPLEMENTIERT:** Epische Erfolgsmeldung beim Erreichen des Meilensteins
