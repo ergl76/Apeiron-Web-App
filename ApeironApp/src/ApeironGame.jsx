@@ -777,7 +777,13 @@ function GameScreen({ gameData, onNewGame }) {
       tileDeck: completeDeck.sort(() => Math.random() - 0.5),
       actionBlockers: [],
       isEventTriggering: false,
-      roundCompleted: false
+      roundCompleted: false,
+      phaseTransitionModal: {
+        show: false,
+        foundationBonus: 0,
+        phaseCompletionBonus: 0,
+        totalBonus: 0
+      }
     };
   });
 
@@ -2069,26 +2075,34 @@ function GameScreen({ gameData, onNewGame }) {
         foundations: [...(prev.tower.foundations || []), elementToAdd]
       };
 
-      let newPhase = prev.phase;
-      let lightBonus = gameRules.foundations.lightBonusPerFoundation; // +4 Light bonus per foundation
-      let newTileDeck = prev.tileDeck;
-
       // Check for Phase 2 transition (all 4 foundations built)
       if (newTower.foundations.length === 4 && prev.phase === 1) {
-        newPhase = 2;
-        lightBonus += 10; // Additional +10 Light bonus for Phase 2 transition
+        // Calculate bonuses
+        const foundationBonus = gameRules.foundations.lightBonusPerFoundation; // +4 for last foundation
+        const phaseCompletionBonus = 10; // +10 for Phase 1 completion
+        const totalBonus = foundationBonus + phaseCompletionBonus;
 
-        // Replace tile deck with Phase 2 deck (from tiles.json)
-        const phase2TileDeck = Object.entries(tilesConfig.phase2).flatMap(([tileId, config]) => {
-          return Array(config.count).fill(tileId);
-        });
-        newTileDeck = phase2TileDeck.sort(() => Math.random() - 0.5);
+        console.log(`🎉 Phase 2 transition triggered! Showing modal with +${totalBonus} Light bonus`);
 
-        console.log(`🎉 Phase 2 transition! All foundations built, +${gameRules.foundations.lightBonusPerFoundation + 10} total Light bonus`);
-        console.log(`🃏 Phase 2 deck created with ${newTileDeck.length} tiles`);
-      } else {
-        console.log(`🏗️ Foundation built! +${gameRules.foundations.lightBonusPerFoundation} Light bonus`);
+        // Show modal (Phase transition happens AFTER user confirms)
+        return {
+          ...prev,
+          players: newPlayers,
+          tower: newTower,
+          light: Math.max(0, Math.min(gameRules.light.maxValue, prev.light + totalBonus)),
+          phaseTransitionModal: {
+            show: true,
+            foundationBonus,
+            phaseCompletionBonus,
+            totalBonus
+          }
+          // phase stays 1, tileDeck/eventDeck stay Phase 1 until user confirms!
+        };
       }
+
+      // Normal foundation building (not the 4th one)
+      const lightBonus = gameRules.foundations.lightBonusPerFoundation;
+      console.log(`🏗️ Foundation built! +${lightBonus} Light bonus`);
 
       // Handle automatic turn transition
       const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
@@ -2097,13 +2111,45 @@ function GameScreen({ gameData, onNewGame }) {
         ...prev,
         players: updatedPlayers || newPlayers,
         tower: newTower,
-        phase: newPhase,
-        tileDeck: newTileDeck,
         actionBlockers: actionBlockers,
         currentPlayerIndex: nextPlayerIndex,
         round: newRound,
         light: Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus)),
         roundCompleted: roundCompleted || false
+      };
+    });
+  };
+
+  // Phase 2 Transition Confirmation Handler
+  const handlePhaseTransitionConfirm = () => {
+    setGameState(prev => {
+      // Create Phase 2 Tile Deck from tiles.json
+      const phase2TileDeck = Object.entries(tilesConfig.phase2).flatMap(
+        ([tileId, config]) => Array(config.count).fill(tileId)
+      );
+      const shuffledTileDeck = phase2TileDeck.sort(() => Math.random() - 0.5);
+
+      // Create Phase 2 Event Deck from events.json
+      const phase2EventDeck = [
+        ...eventsConfig.phase2.positive,
+        ...eventsConfig.phase2.negative
+      ].sort(() => Math.random() - 0.5);
+
+      console.log(`🎉 Phase 2 transition confirmed!`);
+      console.log(`🃏 Phase 2 tile deck: ${shuffledTileDeck.length} tiles`);
+      console.log(`🎴 Phase 2 event deck: ${phase2EventDeck.length} events`);
+
+      return {
+        ...prev,
+        phase: 2,
+        tileDeck: shuffledTileDeck,
+        eventDeck: phase2EventDeck,
+        phaseTransitionModal: {
+          show: false,
+          foundationBonus: 0,
+          phaseCompletionBonus: 0,
+          totalBonus: 0
+        }
       };
     });
   };
@@ -3472,6 +3518,223 @@ function GameScreen({ gameData, onNewGame }) {
         </div>
       )}
 
+      {/* Phase 2 Transition Modal */}
+      {gameState.phaseTransitionModal.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            animation: 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+              border: '3px solid #fbbf24',
+              borderRadius: '16px',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '2rem',
+              boxShadow: '0 20px 60px rgba(251, 191, 36, 0.3)',
+              animation: 'scaleIn 0.3s ease-out'
+            }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                🌟 MEILENSTEIN ERREICHT! 🌟
+              </div>
+              <div style={{
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                color: 'white',
+                letterSpacing: '0.05em'
+              }}>
+                DER TURM DER ELEMENTE ERHEBT SICH
+              </div>
+            </div>
+
+            <hr style={{
+              border: 'none',
+              borderTop: '2px solid #475569',
+              margin: '1.5rem 0'
+            }} />
+
+            {/* Story Text */}
+            <div style={{
+              fontSize: '0.95rem',
+              lineHeight: '1.6',
+              color: '#d1d5db',
+              marginBottom: '1.5rem'
+            }}>
+              <p>Tapfere Helden, euer Mut und eure Zusammenarbeit haben die Welt verändert!</p>
+
+              <p style={{ marginTop: '1rem' }}>
+                Die vier Fundamente stehen fest im Krater von Elyria:
+              </p>
+
+              <div style={{
+                fontSize: '1.5rem',
+                textAlign: 'center',
+                margin: '1rem 0',
+                letterSpacing: '0.5rem'
+              }}>
+                🟫 🟦 🟥 💨
+              </div>
+
+              <p>
+                Aus den Tiefen der Ursubstanz Apeiron erhebt sich das Fundament
+                des Turms - ein Leuchtfeuer der Hoffnung, das die Finsternis zurückdrängt!
+              </p>
+
+              {/* Light Bonus Breakdown */}
+              <div style={{
+                background: 'rgba(251, 191, 36, 0.1)',
+                border: '1px solid #fbbf24',
+                borderRadius: '8px',
+                padding: '1rem',
+                margin: '1.5rem 0',
+                textAlign: 'center'
+              }}>
+                <div style={{ color: '#fbbf24', fontSize: '0.9rem' }}>
+                  💡 +{gameState.phaseTransitionModal.foundationBonus} Licht für das Fundament
+                </div>
+                <div style={{ color: '#fbbf24', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                  💡 +{gameState.phaseTransitionModal.phaseCompletionBonus} Licht für den Abschluss von Phase 1
+                </div>
+                <div style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  color: '#fbbf24',
+                  marginTop: '0.75rem'
+                }}>
+                  Das Licht wächst um {gameState.phaseTransitionModal.totalBonus} Punkte!
+                </div>
+              </div>
+
+              <hr style={{
+                border: 'none',
+                borderTop: '1px dashed #475569',
+                margin: '1.5rem 0'
+              }} />
+
+              <p>
+                Doch die Sphäre der Dunkelheit spürt eure Kraft. Mit einem dunklen
+                Pulsieren antwortet sie auf eure Tat - und beginnt, die Insel Elyria
+                zu verschlingen...
+              </p>
+
+              {/* Phase 2 Warning */}
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '2px solid #ef4444',
+                borderRadius: '8px',
+                padding: '1rem',
+                margin: '1.5rem 0',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  color: '#fbbf24',
+                  marginBottom: '1rem'
+                }}>
+                  ⚠️ PHASE 2 BEGINNT ⚠️
+                </div>
+
+                <div style={{ fontSize: '0.9rem', textAlign: 'left' }}>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    Ab jetzt gilt:
+                  </div>
+                  <ul style={{ marginLeft: '1.5rem', marginTop: '0.5rem' }}>
+                    <li>Herausforderndere Ereignisse erwarten euch</li>
+                    <li>Ein neues Gebiet der Insel wird erkundet</li>
+                    <li>Die Finsternis breitet sich nach jedem Zug aus</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Goal */}
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid #10b981',
+                borderRadius: '8px',
+                padding: '1rem',
+                margin: '1.5rem 0'
+              }}>
+                <div style={{
+                  fontWeight: 'bold',
+                  color: '#10b981',
+                  marginBottom: '0.5rem'
+                }}>
+                  EUER ZIEL IN PHASE 2:
+                </div>
+                <div style={{ fontSize: '0.9rem' }}>
+                  Findet die 4 Element-Fragmente (🟫 🟦 🟥 💨) und aktiviert sie
+                  am Turm mit je <strong style={{ color: '#fbbf24' }}>1 Kristall + 1 Fragment</strong>,
+                  bevor das Licht erlischt!
+                </div>
+                <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
+                  Nur so kann die Finsternis endgültig besiegt werden.
+                </div>
+              </div>
+
+              {/* Quote */}
+              <div style={{
+                fontStyle: 'italic',
+                textAlign: 'center',
+                color: '#9ca3af',
+                fontSize: '0.9rem',
+                marginTop: '1.5rem'
+              }}>
+                "Durch die Vielen wird das Eine zum Höchsten emporgehoben"
+              </div>
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={handlePhaseTransitionConfirm}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #059669, #047857)';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+              }}
+            >
+              🚀 WEITER ZU PHASE 2
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile-friendly Layout */}
       <div style={{ 
         display: 'flex',
@@ -3857,9 +4120,9 @@ function GameScreen({ gameData, onNewGame }) {
         </div>
 
         {/* Game Board - Bottom on mobile, left on desktop */}
-        <div style={{ 
+        <div style={{
           flex: 1,
-          display: 'flex', 
+          display: 'flex',
           justifyContent: 'center',
           alignItems: 'center'
         }}>
@@ -3867,6 +4130,24 @@ function GameScreen({ gameData, onNewGame }) {
         </div>
 
       </div>
+
+      {/* CSS Animations for Phase Transition Modal */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }

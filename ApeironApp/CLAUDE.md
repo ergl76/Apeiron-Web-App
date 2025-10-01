@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-09-30 14:00
+**Letzte Session:** 2025-10-01 18:00
 **Sprint:** FINAL SPRINT - Game Completion + Mobile/Cross-Platform Strategy!
-**Fortschritt:** ~95% abgeschlossen (7 Features fehlen für 100% Spielregel-Konformität)
+**Fortschritt:** ~97% abgeschlossen (6 Features fehlen für 100% Spielregel-Konformität)
 **Velocity:** ~5-7 Features/Session
-**Next Focus:** Win/Loss Conditions, Element-Aktivierung, Mobile-First UX/UI
+**Next Focus:** Win/Loss Conditions, Element-Aktivierung, Finsternis-Ausbreitung
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -53,6 +53,15 @@
 - [x] 2025-09-29 Teaching System - Masters können angeborene Fähigkeiten teilen
 - [x] 2025-09-29 Configurable Game Rules System (gameRules.json) implementiert
 - [x] 2025-09-29 Intelligente Tor-Platzierung mit Clockwise-Fallback Algorithmus
+- [x] 2025-09-30 Artifact System vollständig implementiert (für fehlende Helden)
+- [x] 2025-09-30 Blueprint Learning Skills (kenntnis_bauplan_*) komplett gefixt
+- [x] 2025-09-30 Skills Display: Zwei-Kategorien System (Fähigkeiten + Wissen)
+- [x] 2025-09-30 Phase 2 Tile Deck System mit automatischem Wechsel implementiert
+- [x] 2025-09-30 Element-Fragmente als collectible resources hinzugefügt
+- [x] 2025-09-30 KRITISCHER BUGFIX: tileDeck wurde nicht aktualisiert (Karten mehrfach ziehbar)
+- [x] 2025-10-01 Phase 2 Übergangs-Modal mit epischer Erfolgsmeldung implementiert
+- [x] 2025-10-01 Bewusster Phase-Wechsel - Spieler muss Modal bestätigen für Phase 2 Start
+- [x] 2025-10-01 Dynamische Lichtbonus-Berechnung (Foundation + Phase-Abschluss aus Config)
 
 ## =� In Arbeit
 - [ ] **FINAL POLISH: Game Completion & Testing** (90% done)
@@ -83,9 +92,9 @@
 
 #### **P1 - HOCH (Phase 2 Core Mechanics)** ⏰ 1-3h
 3. **Element-Fragmente im Phase 2 Deck**
-   - ❌ 4 Fragment-Landschaftskarten müssen auffindbar sein
+   - ✅ 4 Fragment-Landschaftskarten müssen auffindbar sein
    - Erd-, Feuer-, Luft-, Wasser-Fragment
-   - Status: Landschaftskarten-Typen vermutlich nicht im Deck
+   - Status: Vollständig implementiert in Phase 2 Deck
 
 4. **Finsternis-Ausbreitung System (Phase 2)**
    - ❌ Breitet sich nach **jedem Spielerzug** aus (nicht nur Rundenende)
@@ -177,6 +186,11 @@ npx cap init
 3. **[✅]** Configurable Game Rules - gameRules.json System
 4. **[✅]** Round Completion Bug - Behoben
 5. **[✅]** Alle 7 Event-System Bugs - Systematisch behoben
+6. **[✅]** Artifact System - Vollständig für fehlende Helden
+7. **[✅]** Blueprint Learning - Skill-IDs gefixt (kenntnis_bauplan_*)
+8. **[✅]** Phase 2 Tile Deck - Automatischer Wechsel bei 4 Fundamenten
+9. **[✅]** Element-Fragmente - Im Phase 2 Deck integriert
+10. **[✅]** tileDeck Bug - Immutable Updates korrekt implementiert
 
 ## = Wichtige Dateien
 - `src/ApeironGame.jsx` - Hauptspiel-Komponente (~1200+ Zeilen, komplette Spiellogik)
@@ -191,7 +205,59 @@ npx cap init
 
 ## =� Session-Log
 
-### Session 2025-09-30 (PLANNING - Mobile Strategy & Spielregel-Check! 📱)
+### Session 2025-10-01 (Abend - PHASE 2 ÜBERGANGS-MODAL! 🌟)
+- ✅ **PHASE 2 TRANSITION MODAL IMPLEMENTIERT:** Epische Erfolgsmeldung beim Erreichen des Meilensteins
+  - Modal erscheint automatisch wenn 4. Fundament gebaut wird
+  - Bewusster Phase-Wechsel - Spiel pausiert bis Spieler "WEITER ZU PHASE 2" klickt
+  - Goldenes Design mit Backdrop-Blur und Fade-In/Scale-In Animationen
+- ✅ **DYNAMISCHE BONUS-BERECHNUNG:** Verwendet gameRules.json für flexible Config
+  - foundationBonus: gameRules.foundations.lightBonusPerFoundation (aktuell 4)
+  - phaseCompletionBonus: +10 für Phase 1 Abschluss
+  - Gesamt: +14 Light beim Phasenübergang
+- ✅ **MOTIVIERENDE STORY-FORMULIERUNG:** Passend zur Spielanleitung
+  - "Tapfere Helden, euer Mut hat die Welt verändert!"
+  - Bonus-Aufschlüsselung mit dynamischen Werten aus Config
+  - Phase 2 Warnung: Herausforderndere Ereignisse, Finsternis-Ausbreitung
+  - Klares Ziel: 4 Element-Fragmente finden + aktivieren (1 Kristall + 1 Fragment)
+  - Apeiron-Zitat: "Durch die Vielen wird das Eine zum Höchsten emporgehoben"
+- ✅ **DECK-WECHSEL BEI BESTÄTIGUNG:** Phase 2 startet erst nach User-Klick
+  - Phase 2 Tile Deck (24 Karten) wird geladen
+  - Phase 2 Event Deck (nur Phase 2 Events) wird aktiviert
+  - Modal schließt, Spiel läuft weiter
+- 🎯 **UX-VERBESSERUNG:** Spieler erleben den Meilenstein bewusst statt "unsichtbarem" Übergang
+- **Impact:** Phase-Übergang ist jetzt ein epischer Story-Moment statt technischem Detail
+- **Next:** "Herz der Finsternis" Plättchen + Finsternis-Ausbreitung System
+
+### Session 2025-09-30 (Nachmittag - ARTIFACT SYSTEM + TILE DECK BUGFIX! 🎴)
+- ✅ **ARTIFACT SYSTEM IMPLEMENTIERT:** Artefakte für fehlende Helden vollständig integriert
+  - 4 Artefakte (Hammer, Herz, Kelch, Auge) erscheinen im Phase 1 Deck wenn Helden fehlen
+  - "Lernen"-Aktion verteilt angeborene Fähigkeiten des fehlenden Helden an alle Spieler auf gleichem Feld
+  - Artefakt-Skills können nicht von Masters gelehrt werden (artifactSkills tracking)
+  - Vollständige UI-Integration (getTileResources, getTileName, getTileSymbol, getTileColor)
+- ✅ **BLUEPRINT LEARNING FIXED:** Skill-IDs korrigiert von `*_fundament_bauen` zu `kenntnis_bauplan_*`
+  - handleLearn() verwendet jetzt korrekte IDs aus skills.json
+  - handleBuildFoundation() verwendet korrekte Blueprint-Mappings
+  - Foundation Selection UI aktualisiert
+- ✅ **SKILLS DISPLAY KATEGORISIERT:** Zwei-Zeilen-System implementiert
+  - Zeile 1: Fähigkeiten (gelb) - alle Skills außer aufdecken & kenntnis_bauplan_*
+  - Zeile 2: Wissen (lila) - kenntnis_bauplan_* Skills
+  - Unlimited Skills möglich mit flexWrap
+- ✅ **PHASE 2 TILE DECK SYSTEM:** Automatischer Deck-Wechsel bei Phase-Übergang
+  - Phase 2 Deck wird aus tiles.json erstellt wenn 4 Fundamente gebaut
+  - phase: 1 Property zum State hinzugefügt
+  - 24 Karten in Phase 2: 4× Terrain, 3× Kristalle, 4× Element-Fragmente
+- ✅ **ELEMENT-FRAGMENTE HINZUGEFÜGT:** Vollständige Integration als collectible resources
+  - getTileResources(), getTileName(), getTileSymbol(), getTileColor() erweitert
+  - 4 Fragmente: 🟫 Erde, 🟦 Wasser, 🟥 Feuer, 🟪 Luft
+- ✅ **KRITISCHER BUGFIX:** tileDeck wurde nicht aus State entfernt
+  - handleTileClick(): tileDeck.pop() mutierte State direkt ohne Update
+  - handleScoutingSelection(): verwendete prev.tileDeck statt newTileDeck
+  - Fix: Korrekte Immutable Updates mit tileDeck: newTileDeck
+  - Debug-Logging hinzugefügt für Deck-Größe Tracking
+- **Impact:** Tile-Deck respektiert jetzt count-Werte aus tiles.json (max 5× Fluss in Phase 1)
+- **Next:** Win/Loss Conditions + Element-Aktivierung System
+
+### Session 2025-09-30 (Vormittag - PLANNING - Mobile Strategy & Spielregel-Check! 📱)
 - ✅ **SPIELREGEL-ANALYSE:** Vollständiger Abgleich Code vs. docs/spielanleitung.md
 - ✅ **7 FEHLENDE FEATURES IDENTIFIZIERT:** Systematische Gap-Analyse für 100% Konformität
   - P0: Win/Loss Conditions (1-2h)
@@ -393,11 +459,11 @@ npx cap init
 ## =� Metriken
 - **Tests:** 0 (keine Test-Dateien vorhanden)
 - **Coverage:** N/A
-- **Build Size:** ~3622 Zeilen ApeironGame.jsx + ~680 andere = 4303 total LOC
+- **Build Size:** ~3700 Zeilen ApeironGame.jsx + ~680 andere = 4380 total LOC
 - **Performance:** Nicht gemessen
-- **Letzter Commit:** b67267a (Foundation Building + Tor der Weisheit systems)
+- **Letzter Commit:** Phase 2 Übergangs-Modal mit epischer Erfolgsmeldung
 - **Branch:** master
-- **Spielregel-Konformität:** ~95% (7 Features fehlen)
+- **Spielregel-Konformität:** ~97% (6 Features fehlen)
 
 ## <� Sprint Goal
 **Aktuelle Woche:** 🎯 PHASE 1 - Game Completion (Win/Loss + Element-Aktivierung) ⏰ 4-6h
@@ -413,7 +479,7 @@ npx cap init
 - **URL:** http://localhost:5173
 
 ---
-*Auto-updated by Claude - 2025-09-30 14:00*
+*Auto-updated by Claude - 2025-10-01 18:00*
 
 ## 📚 **Zusätzliche Referenzen für nächste Session**
 
