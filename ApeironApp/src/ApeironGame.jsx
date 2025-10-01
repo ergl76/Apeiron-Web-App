@@ -2395,69 +2395,95 @@ function GameScreen({ gameData, onNewGame }) {
       return;
     }
 
-    // Draw a direction card (N, E, S, W)
-    const directions = ['N', 'E', 'S', 'W'];
-    const drawnDirection = directions[Math.floor(Math.random() * directions.length)];
-    console.log(`🧭 Direction card drawn: ${drawnDirection}`);
+    setGameState(prev => {
+      // Draw a direction card (N, E, S, W)
+      const directions = ['north', 'east', 'south', 'west'];
+      const drawnDirection = directions[Math.floor(Math.random() * directions.length)];
+      console.log(`🧭 Direction card drawn for Herz der Finsternis: ${drawnDirection}`);
 
-    // Direction offsets from Krater (4,4)
-    const directionOffsets = {
-      'N': { dx: 0, dy: -1 },
-      'E': { dx: 1, dy: 0 },
-      'S': { dx: 0, dy: 1 },
-      'W': { dx: -1, dy: 0 }
-    };
+      // Helper function to find first unrevealed position in a direction (same logic as Tor der Weisheit)
+      const getHerzPlacementPosition = (direction, currentBoard) => {
+        const craterX = 4, craterY = 4;
+        let deltaX = 0, deltaY = 0;
 
-    const offset = directionOffsets[drawnDirection];
-    const kraterX = 4, kraterY = 4;
-    let targetX = kraterX + offset.dx;
-    let targetY = kraterY + offset.dy;
+        // Set direction deltas
+        switch (direction) {
+          case 'north': deltaX = 0; deltaY = -1; break;
+          case 'east': deltaX = 1; deltaY = 0; break;
+          case 'south': deltaX = 0; deltaY = 1; break;
+          case 'west': deltaX = -1; deltaY = 0; break;
+          default: return null;
+        }
 
-    // Find first free adjacent field in clockwise order starting from drawn direction
-    const clockwiseOrder = ['N', 'E', 'S', 'W'];
-    let startIndex = clockwiseOrder.indexOf(drawnDirection);
-    let foundPosition = null;
+        console.log(`🔍 Searching for Herz placement in direction: ${direction} (delta: ${deltaX}, ${deltaY})`);
 
-    // Try all 4 directions in clockwise order
-    for (let i = 0; i < 4; i++) {
-      const dirIndex = (startIndex + i) % 4;
-      const currentDir = clockwiseOrder[dirIndex];
-      const currentOffset = directionOffsets[currentDir];
+        // Search along the direction for the first completely free field (unrevealed)
+        for (let step = 1; step <= 4; step++) { // Maximum 4 steps from crater
+          const targetX = craterX + (deltaX * step);
+          const targetY = craterY + (deltaY * step);
+          const position = `${targetX},${targetY}`;
 
-      targetX = kraterX + currentOffset.dx;
-      targetY = kraterY + currentOffset.dy;
-      const posKey = `${targetX},${targetY}`;
+          // Check if position is within bounds
+          if (targetX < 0 || targetX > 8 || targetY < 0 || targetY > 8) {
+            console.log(`❌ Position ${position} is out of bounds at step ${step}`);
+            continue;
+          }
 
-      // Check if position is valid, revealed, and free (no hero, no gate, no obstacles)
-      const tile = gameState.board[posKey];
-      if (tile && tile.revealed) {
-        const hasHero = gameState.players.some(p => p.position === posKey);
-        const isGate = gameState.torDerWeisheit.position === posKey;
-        const hasObstacle = tile.obstacle;
+          // Check if position is completely free (no tile exists at all = unrevealed)
+          const existingTile = currentBoard[position];
+          if (!existingTile) {
+            // Position is completely empty - perfect for Herz placement
+            console.log(`✅ Found unrevealed position ${position} at step ${step} - perfect for Herz der Finsternis`);
+            return position;
+          } else {
+            // Position is occupied/revealed
+            console.log(`❌ Position ${position} at step ${step} occupied by: ${existingTile.id || 'unknown'}`);
+          }
+        }
 
-        if (!hasHero && !isGate && !hasObstacle) {
-          foundPosition = posKey;
-          console.log(`✅ Found free position: ${posKey} (direction: ${currentDir})`);
-          break;
+        // No free position found in this direction
+        console.log(`❌ No free position found in direction: ${direction}`);
+        return null;
+      };
+
+      // Try drawn direction first
+      let foundPosition = getHerzPlacementPosition(drawnDirection, prev.board);
+      let chosenDirection = drawnDirection;
+
+      // If drawn direction doesn't work, try clockwise order
+      if (!foundPosition) {
+        console.log(`⚠️ No free position found in drawn direction ${drawnDirection}, trying clockwise...`);
+        const clockwiseOrder = ['north', 'east', 'south', 'west'];
+        const startIndex = clockwiseOrder.indexOf(drawnDirection);
+
+        for (let i = 1; i < 4; i++) { // Try the other 3 directions
+          const dirIndex = (startIndex + i) % 4;
+          const currentDir = clockwiseOrder[dirIndex];
+          foundPosition = getHerzPlacementPosition(currentDir, prev.board);
+          if (foundPosition) {
+            chosenDirection = currentDir;
+            console.log(`🔄 Clockwise fallback successful: ${currentDir} -> ${foundPosition}`);
+            break;
+          }
         }
       }
-    }
 
-    if (!foundPosition) {
-      console.log('❌ No free position found for Herz der Finsternis! This should not happen.');
-      return;
-    }
+      if (!foundPosition) {
+        console.log('❌ No free position found for Herz der Finsternis in any direction!');
+        return prev;
+      }
 
-    // Place the Heart of Darkness tile
-    setGameState(prev => {
+      // Place the Heart of Darkness tile
       const updatedBoard = { ...prev.board };
       updatedBoard[foundPosition] = {
-        ...updatedBoard[foundPosition],
-        id: 'herz_der_finsternis',
+        id: 'herz_finsternis',
+        x: parseInt(foundPosition.split(',')[0]),
+        y: parseInt(foundPosition.split(',')[1]),
+        resources: [],
         revealed: true
       };
 
-      console.log(`💀 Herz der Finsternis placed at ${foundPosition}`);
+      console.log(`💀 Herz der Finsternis placed at ${foundPosition} (direction: ${chosenDirection})`);
 
       return {
         ...prev,
