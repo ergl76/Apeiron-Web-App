@@ -27,6 +27,26 @@
   "foundations": {
     "lightBonusPerFoundation": 4
   },
+  "elementActivation": {
+    "bonuses": {
+      "wasser": {
+        "type": "light",
+        "value": 4
+      },
+      "feuer": {
+        "type": "light",
+        "value": 4
+      },
+      "luft": {
+        "type": "permanent_ap",
+        "value": 1
+      },
+      "erde": {
+        "type": "permanent_ap",
+        "value": 1
+      }
+    }
+  },
   "gateOfWisdom": {
     "appearsAtRound": {
       "players2": 4,

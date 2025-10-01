@@ -533,6 +533,59 @@ function GameBoard({ gameState, onTileClick }) {
             {tile.obstacle === 'geroell' ? '🪨' : tile.obstacle === 'dornenwald' ? '🌿' : tile.obstacle === 'ueberflutung' ? '🌊' : '🚧'}
           </div>
         )}
+
+        {/* Darkness Overlay (Phase 2) */}
+        {gameState.herzDerFinsternis.darkTiles?.includes(position) && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(circle, rgba(0, 0, 0, 0.7) 0%, rgba(20, 0, 0, 0.85) 50%, rgba(0, 0, 0, 0.95) 100%)',
+            border: '2px solid #7f1d1d',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            animation: 'pulseDarkness 3s ease-in-out infinite',
+            pointerEvents: 'none' // Allow clicks to pass through to underlying tile
+          }}>
+            <div style={{
+              fontSize: '32px',
+              filter: 'drop-shadow(0 0 8px rgba(220, 38, 38, 0.8))',
+              opacity: 0.9
+            }}>
+              ☠️
+            </div>
+          </div>
+        )}
+
+        {/* Herz der Finsternis Marker */}
+        {gameState.herzDerFinsternis.position === position && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(circle, rgba(127, 29, 29, 0.9) 0%, rgba(20, 0, 0, 0.95) 100%)',
+            border: '3px solid #dc2626',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 11,
+            animation: 'heartbeat 1.5s ease-in-out infinite',
+            pointerEvents: 'none'
+          }}>
+            <div style={{
+              fontSize: '40px',
+              filter: 'drop-shadow(0 0 12px rgba(220, 38, 38, 1))'
+            }}>
+              💀
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -770,6 +823,14 @@ function GameScreen({ gameData, onNewGame }) {
         position: null,
         lightLossAtTrigger: 0
       },
+      herzDerFinsternis: {
+        triggered: false,
+        position: null,
+        darkTiles: [] // Array of "x,y" positions that are covered in darkness
+      },
+      herzDerFinsternisModal: {
+        show: false
+      },
       isTransitioning: false,
       currentEvent: null,
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
@@ -895,6 +956,18 @@ function GameScreen({ gameData, onNewGame }) {
       // Prevent moving to a tile with an obstacle
       if (tile.obstacle) {
         console.log(`Movement to ${position} blocked by obstacle: ${tile.obstacle}`);
+        return;
+      }
+
+      // Prevent moving to a dark tile (Phase 2)
+      if (gameState.herzDerFinsternis.darkTiles?.includes(position)) {
+        console.log(`Movement to ${position} blocked by darkness!`);
+        return;
+      }
+
+      // Prevent moving to Herz der Finsternis position
+      if (position === gameState.herzDerFinsternis.position) {
+        console.log(`Movement to ${position} blocked - Herz der Finsternis is unpassable!`);
         return;
       }
 
@@ -1048,6 +1121,12 @@ function GameScreen({ gameData, onNewGame }) {
 
     if (!currentTile || currentTile.resources.length === 0 || currentPlayer.ap === 0) return;
     if (currentPlayer.inventory.length >= currentPlayer.maxInventory) return; // Inventory full
+
+    // Prevent collecting resources from dark tiles (Phase 2)
+    if (gameState.herzDerFinsternis.darkTiles?.includes(currentPlayer.position)) {
+      console.log('Cannot collect resources from dark tile!');
+      return;
+    }
 
     // If multiple resources available, show selection modal
     if (currentTile.resources.length > 1) {
@@ -1299,6 +1378,15 @@ function GameScreen({ gameData, onNewGame }) {
     if (updatedCurrentPlayer.ap <= 0) {
       // Player completed their turn - decrease light by 1
       lightDecrement = 1;
+
+      // Phase 2: Spread darkness after every player turn
+      if (prevState.phase === 2 && prevState.herzDerFinsternis.triggered) {
+        console.log('☠️ Player turn completed in Phase 2 - triggering darkness spread');
+        // Use setTimeout to ensure state update happens after turn transition
+        setTimeout(() => {
+          spreadDarkness();
+        }, 100);
+      }
 
       // Check if all other players also have 0 AP.
       const allPlayersDone = players.every(p => p.ap <= 0);
@@ -2135,20 +2223,359 @@ function GameScreen({ gameData, onNewGame }) {
         ...eventsConfig.phase2.negative
       ].sort(() => Math.random() - 0.5);
 
+      // Find all artifacts that are still in the tileDeck (not yet discovered)
+      const allHeroes = ['terra', 'ignis', 'lyra', 'corvus'];
+      const playingHeroes = prev.players.map(p => p.id);
+      const missingHeroes = allHeroes.filter(heroId => !playingHeroes.includes(heroId));
+
+      const undiscoveredArtifacts = missingHeroes
+        .map(heroId => `artefakt_${heroId}`)
+        .filter(artifactId => prev.tileDeck.includes(artifactId));
+
+      // Place undiscovered artifacts on Tor der Weisheit (if it exists)
+      let updatedBoard = { ...prev.board };
+      if (prev.torDerWeisheit.triggered && prev.torDerWeisheit.position) {
+        const torPosition = prev.torDerWeisheit.position;
+        const torTile = updatedBoard[torPosition];
+
+        if (torTile && undiscoveredArtifacts.length > 0) {
+          updatedBoard[torPosition] = {
+            ...torTile,
+            resources: [...(torTile.resources || []), ...undiscoveredArtifacts]
+          };
+
+          console.log(`📦 Platziere ${undiscoveredArtifacts.length} Artefakte auf Tor der Weisheit:`, undiscoveredArtifacts);
+        }
+      }
+
       console.log(`🎉 Phase 2 transition confirmed!`);
       console.log(`🃏 Phase 2 tile deck: ${shuffledTileDeck.length} tiles`);
       console.log(`🎴 Phase 2 event deck: ${phase2EventDeck.length} events`);
+      if (undiscoveredArtifacts.length > 0) {
+        console.log(`📦 ${undiscoveredArtifacts.length} undiscovered artifacts placed on Tor der Weisheit`);
+      }
 
       return {
         ...prev,
         phase: 2,
-        tileDeck: shuffledTileDeck,
+        tileDeck: shuffledTileDeck,  // Phase 2 deck replaces Phase 1 deck completely
         eventDeck: phase2EventDeck,
+        board: updatedBoard,
         phaseTransitionModal: {
           show: false,
           foundationBonus: 0,
           phaseCompletionBonus: 0,
           totalBonus: 0
+        }
+      };
+    });
+
+    // Immediately place Herz der Finsternis after Phase 2 transition
+    setTimeout(() => {
+      placeHerzDerFinsternis();
+    }, 500); // Small delay to ensure state update has completed
+  };
+
+  // Element Activation Handler (Phase 2)
+  const handleActivateElement = (fragmentType) => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Fragment to Element mapping
+    const fragmentToElement = {
+      'element_fragment_erde': 'erde',
+      'element_fragment_wasser': 'wasser',
+      'element_fragment_feuer': 'feuer',
+      'element_fragment_luft': 'luft'
+    };
+
+    const element = fragmentToElement[fragmentType];
+    if (!element) return;
+
+    // Validations
+    // 1. Must be in Phase 2 (all 4 foundations built)
+    if (gameState.phase !== 2) return;
+
+    // 2. Must be at crater (4,4)
+    if (currentPlayer.position !== '4,4') return;
+
+    // 3. Must have 'element_aktivieren' skill
+    // (Ignis innate, OR learned via Master Ignis, OR via "Herz des Feuers" artifact)
+    if (!currentPlayer.learnedSkills.includes('element_aktivieren')) return;
+
+    // 4. Must have at least 1 AP
+    if (currentPlayer.ap < 1) return;
+
+    // 5. Must have 1 crystal
+    const kristallCount = currentPlayer.inventory.filter(item => item === 'kristall').length;
+    if (kristallCount < 1) return;
+
+    // 6. Must have the specific element fragment
+    if (!currentPlayer.inventory.includes(fragmentType)) return;
+
+    // 7. Element must not already be activated
+    if (gameState.tower.activatedElements.includes(element)) return;
+
+    setGameState(prev => {
+      const newPlayers = prev.players.map((player, index) => {
+        if (index === prev.currentPlayerIndex) {
+          const newInventory = [...player.inventory];
+
+          // Remove 1 crystal
+          const kristallIndex = newInventory.indexOf('kristall');
+          if (kristallIndex !== -1) {
+            newInventory.splice(kristallIndex, 1);
+          }
+
+          // Remove element fragment
+          const fragmentIndex = newInventory.indexOf(fragmentType);
+          if (fragmentIndex !== -1) {
+            newInventory.splice(fragmentIndex, 1);
+          }
+
+          return {
+            ...player,
+            inventory: newInventory,
+            ap: player.ap - 1
+          };
+        }
+        return player;
+      });
+
+      const newTower = {
+        ...prev.tower,
+        activatedElements: [...(prev.tower.activatedElements || []), element]
+      };
+
+      // Apply bonuses based on element type
+      const bonusConfig = gameRules.elementActivation.bonuses[element];
+      let lightBonus = 0;
+      let apBonus = 0;
+      let bonusText = '';
+      let finalPlayers = newPlayers;
+
+      if (bonusConfig.type === 'light') {
+        lightBonus = bonusConfig.value;
+        bonusText = `+${lightBonus} Licht`;
+      } else if (bonusConfig.type === 'permanent_ap') {
+        apBonus = bonusConfig.value;
+        bonusText = `Alle Helden erhalten permanent +${apBonus} AP`;
+
+        // Apply permanent AP bonus to ALL players
+        finalPlayers = newPlayers.map(player => ({
+          ...player,
+          maxAp: player.maxAp + apBonus,
+          ap: player.ap + apBonus  // Also increase current AP
+        }));
+      }
+
+      console.log(`🔥 ${element.toUpperCase()}-Element aktiviert!`);
+      console.log(`✨ Bonus: ${bonusText}`);
+
+      // Handle automatic turn transition
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers } =
+        handleAutoTurnTransition(finalPlayers, prev.currentPlayerIndex, prev.round, prev);
+
+      return {
+        ...prev,
+        players: updatedPlayers || finalPlayers,
+        tower: newTower,
+        actionBlockers: actionBlockers,
+        currentPlayerIndex: nextPlayerIndex,
+        round: newRound,
+        light: Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus)),
+        roundCompleted: roundCompleted || false
+      };
+    });
+  };
+
+  // Place Herz der Finsternis immediately after Phase 2 transition
+  const placeHerzDerFinsternis = () => {
+    if (gameState.herzDerFinsternis.triggered) {
+      console.log('⚠️ Herz der Finsternis already placed!');
+      return;
+    }
+
+    // Draw a direction card (N, E, S, W)
+    const directions = ['N', 'E', 'S', 'W'];
+    const drawnDirection = directions[Math.floor(Math.random() * directions.length)];
+    console.log(`🧭 Direction card drawn: ${drawnDirection}`);
+
+    // Direction offsets from Krater (4,4)
+    const directionOffsets = {
+      'N': { dx: 0, dy: -1 },
+      'E': { dx: 1, dy: 0 },
+      'S': { dx: 0, dy: 1 },
+      'W': { dx: -1, dy: 0 }
+    };
+
+    const offset = directionOffsets[drawnDirection];
+    const kraterX = 4, kraterY = 4;
+    let targetX = kraterX + offset.dx;
+    let targetY = kraterY + offset.dy;
+
+    // Find first free adjacent field in clockwise order starting from drawn direction
+    const clockwiseOrder = ['N', 'E', 'S', 'W'];
+    let startIndex = clockwiseOrder.indexOf(drawnDirection);
+    let foundPosition = null;
+
+    // Try all 4 directions in clockwise order
+    for (let i = 0; i < 4; i++) {
+      const dirIndex = (startIndex + i) % 4;
+      const currentDir = clockwiseOrder[dirIndex];
+      const currentOffset = directionOffsets[currentDir];
+
+      targetX = kraterX + currentOffset.dx;
+      targetY = kraterY + currentOffset.dy;
+      const posKey = `${targetX},${targetY}`;
+
+      // Check if position is valid, revealed, and free (no hero, no gate, no obstacles)
+      const tile = gameState.board[posKey];
+      if (tile && tile.revealed) {
+        const hasHero = gameState.players.some(p => p.position === posKey);
+        const isGate = gameState.torDerWeisheit.position === posKey;
+        const hasObstacle = tile.obstacle;
+
+        if (!hasHero && !isGate && !hasObstacle) {
+          foundPosition = posKey;
+          console.log(`✅ Found free position: ${posKey} (direction: ${currentDir})`);
+          break;
+        }
+      }
+    }
+
+    if (!foundPosition) {
+      console.log('❌ No free position found for Herz der Finsternis! This should not happen.');
+      return;
+    }
+
+    // Place the Heart of Darkness tile
+    setGameState(prev => {
+      const updatedBoard = { ...prev.board };
+      updatedBoard[foundPosition] = {
+        ...updatedBoard[foundPosition],
+        id: 'herz_der_finsternis',
+        revealed: true
+      };
+
+      console.log(`💀 Herz der Finsternis placed at ${foundPosition}`);
+
+      return {
+        ...prev,
+        board: updatedBoard,
+        herzDerFinsternis: {
+          triggered: true,
+          position: foundPosition,
+          darkTiles: [] // Darkness will start spreading from this position
+        },
+        herzDerFinsternisModal: {
+          show: true
+        }
+      };
+    });
+  };
+
+  // Spread Darkness - Spiral algorithm expanding from Herz der Finsternis
+  const spreadDarkness = () => {
+    if (!gameState.herzDerFinsternis.triggered || !gameState.herzDerFinsternis.position) {
+      return; // Heart not yet placed
+    }
+
+    setGameState(prev => {
+      const heartPos = prev.herzDerFinsternis.position;
+      const [heartX, heartY] = heartPos.split(',').map(Number);
+      const kraterPos = '4,4';
+      const torPos = prev.torDerWeisheit.position;
+
+      // Find all revealed tiles
+      const revealedTiles = Object.entries(prev.board)
+        .filter(([pos, tile]) => tile.revealed && pos !== heartPos)
+        .map(([pos]) => pos);
+
+      // Already dark tiles
+      const currentDarkTiles = prev.herzDerFinsternis.darkTiles || [];
+
+      // Calculate angle and distance for each revealed tile from heart
+      const tilesWithMetrics = revealedTiles.map(pos => {
+        const [x, y] = pos.split(',').map(Number);
+        const dx = x - heartX;
+        const dy = y - heartY;
+
+        // Calculate angle in degrees (0° = North, 90° = East, 180° = South, 270° = West)
+        // atan2 returns angle from -π to π, we convert to 0-360°
+        let angle = Math.atan2(dx, -dy) * (180 / Math.PI); // Note: -dy for North=0°
+        if (angle < 0) angle += 360;
+
+        // Calculate Manhattan distance (not Euclidean for grid movement)
+        const distance = Math.abs(dx) + Math.abs(dy);
+
+        return {
+          pos,
+          angle,
+          distance,
+          isDark: currentDarkTiles.includes(pos)
+        };
+      });
+
+      // Sort by:
+      // 1. Angle (clockwise from 0° = North)
+      // 2. Distance (shorter distance first for tiles at same angle)
+      const sortedTiles = tilesWithMetrics.sort((a, b) => {
+        if (Math.abs(a.angle - b.angle) < 1) {
+          // Same angle (within 1° tolerance) - sort by distance
+          return a.distance - b.distance;
+        }
+        // Different angles - sort clockwise
+        return a.angle - b.angle;
+      });
+
+      // Find next tile to darken
+      // We want the first tile that is NOT yet dark
+      const nextTileTodarken = sortedTiles.find(tile => !tile.isDark);
+
+      if (!nextTileTodarken) {
+        console.log('☠️ All revealed tiles are already dark!');
+        return prev; // No changes needed
+      }
+
+      const targetPos = nextTileTodarken.pos;
+
+      // Check immunity: Krater and Tor der Weisheit are immune
+      if (targetPos === kraterPos || targetPos === torPos) {
+        console.log(`🛡️ ${targetPos} is immune to darkness!`);
+        // Skip this tile, try next one
+        const nextNonImmuneTile = sortedTiles.find(tile =>
+          !tile.isDark &&
+          tile.pos !== kraterPos &&
+          tile.pos !== torPos
+        );
+
+        if (!nextNonImmuneTile) {
+          console.log('☠️ No more tiles to darken (all remaining are immune)!');
+          return prev;
+        }
+
+        // Darken the next non-immune tile
+        const updatedDarkTiles = [...currentDarkTiles, nextNonImmuneTile.pos];
+        console.log(`☠️ Darkness spreads to ${nextNonImmuneTile.pos} (angle: ${nextNonImmuneTile.angle.toFixed(1)}°, distance: ${nextNonImmuneTile.distance})`);
+
+        return {
+          ...prev,
+          herzDerFinsternis: {
+            ...prev.herzDerFinsternis,
+            darkTiles: updatedDarkTiles
+          }
+        };
+      }
+
+      // Darken the target tile
+      const updatedDarkTiles = [...currentDarkTiles, targetPos];
+      console.log(`☠️ Darkness spreads to ${targetPos} (angle: ${nextTileTodarken.angle.toFixed(1)}°, distance: ${nextTileTodarken.distance})`);
+
+      return {
+        ...prev,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
         }
       };
     });
@@ -2992,6 +3419,68 @@ function GameScreen({ gameData, onNewGame }) {
           </div>
         )}
 
+        {/* Element Activation (Phase 2) */}
+        {gameState.phase === 2 && currentPlayer.learnedSkills.includes('element_aktivieren') && currentPlayer.position === '4,4' && (
+          <div style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', marginBottom: '6px' }}>
+              Element aktivieren (1 AP + 💎 + Fragment)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+              {['element_fragment_erde', 'element_fragment_wasser', 'element_fragment_feuer', 'element_fragment_luft'].map(fragmentType => {
+                const elementMap = {
+                  'element_fragment_erde': { name: 'Erde', emoji: '🟫', element: 'erde', bonusText: '+1 AP' },
+                  'element_fragment_wasser': { name: 'Wasser', emoji: '🟦', element: 'wasser', bonusText: '+4 Licht' },
+                  'element_fragment_feuer': { name: 'Feuer', emoji: '🟥', element: 'feuer', bonusText: '+4 Licht' },
+                  'element_fragment_luft': { name: 'Luft', emoji: '🟪', element: 'luft', bonusText: '+1 AP' }
+                };
+
+                const elementInfo = elementMap[fragmentType];
+                const hasFragment = currentPlayer.inventory.includes(fragmentType);
+                const hasKristall = currentPlayer.inventory.includes('kristall');
+                const isActivated = gameState.tower?.activatedElements?.includes(elementInfo.element);
+                const canActivate = hasFragment && hasKristall && !isActivated && currentPlayer.ap >= 1;
+
+                return (
+                  <button
+                    key={fragmentType}
+                    onClick={() => handleActivateElement(fragmentType)}
+                    disabled={!canActivate}
+                    style={{
+                      backgroundColor: isActivated ? '#065f46' : canActivate ? '#10b981' : '#4b5563',
+                      color: isActivated || canActivate ? 'white' : '#9ca3af',
+                      padding: '8px 8px',
+                      borderRadius: '6px',
+                      border: isActivated ? '2px solid #10b981' : canActivate ? '2px solid #34d399' : '2px solid transparent',
+                      fontWeight: 'bold',
+                      cursor: canActivate ? 'pointer' : 'not-allowed',
+                      fontSize: '0.7rem',
+                      transition: 'all 0.2s ease-in-out',
+                      opacity: isActivated ? 0.7 : 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '2px'
+                    }}
+                    title={
+                      isActivated ? `${elementInfo.name}-Element bereits aktiviert` :
+                      !hasFragment ? `${elementInfo.name}-Fragment nicht im Inventar` :
+                      !hasKristall ? 'Kristall benötigt' :
+                      currentPlayer.ap < 1 ? 'Keine AP verfügbar' :
+                      `${elementInfo.name}-Element aktivieren (${elementInfo.bonusText})`
+                    }
+                  >
+                    <div style={{ fontSize: '1rem' }}>{elementInfo.emoji}</div>
+                    <div>{elementInfo.name}</div>
+                    <div style={{ fontSize: '0.65rem', opacity: 0.8 }}>
+                      {isActivated ? '✅ Aktiviert' : elementInfo.bonusText}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {currentPlayer.learnedSkills.includes('spaehen') && (
           <button 
             onClick={handleScout}
@@ -3735,6 +4224,223 @@ function GameScreen({ gameData, onNewGame }) {
         </div>
       )}
 
+      {/* Herz der Finsternis Modal */}
+      {gameState.herzDerFinsternisModal.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10001,
+            animation: 'fadeIn 0.5s ease-out'
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #0f0f0f 0%, #1a0000 50%, #000000 100%)',
+              border: '3px solid #dc2626',
+              borderRadius: '16px',
+              maxWidth: '700px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '2rem',
+              boxShadow: '0 0 80px rgba(220, 38, 38, 0.6), inset 0 0 40px rgba(220, 38, 38, 0.1)',
+              animation: 'scaleIn 0.5s ease-out, pulse 2s ease-in-out infinite'
+            }}
+          >
+            {/* Header with pulsing heart symbol */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{
+                fontSize: '3rem',
+                marginBottom: '0.5rem',
+                filter: 'drop-shadow(0 0 20px rgba(220, 38, 38, 0.8))',
+                animation: 'heartbeat 1.5s ease-in-out infinite'
+              }}>
+                💀
+              </div>
+              <div style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                color: '#dc2626',
+                letterSpacing: '0.1em',
+                textShadow: '0 0 20px rgba(220, 38, 38, 0.8)'
+              }}>
+                DAS HERZ DER FINSTERNIS ERWACHT
+              </div>
+            </div>
+
+            <hr style={{
+              border: 'none',
+              borderTop: '2px solid #7f1d1d',
+              margin: '1.5rem 0'
+            }} />
+
+            {/* Story Text */}
+            <div style={{
+              fontSize: '0.95rem',
+              lineHeight: '1.7',
+              color: '#d1d5db',
+              marginBottom: '1.5rem'
+            }}>
+              <p style={{ color: '#ef4444' }}>
+                <strong>Ein kalter Schauder durchfährt die Helden...</strong>
+              </p>
+
+              <p style={{ marginTop: '1rem' }}>
+                Mit dem Errichten des Turms habt ihr die Balance der Welt erschüttert.
+                Die Finsternis, die bisher in den Schatten lauerte, reagiert auf eure Kraft!
+              </p>
+
+              <p style={{ marginTop: '1rem', color: '#fca5a5' }}>
+                Aus den Tiefen der Insel pulsiert ein uraltes, verdorbenes Herz.
+                Schwärze kriecht über das Land wie ein lebendiger Organismus.
+              </p>
+
+              {/* Heart Position Info */}
+              {gameState.herzDerFinsternis.position && (
+                <div style={{
+                  background: 'rgba(220, 38, 38, 0.15)',
+                  border: '2px solid #dc2626',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  margin: '1.5rem 0',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '1.1rem', color: '#ef4444', marginBottom: '0.5rem' }}>
+                    💀 Herz der Finsternis erscheint bei:
+                  </div>
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold',
+                    color: '#dc2626',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.2em'
+                  }}>
+                    {gameState.herzDerFinsternis.position}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#fca5a5', marginTop: '0.5rem' }}>
+                    (Dieses Feld ist unpassierbar und Ursprung der Verderbnis)
+                  </div>
+                </div>
+              )}
+
+              {/* Warning Box */}
+              <div style={{
+                background: 'rgba(127, 29, 29, 0.3)',
+                border: '2px solid #991b1b',
+                borderRadius: '8px',
+                padding: '1rem',
+                margin: '1.5rem 0'
+              }}>
+                <div style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  color: '#f87171',
+                  marginBottom: '0.75rem',
+                  textAlign: 'center'
+                }}>
+                  ⚠️ DIE FINSTERNIS BREITET SICH AUS ⚠️
+                </div>
+
+                <div style={{ fontSize: '0.9rem', textAlign: 'left' }}>
+                  <ul style={{ marginLeft: '1.5rem', marginTop: '0.5rem' }}>
+                    <li style={{ marginBottom: '0.5rem' }}>
+                      Die Finsternis breitet sich <strong style={{ color: '#fca5a5' }}>nach jedem Spielerzug</strong> im Uhrzeigersinn aus
+                    </li>
+                    <li style={{ marginBottom: '0.5rem' }}>
+                      Befallene Felder sind <strong style={{ color: '#fca5a5' }}>unpassierbar</strong>
+                    </li>
+                    <li style={{ marginBottom: '0.5rem' }}>
+                      Ressourcen auf befallenen Feldern können <strong style={{ color: '#fca5a5' }}>nicht aufgehoben</strong> werden
+                    </li>
+                    <li>
+                      Nur der <strong style={{ color: '#fbbf24' }}>Krater</strong> und das <strong style={{ color: '#fbbf24' }}>Tor der Weisheit</strong> sind immun
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Mini-Map Placeholder */}
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.5)',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                padding: '1rem',
+                margin: '1.5rem 0',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '0.85rem', color: '#9ca3af', marginBottom: '0.5rem' }}>
+                  Das Herz schlägt... die Verderbnis beginnt zu kriechen...
+                </div>
+                <div style={{
+                  fontSize: '2rem',
+                  marginTop: '0.5rem',
+                  filter: 'drop-shadow(0 0 10px rgba(220, 38, 38, 0.5))'
+                }}>
+                  ☠️ → 💀 → ☠️
+                </div>
+              </div>
+
+              {/* Quote */}
+              <div style={{
+                fontStyle: 'italic',
+                textAlign: 'center',
+                color: '#6b7280',
+                fontSize: '0.9rem',
+                marginTop: '1.5rem',
+                borderLeft: '3px solid #7f1d1d',
+                paddingLeft: '1rem'
+              }}>
+                "Das Licht kämpft gegen die Dunkelheit, doch die Dunkelheit kennt keine Erschöpfung..."
+              </div>
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={() => {
+                setGameState(prev => ({
+                  ...prev,
+                  herzDerFinsternisModal: { show: false }
+                }));
+              }}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #991b1b, #7f1d1d)';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.6)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #dc2626, #991b1b)';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
+              }}
+            >
+              💀 DIE HERAUSFORDERUNG ANNEHMEN
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile-friendly Layout */}
       <div style={{ 
         display: 'flex',
@@ -4131,7 +4837,7 @@ function GameScreen({ gameData, onNewGame }) {
 
       </div>
 
-      {/* CSS Animations for Phase Transition Modal */}
+      {/* CSS Animations for Modals */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -4145,6 +4851,41 @@ function GameScreen({ gameData, onNewGame }) {
           to {
             opacity: 1;
             transform: scale(1);
+          }
+        }
+        @keyframes pulse {
+          0%, 100% {
+            box-shadow: 0 0 80px rgba(220, 38, 38, 0.6), inset 0 0 40px rgba(220, 38, 38, 0.1);
+          }
+          50% {
+            box-shadow: 0 0 120px rgba(220, 38, 38, 0.8), inset 0 0 60px rgba(220, 38, 38, 0.2);
+          }
+        }
+        @keyframes heartbeat {
+          0%, 100% {
+            transform: scale(1);
+          }
+          10% {
+            transform: scale(1.1);
+          }
+          20% {
+            transform: scale(1);
+          }
+          30% {
+            transform: scale(1.15);
+          }
+          40% {
+            transform: scale(1);
+          }
+        }
+        @keyframes pulseDarkness {
+          0%, 100% {
+            opacity: 0.85;
+            border-color: #7f1d1d;
+          }
+          50% {
+            opacity: 0.95;
+            border-color: #991b1b;
           }
         }
       `}</style>
