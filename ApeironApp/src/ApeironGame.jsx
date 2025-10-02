@@ -3,6 +3,11 @@ import eventsConfig from './config/events.json';
 import tilesConfig from './config/tiles.json';
 import gameRules from './config/gameRules.json';
 
+// MODULE-LEVEL LOCKS: Prevent React StrictMode from executing handlers twice
+// These MUST be outside the component to work across simultaneous calls
+let currentlyApplyingEventId = null;
+let currentlyConfirmingCardDraw = false;
+
 // Konter-Informationen aus ereigniskarten.md
 const eventCounters = {
   // Phase 1 Negative
@@ -934,7 +939,10 @@ function GameScreen({ gameData, onNewGame }) {
         foundationBonus: 0,
         phaseCompletionBonus: 0,
         totalBonus: 0
-      }
+      },
+      cardDrawQueue: [], // Queue of cards to draw [{type: 'direction'|'hero', options: [...], purpose: 'event_effect'}]
+      drawnCards: {}, // Store drawn card results {direction: 'north', hero: 'terra', etc.}
+      cardDrawState: 'none' // 'none' | 'event_shown' | 'drawing' | 'result_shown'
     };
   });
 
@@ -942,6 +950,53 @@ function GameScreen({ gameData, onNewGame }) {
   useEffect(() => {
     triggerTorDerWeisheit(gameState.light);
   }, [gameState.light]);
+
+  // Apply Tor der Weisheit placement after direction card is drawn
+  useEffect(() => {
+    if (gameState.cardDrawQueue.length === 0 &&
+        gameState.cardDrawState === 'none' &&
+        gameState.drawnCards?.direction &&
+        gameState.torDerWeisheit.triggered &&
+        !gameState.torDerWeisheit.position) {
+
+      console.log('🎴 Direction card drawn for Tor der Weisheit - placing gate now');
+
+      setGameState(prev => {
+        const lightLoss = gameRules.light.startValue - prev.light;
+        return placeTorDerWeisheit(prev, prev.drawnCards.direction, lightLoss);
+      });
+    }
+  }, [gameState.cardDrawQueue.length, gameState.cardDrawState, gameState.drawnCards, gameState.torDerWeisheit]);
+
+  // Apply Herz der Finsternis placement after direction card is drawn
+  useEffect(() => {
+    if (gameState.cardDrawQueue.length === 0 &&
+        gameState.cardDrawState === 'none' &&
+        gameState.drawnCards?.direction &&
+        gameState.herzDerFinsternis.triggered &&
+        !gameState.herzDerFinsternis.position) {
+
+      console.log('🎴 Direction card drawn for Herz der Finsternis - placing heart now');
+
+      setGameState(prev => {
+        return placeHeartOfDarknessWithDirection(prev, prev.drawnCards.direction);
+      });
+    }
+  }, [gameState.cardDrawQueue.length, gameState.cardDrawState, gameState.drawnCards, gameState.herzDerFinsternis]);
+
+  // NOTE: Event effects are now applied DIRECTLY in the card-draw onClick handler
+  // This useEffect is NO LONGER USED but kept for reference/backup
+  // The direct approach prevents React StrictMode double-execution issues
+  /*
+  useEffect(() => {
+    if (gameState.currentEvent &&
+        gameState.cardDrawQueue.length === 0 &&
+        gameState.isEventTriggering &&
+        Object.keys(gameState.drawnCards).length > 0) {
+      // Effect application happens in onClick handler now
+    }
+  }, [gameState.cardDrawQueue.length, gameState.currentEvent, gameState.drawnCards, gameState.isEventTriggering]);
+  */
 
   // Check for DEFEAT condition whenever light changes
   useEffect(() => {
@@ -1372,106 +1427,121 @@ function GameScreen({ gameData, onNewGame }) {
       console.log(`🚪 Triggering Tor der Weisheit at light loss: ${lightLoss}`);
 
       setGameState(prev => {
-        // Draw direction card (simplified to random direction)
-        const directions = ['north', 'east', 'south', 'west'];
-        let attempts = 0;
-        let torPosition = null;
-        let chosenDirection = null;
-
-        // Try each direction until we find a free spot
-        const shuffledDirections = [...directions].sort(() => Math.random() - 0.5);
-        let originalDirection = null;
-
-        for (const direction of shuffledDirections) {
-          attempts++;
-          if (!originalDirection) originalDirection = direction; // Remember first tried direction
-          const position = getTorPlacementPositionFromState(direction, prev.board);
-          if (position) {
-            torPosition = position;
-            chosenDirection = direction;
-            break;
-          }
-        }
-
-        // If no direction worked, use clockwise fallback starting from first attempted direction
-        if (!torPosition && originalDirection) {
-          console.log(`⚠️ No free position found in any random direction, trying clockwise fallback from ${originalDirection}...`);
-
-          // Define clockwise order starting from any direction
-          const getClockwiseOrder = (startDir) => {
-            const directions = ['north', 'east', 'south', 'west'];
-            const startIndex = directions.indexOf(startDir);
-            const clockwise = [];
-            for (let i = 1; i < 4; i++) { // Skip the original direction (i=0)
-              clockwise.push(directions[(startIndex + i) % 4]);
-            }
-            return clockwise;
-          };
-
-          const clockwiseDirections = getClockwiseOrder(originalDirection);
-
-          for (const direction of clockwiseDirections) {
-            const position = getTorPlacementPositionFromState(direction, prev.board);
-            if (position) {
-              torPosition = position;
-              chosenDirection = direction;
-              console.log(`🔄 Clockwise fallback successful: ${direction} -> ${position}`);
-              break;
-            }
-          }
-        }
-
-        // Last resort: force placement on first available adjacent spot
-        if (!torPosition) {
-          console.log(`⚠️ Even clockwise fallback failed, forcing placement on adjacent field...`);
-          const adjacentPositions = [
-            { pos: '4,3', dir: 'north' },  // North of crater
-            { pos: '5,4', dir: 'east' },   // East of crater
-            { pos: '4,5', dir: 'south' },  // South of crater
-            { pos: '3,4', dir: 'west' }    // West of crater
-          ];
-
-          for (const { pos, dir } of adjacentPositions) {
-            const [x, y] = pos.split(',').map(Number);
-            if (x >= 0 && x <= 8 && y >= 0 && y <= 8) {
-              torPosition = pos;
-              chosenDirection = dir;
-              console.log(`🔧 Forcing Tor placement at ${pos} (${dir})`);
-              break;
-            }
-          }
-        }
-
-        if (torPosition) {
-          console.log(`🚪 Tor der Weisheit placed at position: ${torPosition} (direction: ${chosenDirection})`);
-
+        // Check if direction card already drawn
+        if (prev.drawnCards?.torDirection) {
+          // Direction already drawn - place the gate now
+          return placeTorDerWeisheit(prev, prev.drawnCards.torDirection, lightLoss);
+        } else {
+          // Need to draw direction card first
+          console.log('🎴 Tor der Weisheit needs direction card draw');
           return {
             ...prev,
+            cardDrawQueue: [{
+              type: 'direction',
+              options: ['north', 'east', 'south', 'west'],
+              purpose: 'tor_der_weisheit'
+            }],
+            cardDrawState: 'drawing',
             torDerWeisheit: {
+              ...prev.torDerWeisheit,
               triggered: true,
-              position: torPosition,
               lightLossAtTrigger: lightLoss
-            },
-            torDerWeisheitModal: {
-              show: true,
-              position: torPosition
-            },
-            board: {
-              ...prev.board,
-              [torPosition]: {
-                id: 'tor_der_weisheit',
-                x: parseInt(torPosition.split(',')[0]),
-                y: parseInt(torPosition.split(',')[1]),
-                resources: [],
-                revealed: true
-              }
             }
           };
-        } else {
-          console.log(`❌ Could not place Tor der Weisheit anywhere!`);
-          return prev;
         }
       });
+    }
+  };
+
+  // Helper function to actually place the gate after direction is determined
+  const placeTorDerWeisheit = (prevState, direction, lightLoss) => {
+    console.log(`🚪 Placing Tor der Weisheit in direction: ${direction}`);
+
+    let torPosition = null;
+    let chosenDirection = direction;
+
+    // Try the drawn direction first
+    torPosition = getTorPlacementPositionFromState(direction, prevState.board);
+
+    // If drawn direction doesn't work, use clockwise fallback
+    if (!torPosition) {
+      console.log(`⚠️ Drawn direction ${direction} blocked, trying clockwise fallback...`);
+
+      const getClockwiseOrder = (startDir) => {
+        const directions = ['north', 'east', 'south', 'west'];
+        const startIndex = directions.indexOf(startDir);
+        const clockwise = [];
+        for (let i = 1; i < 4; i++) {
+          clockwise.push(directions[(startIndex + i) % 4]);
+        }
+        return clockwise;
+      };
+
+      const clockwiseDirections = getClockwiseOrder(direction);
+
+      for (const dir of clockwiseDirections) {
+        const position = getTorPlacementPositionFromState(dir, prevState.board);
+        if (position) {
+          torPosition = position;
+          chosenDirection = dir;
+          console.log(`🔄 Clockwise fallback successful: ${dir} -> ${position}`);
+          break;
+        }
+      }
+    }
+
+    // Last resort: force placement on first available adjacent spot
+    if (!torPosition) {
+      console.log(`⚠️ Even clockwise fallback failed, forcing placement on adjacent field...`);
+      const adjacentPositions = [
+        { pos: '4,3', dir: 'north' },
+        { pos: '5,4', dir: 'east' },
+        { pos: '4,5', dir: 'south' },
+        { pos: '3,4', dir: 'west' }
+      ];
+
+      for (const { pos, dir } of adjacentPositions) {
+        const [x, y] = pos.split(',').map(Number);
+        if (x >= 0 && x <= 8 && y >= 0 && y <= 8) {
+          torPosition = pos;
+          chosenDirection = dir;
+          console.log(`🔧 Forcing Tor placement at ${pos} (${dir})`);
+          break;
+        }
+      }
+    }
+
+    if (torPosition) {
+      console.log(`🚪 Tor der Weisheit placed at position: ${torPosition} (direction: ${chosenDirection})`);
+
+      return {
+        ...prevState,
+        torDerWeisheit: {
+          triggered: true,
+          position: torPosition,
+          lightLossAtTrigger: lightLoss
+        },
+        torDerWeisheitModal: {
+          show: true,
+          position: torPosition
+        },
+        board: {
+          ...prevState.board,
+          [torPosition]: {
+            id: 'tor_der_weisheit',
+            x: parseInt(torPosition.split(',')[0]),
+            y: parseInt(torPosition.split(',')[1]),
+            resources: [],
+            revealed: true
+          }
+        },
+        drawnCards: {},
+        cardDrawQueue: [],
+        cardDrawState: 'none'
+      };
+    } else {
+      console.log(`❌ Could not place Tor der Weisheit anywhere!`);
+      return prevState;
     }
   };
 
@@ -1772,7 +1842,23 @@ function GameScreen({ gameData, onNewGame }) {
       const randomIndex = randomValues.index;
       const selectedEvent = randomValues.event;
 
-      // Apply the effect immediately, then show the modal.
+      // Check if this event needs card draws BEFORE applying effects
+      const neededCardDraws = analyzeEventForCardDraws(selectedEvent, prev);
+
+      if (neededCardDraws.length > 0) {
+        // Event needs card draws - show event first with instruction to draw cards
+        console.log(`🎴 Event "${selectedEvent.name}" requires ${neededCardDraws.length} card draws. Showing event modal first...`);
+        return {
+          ...prev,
+          currentEvent: selectedEvent,
+          cardDrawQueue: neededCardDraws,
+          cardDrawState: 'event_shown', // Show event modal with draw instruction
+          isEventTriggering: true,
+          eventDeck: prev.eventDeck.filter((_, index) => index !== randomIndex)
+        };
+      }
+
+      // No card draws needed - apply effect immediately
       // BULLETPROOF: Only apply effect once, even with React StrictMode
       if (!randomValues.effectApplied) {
         randomValues.stateAfterEffect = applyEventEffect(selectedEvent, prev);
@@ -1784,6 +1870,7 @@ function GameScreen({ gameData, onNewGame }) {
       return {
         ...stateAfterEffect,
         // The modal will now show the event with the resolved text
+        drawnCards: {}, // CRITICAL: Clear drawnCards to prevent next event from using old values
         eventDeck: prev.eventDeck.filter((_, index) => index !== randomIndex)
       };
     });
@@ -1797,10 +1884,19 @@ function GameScreen({ gameData, onNewGame }) {
   const applyEventEffect = (event, currentState) => {
       let newState = { ...currentState };
       let resolvedTexts = [];
-      
-      // Pre-determine random targets ONCE before applying effects
-      const randomHeroIndex = newState.players.length > 0 ? Math.floor(Math.random() * newState.players.length) : -1;
-      const randomHero = randomHeroIndex !== -1 ? newState.players[randomHeroIndex] : null;
+
+      // Use drawn cards if available, otherwise random (fallback for events without card draws)
+      let randomHero = null;
+      if (currentState.drawnCards?.hero) {
+        // Use drawn hero card
+        randomHero = newState.players.find(p => p.id === currentState.drawnCards.hero);
+        console.log(`🎴 Using drawn hero card: ${randomHero?.name}`);
+      } else {
+        // Fallback: random hero (for events that don't need card draws)
+        const randomHeroIndex = newState.players.length > 0 ? Math.floor(Math.random() * newState.players.length) : -1;
+        randomHero = randomHeroIndex !== -1 ? newState.players[randomHeroIndex] : null;
+        if (randomHero) console.log(`🎲 Fallback: Random hero selected: ${randomHero.name}`);
+      }
       
       const revealedTiles = Object.keys(newState.board).filter(pos => pos !== '4,4' && newState.board[pos]);
       const randomRevealedTilePos = revealedTiles.length > 0 ? revealedTiles[Math.floor(Math.random() * revealedTiles.length)] : null;
@@ -2047,7 +2143,19 @@ function GameScreen({ gameData, onNewGame }) {
               const obstacle = effect.obstacle;
               let targetPositions = [];
 
-              if (effect.target === 'north_of_crater') {
+              if (effect.target === 'random_direction_from_crater') {
+                // Use drawn direction card
+                const direction = currentState.drawnCards?.direction || 'north'; // fallback
+                console.log(`🎴 Using drawn direction: ${direction}`);
+
+                const directionMap = {
+                  north: '4,3',
+                  east: '5,4',
+                  south: '4,5',
+                  west: '3,4'
+                };
+                targetPositions.push(directionMap[direction]);
+              } else if (effect.target === 'north_of_crater') {
                 targetPositions.push('4,3');
               } else if (effect.target === 'east_of_crater') {
                 targetPositions.push('5,4');
@@ -2076,6 +2184,26 @@ function GameScreen({ gameData, onNewGame }) {
                 targetPositions.push(...ringPositions);
               } else if (effect.target === 'diagonal_to_crater') {
                 targetPositions.push('5,3', '5,5', '3,5', '3,3');
+              } else if (effect.target === 'all_apeiron_sources_random_direction') {
+                // Use drawn direction card
+                const direction = currentState.drawnCards?.direction || 'east'; // fallback
+                console.log(`🎴 Using drawn direction for apeiron sources: ${direction}`);
+
+                const sourcePositions = Object.keys(newBoard).filter(pos => {
+                  const tile = newBoard[pos];
+                  const [x, y] = pos.split(',').map(Number);
+
+                  const isApeironSource = tile?.id === 'wiese_kristall' || tile?.id === 'hoehle_kristall';
+                  if (!isApeironSource) return false;
+
+                  // Check if in the drawn direction from crater (4,4)
+                  if (direction === 'north') return y < 4;
+                  if (direction === 'east') return x > 4;
+                  if (direction === 'south') return y > 4;
+                  if (direction === 'west') return x < 4;
+                  return false;
+                });
+                targetPositions.push(...sourcePositions);
               } else if (effect.target === 'all_apeiron_sources_east') {
                 const sourcePositions = Object.keys(newBoard).filter(pos => {
                   const tile = newBoard[pos];
@@ -2088,8 +2216,17 @@ function GameScreen({ gameData, onNewGame }) {
               }
 
               targetPositions.forEach(pos => {
-                if (newBoard[pos] || pos.match(/^\d+,\d+$/)) { // Allow placing on undiscovered tiles
-                  newBoard[pos] = { ...newBoard[pos], obstacle };
+                // Only place obstacles on REVEALED tiles (not on undiscovered tiles)
+                // Check 1: Tile must exist in board (has been discovered)
+                // Check 2: Tile must have revealed flag set to true
+                const tile = newBoard[pos];
+                if (tile && tile.revealed === true) {
+                  newBoard[pos] = { ...tile, obstacle };
+                  console.log(`🪨 Obstacle "${obstacle}" placed on revealed tile at ${pos} (tile: ${tile.id})`);
+                } else if (!tile) {
+                  console.log(`⚠️ Skipped obstacle placement at ${pos} - tile does not exist (not discovered yet)`);
+                } else {
+                  console.log(`⚠️ Skipped obstacle placement at ${pos} - tile exists but not revealed (revealed=${tile.revealed})`);
                 }
               });
 
@@ -2653,108 +2790,130 @@ function GameScreen({ gameData, onNewGame }) {
     }
 
     setGameState(prev => {
-      // Draw a direction card (N, E, S, W)
-      const directions = ['north', 'east', 'south', 'west'];
-      const drawnDirection = directions[Math.floor(Math.random() * directions.length)];
-      console.log(`🧭 Direction card drawn for Herz der Finsternis: ${drawnDirection}`);
-
-      // Helper function to find first unrevealed position in a direction (same logic as Tor der Weisheit)
-      const getHerzPlacementPosition = (direction, currentBoard) => {
-        const craterX = 4, craterY = 4;
-        let deltaX = 0, deltaY = 0;
-
-        // Set direction deltas
-        switch (direction) {
-          case 'north': deltaX = 0; deltaY = -1; break;
-          case 'east': deltaX = 1; deltaY = 0; break;
-          case 'south': deltaX = 0; deltaY = 1; break;
-          case 'west': deltaX = -1; deltaY = 0; break;
-          default: return null;
-        }
-
-        console.log(`🔍 Searching for Herz placement in direction: ${direction} (delta: ${deltaX}, ${deltaY})`);
-
-        // Search along the direction for the first completely free field (unrevealed)
-        for (let step = 1; step <= 4; step++) { // Maximum 4 steps from crater
-          const targetX = craterX + (deltaX * step);
-          const targetY = craterY + (deltaY * step);
-          const position = `${targetX},${targetY}`;
-
-          // Check if position is within bounds
-          if (targetX < 0 || targetX > 8 || targetY < 0 || targetY > 8) {
-            console.log(`❌ Position ${position} is out of bounds at step ${step}`);
-            continue;
+      // Check if direction card already drawn
+      if (prev.drawnCards?.herzDirection) {
+        // Direction already drawn - place the heart now
+        return placeHeartOfDarknessWithDirection(prev, prev.drawnCards.herzDirection);
+      } else {
+        // Need to draw direction card first
+        console.log('🎴 Herz der Finsternis needs direction card draw');
+        return {
+          ...prev,
+          cardDrawQueue: [{
+            type: 'direction',
+            options: ['north', 'east', 'south', 'west'],
+            purpose: 'herz_der_finsternis'
+          }],
+          cardDrawState: 'drawing',
+          herzDerFinsternis: {
+            ...prev.herzDerFinsternis,
+            triggered: true
           }
-
-          // Check if position is completely free (no tile exists at all = unrevealed)
-          const existingTile = currentBoard[position];
-          if (!existingTile) {
-            // Position is completely empty - perfect for Herz placement
-            console.log(`✅ Found unrevealed position ${position} at step ${step} - perfect for Herz der Finsternis`);
-            return position;
-          } else {
-            // Position is occupied/revealed
-            console.log(`❌ Position ${position} at step ${step} occupied by: ${existingTile.id || 'unknown'}`);
-          }
-        }
-
-        // No free position found in this direction
-        console.log(`❌ No free position found in direction: ${direction}`);
-        return null;
-      };
-
-      // Try drawn direction first
-      let foundPosition = getHerzPlacementPosition(drawnDirection, prev.board);
-      let chosenDirection = drawnDirection;
-
-      // If drawn direction doesn't work, try clockwise order
-      if (!foundPosition) {
-        console.log(`⚠️ No free position found in drawn direction ${drawnDirection}, trying clockwise...`);
-        const clockwiseOrder = ['north', 'east', 'south', 'west'];
-        const startIndex = clockwiseOrder.indexOf(drawnDirection);
-
-        for (let i = 1; i < 4; i++) { // Try the other 3 directions
-          const dirIndex = (startIndex + i) % 4;
-          const currentDir = clockwiseOrder[dirIndex];
-          foundPosition = getHerzPlacementPosition(currentDir, prev.board);
-          if (foundPosition) {
-            chosenDirection = currentDir;
-            console.log(`🔄 Clockwise fallback successful: ${currentDir} -> ${foundPosition}`);
-            break;
-          }
-        }
+        };
       }
-
-      if (!foundPosition) {
-        console.log('❌ No free position found for Herz der Finsternis in any direction!');
-        return prev;
-      }
-
-      // Place the Heart of Darkness tile
-      const updatedBoard = { ...prev.board };
-      updatedBoard[foundPosition] = {
-        id: 'herz_finsternis',
-        x: parseInt(foundPosition.split(',')[0]),
-        y: parseInt(foundPosition.split(',')[1]),
-        resources: [],
-        revealed: true
-      };
-
-      console.log(`💀 Herz der Finsternis placed at ${foundPosition} (direction: ${chosenDirection})`);
-
-      return {
-        ...prev,
-        board: updatedBoard,
-        herzDerFinsternis: {
-          triggered: true,
-          position: foundPosition,
-          darkTiles: [] // Darkness will start spreading from this position
-        },
-        herzDerFinsternisModal: {
-          show: true
-        }
-      };
     });
+  };
+
+  // Helper function to actually place the heart after direction is determined
+  const placeHeartOfDarknessWithDirection = (prevState, drawnDirection) => {
+    console.log(`💀 Placing Herz der Finsternis in direction: ${drawnDirection}`);
+
+    // Helper function to find first unrevealed position in a direction
+    const getHerzPlacementPosition = (direction, currentBoard) => {
+      const craterX = 4, craterY = 4;
+      let deltaX = 0, deltaY = 0;
+
+      // Set direction deltas
+      switch (direction) {
+        case 'north': deltaX = 0; deltaY = -1; break;
+        case 'east': deltaX = 1; deltaY = 0; break;
+        case 'south': deltaX = 0; deltaY = 1; break;
+        case 'west': deltaX = -1; deltaY = 0; break;
+        default: return null;
+      }
+
+      console.log(`🔍 Searching for Herz placement in direction: ${direction} (delta: ${deltaX}, ${deltaY})`);
+
+      // Search along the direction for the first completely free field (unrevealed)
+      for (let step = 1; step <= 4; step++) {
+        const targetX = craterX + (deltaX * step);
+        const targetY = craterY + (deltaY * step);
+        const position = `${targetX},${targetY}`;
+
+        // Check if position is within bounds
+        if (targetX < 0 || targetX > 8 || targetY < 0 || targetY > 8) {
+          console.log(`❌ Position ${position} is out of bounds at step ${step}`);
+          continue;
+        }
+
+        // Check if position is completely free (no tile exists at all = unrevealed)
+        const existingTile = currentBoard[position];
+        if (!existingTile) {
+          console.log(`✅ Found unrevealed position ${position} at step ${step} - perfect for Herz der Finsternis`);
+          return position;
+        } else {
+          console.log(`❌ Position ${position} at step ${step} occupied by: ${existingTile.id || 'unknown'}`);
+        }
+      }
+
+      console.log(`❌ No free position found in direction: ${direction}`);
+      return null;
+    };
+
+    // Try drawn direction first
+    let foundPosition = getHerzPlacementPosition(drawnDirection, prevState.board);
+    let chosenDirection = drawnDirection;
+
+    // If drawn direction doesn't work, try clockwise order
+    if (!foundPosition) {
+      console.log(`⚠️ No free position found in drawn direction ${drawnDirection}, trying clockwise...`);
+      const clockwiseOrder = ['north', 'east', 'south', 'west'];
+      const startIndex = clockwiseOrder.indexOf(drawnDirection);
+
+      for (let i = 1; i < 4; i++) {
+        const dirIndex = (startIndex + i) % 4;
+        const currentDir = clockwiseOrder[dirIndex];
+        foundPosition = getHerzPlacementPosition(currentDir, prevState.board);
+        if (foundPosition) {
+          chosenDirection = currentDir;
+          console.log(`🔄 Clockwise fallback successful: ${currentDir} -> ${foundPosition}`);
+          break;
+        }
+      }
+    }
+
+    if (!foundPosition) {
+      console.log('❌ No free position found for Herz der Finsternis in any direction!');
+      return prevState;
+    }
+
+    // Place the Heart of Darkness tile
+    const updatedBoard = { ...prevState.board };
+    updatedBoard[foundPosition] = {
+      id: 'herz_finsternis',
+      x: parseInt(foundPosition.split(',')[0]),
+      y: parseInt(foundPosition.split(',')[1]),
+      resources: [],
+      revealed: true
+    };
+
+    console.log(`💀 Herz der Finsternis placed at ${foundPosition} (direction: ${chosenDirection})`);
+
+    return {
+      ...prevState,
+      board: updatedBoard,
+      herzDerFinsternis: {
+        triggered: true,
+        position: foundPosition,
+        darkTiles: []
+      },
+      herzDerFinsternisModal: {
+        show: true
+      },
+      drawnCards: {},
+      cardDrawQueue: [],
+      cardDrawState: 'none'
+    };
   };
 
   // Helper function to calculate next darkness position (pure function, no state update)
@@ -3186,12 +3345,33 @@ function GameScreen({ gameData, onNewGame }) {
     const availableBlueprints = currentPlayer.inventory.filter(item => item.startsWith('bauplan_'));
     if (availableBlueprints.length === 0 || currentPlayer.ap < 1) return;
 
+    // If multiple blueprints available, show selection modal
+    if (availableBlueprints.length > 1) {
+      setGameState(prev => ({
+        ...prev,
+        currentEvent: {
+          type: 'learn_item_selection',
+          title: 'Bauplan lernen',
+          description: 'Wähle einen Bauplan zum Lernen (1 AP):',
+          availableItems: availableBlueprints,
+          itemType: 'blueprint'
+        }
+      }));
+      return;
+    }
+
+    // Only one blueprint, learn it directly
+    learnSelectedItem(availableBlueprints[0]);
+  };
+
+  const learnSelectedItem = (selectedItem) => {
     setGameState(prev => {
+      const currentPlayer = prev.players[prev.currentPlayerIndex];
       // Find all players on the same position
       const playersOnSamePosition = prev.players.filter(player => player.position === currentPlayer.position);
 
-      // Determine foundation building skill from first available blueprint (consume one blueprint per action)
-      const blueprintToUse = availableBlueprints[0];
+      // Determine foundation building skill from selected blueprint
+      const blueprintToUse = selectedItem;
       let foundationSkill = '';
 
       // Each blueprint teaches the knowledge skill (matches skills.json IDs)
@@ -3257,6 +3437,7 @@ function GameScreen({ gameData, onNewGame }) {
         actionBlockers: actionBlockers,
         light: Math.max(0, prev.light - lightDecrement),
         roundCompleted: roundCompleted || false,
+        currentEvent: null, // Close the selection modal
         herzDerFinsternis: {
           ...prev.herzDerFinsternis,
           darkTiles: updatedDarkTiles
@@ -3274,8 +3455,29 @@ function GameScreen({ gameData, onNewGame }) {
     );
     if (availableArtifacts.length === 0 || currentPlayer.ap < 1) return;
 
+    // If multiple artifacts available, show selection modal
+    if (availableArtifacts.length > 1) {
+      setGameState(prev => ({
+        ...prev,
+        currentEvent: {
+          type: 'learn_item_selection',
+          title: 'Artefakt lernen',
+          description: 'Wähle ein Artefakt zum Lernen (1 AP):',
+          availableItems: availableArtifacts,
+          itemType: 'artifact'
+        }
+      }));
+      return;
+    }
+
+    // Only one artifact, learn it directly
+    learnSelectedArtifact(availableArtifacts[0]);
+  };
+
+  const learnSelectedArtifact = (selectedItem) => {
     setGameState(prev => {
-      const artifactToUse = availableArtifacts[0];
+      const currentPlayer = prev.players[prev.currentPlayerIndex];
+      const artifactToUse = selectedItem;
       const heroId = artifactToUse.replace('artefakt_', '');
 
       // Map hero IDs to their innate skills
@@ -3358,7 +3560,8 @@ function GameScreen({ gameData, onNewGame }) {
         round: newRound,
         actionBlockers: actionBlockers,
         light: Math.max(0, prev.light - lightDecrement),
-        roundCompleted: roundCompleted || false
+        roundCompleted: roundCompleted || false,
+        currentEvent: null // Close the selection modal
       };
     });
   };
@@ -3491,6 +3694,73 @@ function GameScreen({ gameData, onNewGame }) {
         };
       });
     }
+  };
+
+  // ========== CARD DRAW SYSTEM ==========
+
+  const analyzeEventForCardDraws = (event, currentState) => {
+    const cardDrawQueue = [];
+
+    // Check each effect for random selections needed
+    event.effects.forEach(effect => {
+      // Check for random_hero target
+      if (effect.target === 'random_hero' && !currentState.drawnCards.hero) {
+        // Only add if not already drawn
+        if (!cardDrawQueue.find(card => card.type === 'hero')) {
+          cardDrawQueue.push({
+            type: 'hero',
+            options: currentState.players.map(p => p.id),
+            purpose: 'event_effect'
+          });
+        }
+      }
+
+      // Check for random direction targets
+      if (effect.target === 'random_direction_from_crater' ||
+          effect.target === 'all_apeiron_sources_random_direction') {
+        if (!currentState.drawnCards.direction) {
+          // Only add if not already drawn
+          if (!cardDrawQueue.find(card => card.type === 'direction')) {
+            cardDrawQueue.push({
+              type: 'direction',
+              options: ['north', 'east', 'south', 'west'],
+              purpose: 'event_effect'
+            });
+          }
+        }
+      }
+    });
+
+    console.log(`🔍 Event "${event.name}" needs ${cardDrawQueue.length} card draws:`, cardDrawQueue);
+    return cardDrawQueue;
+  };
+
+  const handleCardDraw = (drawnValue, cardType) => {
+    console.log(`🎴 Card drawn: ${cardType} = ${drawnValue}`);
+
+    setGameState(prev => {
+      // Check the purpose to determine how to store the drawn card
+      const currentCard = prev.cardDrawQueue[0];
+      const purpose = currentCard?.purpose;
+
+      let newDrawnCards = { ...prev.drawnCards };
+
+      if (purpose === 'tor_der_weisheit' || purpose === 'herz_der_finsternis') {
+        // For special purposes, store with purpose-specific key
+        newDrawnCards[cardType] = drawnValue;
+        console.log(`📝 Direction card drawn for ${purpose}: ${drawnValue}`);
+      } else {
+        // For event effects, use standard key
+        newDrawnCards[cardType] = drawnValue;
+        console.log(`📝 Drawn cards so far:`, newDrawnCards);
+      }
+
+      return {
+        ...prev,
+        drawnCards: newDrawnCards,
+        cardDrawState: 'result_shown' // Show result in same modal (DON'T remove from queue yet!)
+      };
+    });
   };
 
   const handleHeilendeReinigung = (darknessPosition) => {
@@ -4218,8 +4488,337 @@ function GameScreen({ gameData, onNewGame }) {
         </button>
       </header>
 
+      {/* Card Draw Modal - only show when in 'drawing' or 'result_shown' state */}
+      {gameState.cardDrawQueue && gameState.cardDrawQueue.length > 0 && (gameState.cardDrawState === 'drawing' || gameState.cardDrawState === 'result_shown') && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000
+        }}>
+          <div style={{
+            backgroundColor: '#1f2937',
+            padding: '32px',
+            borderRadius: '16px',
+            maxWidth: '500px',
+            width: '90%',
+            border: '3px solid #3b82f6',
+            boxShadow: '0 0 40px rgba(59, 130, 246, 0.5)',
+            animation: 'fadeIn 0.3s ease-in'
+          }}>
+            {(() => {
+              const currentCard = gameState.cardDrawQueue[0];
+              const isDirection = currentCard.type === 'direction';
+              const isHero = currentCard.type === 'hero';
+              const cardIsFlipped = gameState.cardDrawState === 'result_shown';
+
+              // Get the drawn result if card is flipped
+              const drawnDirection = cardIsFlipped && isDirection ? gameState.drawnCards.direction : null;
+              const drawnHeroId = cardIsFlipped && isHero ? gameState.drawnCards.hero : null;
+              const drawnHero = drawnHeroId ? gameState.players.find(p => p.id === drawnHeroId) : null;
+
+              const heroColors = {
+                terra: '#22c55e',
+                ignis: '#ef4444',
+                lyra: '#3b82f6',
+                corvus: '#eab308'
+              };
+
+              // Determine title based on purpose
+              const purpose = currentCard.purpose;
+              let title = '🎴 Himmelsrichtung ziehen';
+              if (isHero) {
+                title = '🎴 Held ziehen';
+              } else if (purpose === 'tor_der_weisheit') {
+                title = '🚪 Tor der Weisheit - Himmelsrichtung ziehen';
+              } else if (purpose === 'herz_der_finsternis') {
+                title = '💀 Herz der Finsternis - Himmelsrichtung ziehen';
+              }
+
+              return (
+                <>
+                  {/* Title */}
+                  <h2 style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold',
+                    marginBottom: '24px',
+                    textAlign: 'center',
+                    color: isDirection ? '#3b82f6' : '#ca8a04'
+                  }}>
+                    {title}
+                  </h2>
+
+                  {/* Card Stack - clickable */}
+                  <div
+                    onClick={() => {
+                      if (!cardIsFlipped) {
+                        // First click: Draw and flip card
+                        const randomIndex = Math.floor(Math.random() * currentCard.options.length);
+                        const drawnValue = currentCard.options[randomIndex];
+                        handleCardDraw(drawnValue, currentCard.type);
+                      } else {
+                        // Second click: Remove card from queue and proceed
+                        // CRITICAL: Prevent React StrictMode from handling this click twice
+                        if (currentlyConfirmingCardDraw) {
+                          console.log('🔒 BLOCKED: Card confirmation already in progress - duplicate StrictMode click');
+                          return;
+                        }
+
+                        currentlyConfirmingCardDraw = true;
+                        console.log('✅ Card result confirmed by player - proceeding');
+
+                        setGameState(prev => {
+                          // Remove first item from queue NOW (on confirmation)
+                          const newQueue = prev.cardDrawQueue.slice(1);
+                          console.log(`📋 Remaining queue after confirmation: ${newQueue.length}`);
+
+                          // Check if more cards need to be drawn
+                          if (newQueue.length > 0) {
+                            console.log(`📋 More cards to draw`);
+                            // Release lock for next card
+                            setTimeout(() => { currentlyConfirmingCardDraw = false; }, 100);
+                            return {
+                              ...prev,
+                              cardDrawQueue: newQueue,
+                              cardDrawState: 'event_shown' // Go back to event to draw next card
+                            };
+                          } else {
+                            console.log('🎯 All cards drawn - applying effects NOW (directly in handler)');
+
+                            // CRITICAL: Use module-level lock INSIDE setState to prevent React StrictMode double-execution
+                            // This is the ONLY reliable way to prevent both:
+                            // 1) Duplicate AP modifications (player.ap mutated twice)
+                            // 2) Missing obstacles (second call overwrites first)
+                            const eventId = prev.currentEvent?.id;
+
+                            // SYNCHRONOUS check of module-level lock
+                            if (currentlyApplyingEventId === eventId) {
+                              console.log(`🔒 BLOCKED: Effect already applied for ${eventId} - duplicate StrictMode call`);
+                              setTimeout(() => { currentlyConfirmingCardDraw = false; }, 200);
+                              // CRITICAL: Return prev UNCHANGED (no spreading, no modifications)
+                              // This ensures React doesn't overwrite the first call's changes with original state
+                              return prev;
+                            }
+
+                            const eventToApply = prev.currentEvent;
+
+                            if (eventToApply && prev.isEventTriggering) {
+                              // Set lock IMMEDIATELY before applying effect
+                              currentlyApplyingEventId = eventId;
+
+                              console.log(`🎯 DIRECT: Applying effect for event ${eventToApply.id}`);
+
+                              // Apply the effect with drawn cards
+                              const stateAfterEffect = applyEventEffect(eventToApply, prev);
+
+                              // Release both locks
+                              setTimeout(() => {
+                                currentlyConfirmingCardDraw = false;
+                                currentlyApplyingEventId = null;
+                                console.log(`🔓 Released locks for event ${eventId}`);
+                              }, 200);
+
+                              // Return state with effect applied AND modal closed
+                              return {
+                                ...stateAfterEffect,
+                                cardDrawQueue: newQueue,
+                                cardDrawState: 'none',
+                                drawnCards: {},
+                                isEventTriggering: false,
+                                currentEvent: {
+                                  ...eventToApply,
+                                  effectApplied: true
+                                }
+                              };
+                            } else {
+                              console.log('⏭️ No event to apply');
+                              setTimeout(() => { currentlyConfirmingCardDraw = false; }, 200);
+                              return {
+                                ...prev,
+                                cardDrawQueue: newQueue,
+                                cardDrawState: 'none'
+                              };
+                            }
+                          }
+                        });
+                      }
+                    }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '16px',
+                      padding: '24px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.backgroundColor = cardIsFlipped ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+                    }}
+                  >
+                    {!cardIsFlipped ? (
+                      /* Card Stack visualization - BEFORE flip */
+                      <>
+                        <div style={{
+                          position: 'relative',
+                          width: '200px',
+                          height: '280px'
+                        }}>
+                          {[0, 1, 2, 3].map(i => (
+                            <div key={i} style={{
+                              position: 'absolute',
+                              top: `${i * 4}px`,
+                              left: `${i * 4}px`,
+                              width: '200px',
+                              height: '280px',
+                              backgroundColor: isDirection ? '#1e3a8a' : '#92400e',
+                              borderRadius: '12px',
+                              border: '3px solid ' + (isDirection ? '#3b82f6' : '#ca8a04'),
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              fontSize: '4rem',
+                              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
+                            }}>
+                              {i === 3 && '🎴'}
+                            </div>
+                          ))}
+                        </div>
+
+                        <p style={{
+                          fontSize: '1.1rem',
+                          color: '#e5e7eb',
+                          fontWeight: 'bold',
+                          textAlign: 'center'
+                        }}>
+                          Klicke um eine Karte zu ziehen
+                        </p>
+                        <p style={{
+                          fontSize: '0.9rem',
+                          color: '#9ca3af',
+                          textAlign: 'center'
+                        }}>
+                          {currentCard.options.length} Karten verfügbar
+                        </p>
+                      </>
+                    ) : (
+                      /* Flipped Card - Show Result with animation */
+                      <>
+                        {isDirection && drawnDirection && (
+                          <div style={{
+                            width: '200px',
+                            height: '280px',
+                            backgroundColor: '#3b82f6',
+                            borderRadius: '12px',
+                            border: '3px solid #60a5fa',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            boxShadow: '0 4px 20px rgba(59, 130, 246, 0.6)',
+                            animation: 'flipCard 0.6s ease-out'
+                          }}>
+                            <div style={{ fontSize: '5rem', marginBottom: '16px' }}>
+                              {drawnDirection === 'north' && '⬆️'}
+                              {drawnDirection === 'east' && '➡️'}
+                              {drawnDirection === 'south' && '⬇️'}
+                              {drawnDirection === 'west' && '⬅️'}
+                            </div>
+                            <div style={{
+                              fontSize: '1.8rem',
+                              fontWeight: 'bold',
+                              color: 'white',
+                              textTransform: 'uppercase',
+                              letterSpacing: '3px'
+                            }}>
+                              {drawnDirection === 'north' && 'NORDEN'}
+                              {drawnDirection === 'east' && 'OSTEN'}
+                              {drawnDirection === 'south' && 'SÜDEN'}
+                              {drawnDirection === 'west' && 'WESTEN'}
+                            </div>
+                          </div>
+                        )}
+
+                        {isHero && drawnHero && (
+                          <div style={{
+                            width: '200px',
+                            height: '280px',
+                            backgroundColor: heroColors[drawnHero.id] || '#ca8a04',
+                            borderRadius: '12px',
+                            border: '3px solid rgba(255, 255, 255, 0.5)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            boxShadow: `0 4px 20px ${heroColors[drawnHero.id] || '#ca8a04'}80`,
+                            animation: 'flipCard 0.6s ease-out'
+                          }}>
+                            <div style={{ fontSize: '5rem', marginBottom: '16px' }}>
+                              {drawnHero.icon}
+                            </div>
+                            <div style={{
+                              fontSize: '1.8rem',
+                              fontWeight: 'bold',
+                              color: 'white',
+                              textTransform: 'uppercase',
+                              letterSpacing: '3px'
+                            }}>
+                              {drawnHero.name}
+                            </div>
+                          </div>
+                        )}
+
+                        <p style={{
+                          fontSize: '1.1rem',
+                          color: '#10b981',
+                          fontWeight: 'bold',
+                          textAlign: 'center',
+                          marginTop: '16px'
+                        }}>
+                          Klicke erneut um fortzufahren
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  {/* CSS Animation */}
+                  <style>{`
+                    @keyframes flipCard {
+                      0% {
+                        transform: rotateY(90deg) scale(0.8);
+                        opacity: 0;
+                      }
+                      50% {
+                        transform: rotateY(45deg) scale(0.9);
+                      }
+                      100% {
+                        transform: rotateY(0deg) scale(1);
+                        opacity: 1;
+                      }
+                    }
+                  `}</style>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Event Card Modal */}
-      {gameState.currentEvent && (
+      {gameState.currentEvent && (gameState.cardDrawState === 'event_shown' || !gameState.cardDrawQueue.length) && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -4418,31 +5017,124 @@ function GameScreen({ gameData, onNewGame }) {
                   Abbrechen
                 </button>
               </div>
+            ) : gameState.currentEvent.type === 'learn_item_selection' ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                marginTop: '16px'
+              }}>
+                {gameState.currentEvent.availableItems.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      if (gameState.currentEvent.itemType === 'blueprint') {
+                        learnSelectedItem(item);
+                      } else if (gameState.currentEvent.itemType === 'artifact') {
+                        learnSelectedArtifact(item);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: '#8b5cf6',
+                      color: 'white',
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                    title={`${item} lernen`}
+                  >
+                    {item === 'artefakt_terra' ? '🔨 Terras Hammer der Erbauerin' :
+                     item === 'artefakt_ignis' ? '🔥 Ignis\' Herz des Feuers' :
+                     item === 'artefakt_lyra' ? '🏺 Lyras Kelch der Reinigung' :
+                     item === 'artefakt_corvus' ? '👁️ Corvus\' Auge des Spähers' :
+                     item === 'bauplan_erde' ? '📜 Bauplan Erde' :
+                     item === 'bauplan_wasser' ? '📜 Bauplan Wasser' :
+                     item === 'bauplan_feuer' ? '📜 Bauplan Feuer' :
+                     item === 'bauplan_luft' ? '📜 Bauplan Luft' :
+                     item}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setGameState(prev => ({ ...prev, currentEvent: null }))}
+                  style={{
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Abbrechen
+                </button>
+              </div>
             ) : (
               <div style={{
                 display: 'flex',
                 justifyContent: 'center'
               }}>
-                <button
-                  onClick={() => setGameState(prev => ({
-                    ...prev,
-                    currentEvent: null,
-                    isEventTriggering: false,
-                    currentPlayerIndex: 0  // Start new round with first player
-                  }))}
-                  style={{
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    padding: '12px 32px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Bestätigen
-                </button>
+                {gameState.cardDrawState === 'event_shown' && gameState.cardDrawQueue.length > 0 ? (
+                  // Event needs card draw - show "Draw Card" button
+                  <button
+                    onClick={() => {
+                      const cardType = gameState.cardDrawQueue[0].type;
+                      console.log(`🎴 User clicked to draw ${cardType} card`);
+                      setGameState(prev => ({
+                        ...prev,
+                        cardDrawState: 'drawing' // Switch to card draw modal
+                      }));
+                    }}
+                    style={{
+                      backgroundColor: gameState.cardDrawQueue[0].type === 'direction' ? '#3b82f6' : '#ca8a04',
+                      color: 'white',
+                      padding: '12px 32px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                      transition: 'all 0.2s ease-in-out'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    🎴 {gameState.cardDrawQueue[0].type === 'direction' ? 'Himmelsrichtung ziehen' : 'Heldenkarte ziehen'}
+                  </button>
+                ) : (
+                  // No card draw needed - show normal "Continue" button
+                  <button
+                    onClick={() => setGameState(prev => ({
+                      ...prev,
+                      currentEvent: null,
+                      isEventTriggering: false,
+                      cardDrawState: 'none',
+                      drawnCards: {}, // CRITICAL: Clear drawnCards when event modal closes
+                      currentPlayerIndex: 0  // Start new round with first player
+                    }))}
+                    style={{
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      padding: '12px 32px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Bestätigen
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -5621,35 +6313,50 @@ function GameScreen({ gameData, onNewGame }) {
                   {/* Active Effects */}
                   {player.effects && player.effects.filter(e => e.expiresInRound > gameState.round).length > 0 && (
                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                      {player.effects.filter(e => e.expiresInRound > gameState.round).map((effect, index) => {
-                        const effectInfo = {
-                          skip_turn: { icon: '😴', title: 'Muss nächste Runde aussetzen' },
-                          prevent_movement: { icon: '⛓️', title: 'Kann sich nicht bewegen' },
-                          block_skills: { icon: '🚫', title: 'Spezialfähigkeiten blockiert' },
-                          bonus_ap: { icon: '⚡', title: `Hat +${effect.value} AP in dieser Runde` },
-                          reduce_ap: { icon: '🧊', title: `Hat -${effect.value} AP in dieser Runde` },
-                          set_ap: { icon: '⏸️', title: `AP auf ${effect.value} gesetzt` }
-                        }[effect.type];
+                      {(() => {
+                        // Deduplicate effects by type to prevent double display
+                        const activeEffects = player.effects.filter(e => e.expiresInRound > gameState.round);
+                        const uniqueEffects = [];
+                        const seen = new Set();
 
-                        if (!effectInfo) return null;
+                        activeEffects.forEach(effect => {
+                          const key = `${effect.type}-${effect.value || ''}-${effect.expiresInRound}`;
+                          if (!seen.has(key)) {
+                            seen.add(key);
+                            uniqueEffects.push(effect);
+                          }
+                        });
 
-                        return (
-                          <div 
-                            key={index}
-                            title={effectInfo.title}
-                            style={{
-                              backgroundColor: effect.type.includes('bonus') ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                              border: effect.type.includes('bonus') ? '1px solid #22c55e' : '1px solid #ef4444',
-                              color: '#fca5a5',
-                              borderRadius: '4px',
-                              padding: '2px 4px',
-                              fontSize: '0.8rem'
-                            }}
-                          >
-                            {effectInfo.icon}
-                          </div>
-                        );
-                      })}
+                        return uniqueEffects.map((effect, index) => {
+                          const effectInfo = {
+                            skip_turn: { icon: '😴', title: 'Muss nächste Runde aussetzen' },
+                            prevent_movement: { icon: '⛓️', title: 'Kann sich nicht bewegen' },
+                            block_skills: { icon: '🚫', title: 'Spezialfähigkeiten blockiert' },
+                            bonus_ap: { icon: '⚡', title: `Hat +${effect.value} AP in dieser Runde` },
+                            reduce_ap: { icon: '🧊', title: `Hat -${effect.value} AP in dieser Runde` },
+                            set_ap: { icon: '⏸️', title: `AP auf ${effect.value} gesetzt` }
+                          }[effect.type];
+
+                          if (!effectInfo) return null;
+
+                          return (
+                            <div
+                              key={`${effect.type}-${effect.value || ''}-${index}`}
+                              title={effectInfo.title}
+                              style={{
+                                backgroundColor: effect.type.includes('bonus') ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                border: effect.type.includes('bonus') ? '1px solid #22c55e' : '1px solid #ef4444',
+                                color: '#fca5a5',
+                                borderRadius: '4px',
+                                padding: '2px 4px',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              {effectInfo.icon}
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   )}
                   {/* Action Blockers */}

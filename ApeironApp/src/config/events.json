@@ -35,43 +35,43 @@
         "name": "Erdrutsch am Krater",
         "symbol": "🪨",
         "type": "negative",
-        "effectText": "Platziere ein Geröll-Hindernis auf dem ersten Feld nördlich des Kraters.",
-        "description": "Die Berge erzittern und Geröll poltert zum Zentrum.",
+        "effectText": "Platziere ein Geröll-Hindernis auf einem zufälligen Feld angrenzend zum Krater.",
+        "description": "Die Berge erzittern und Geröll poltert zum Zentrum. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
             "obstacle": "geroell",
-            "target": "north_of_crater"
+            "target": "random_direction_from_crater"
           }
         ]
       },
       {
         "id": "dornenplage_im_osten",
-        "name": "Dornenplage im Osten",
+        "name": "Dornenplage",
         "symbol": "🌿",
         "type": "negative",
-        "effectText": "Platziere ein Dornenwald-Hindernis auf dem ersten Feld östlich des Kraters.",
-        "description": "Über Nacht wuchern dornige Ranken aus dem Waldboden.",
+        "effectText": "Platziere ein Dornenwald-Hindernis auf einem zufälligen Feld angrenzend zum Krater.",
+        "description": "Über Nacht wuchern dornige Ranken aus dem Waldboden. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
             "obstacle": "dornenwald",
-            "target": "east_of_crater"
+            "target": "random_direction_from_crater"
           }
         ]
       },
       {
         "id": "sturzflut_im_westen",
-        "name": "Sturzflut im Westen",
+        "name": "Sturzflut",
         "symbol": "🌊",
         "type": "negative",
-        "effectText": "Platziere ein Überflutungs-Hindernis auf dem ersten Feld westlich des Kraters.",
-        "description": "Heftige Regenfälle lassen die Flüsse über die Ufer treten.",
+        "effectText": "Platziere ein Überflutungs-Hindernis auf einem zufälligen Feld angrenzend zum Krater.",
+        "description": "Heftige Regenfälle lassen die Flüsse über die Ufer treten. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
             "obstacle": "ueberflutung",
-            "target": "west_of_crater"
+            "target": "random_direction_from_crater"
           }
         ]
       },
@@ -140,7 +140,7 @@
         "symbol": "😴",
         "type": "negative",
         "effectText": "Ein zufällig gewählter Held muss die nächste Runde aussetzen.",
-        "description": "Die andauernde Suche fordert ihren Tribut.",
+        "description": "Die andauernde Suche fordert ihren Tribut. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "skip_turn",
@@ -155,7 +155,7 @@
         "symbol": "👁️",
         "type": "negative",
         "effectText": "Ein zufällig gewählter Held kann in der nächsten Runde weder entdecken noch spähen.",
-        "description": "Trugbilder täuschen eure Sinne.",
+        "description": "Trugbilder täuschen eure Sinne. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "block_action",
@@ -182,16 +182,16 @@
       },
       {
         "id": "blockade_im_sueden",
-        "name": "Blockade im Süden",
+        "name": "Blockade",
         "symbol": "🪨",
         "type": "negative",
-        "effectText": "Platziere ein Geröll-Hindernis auf dem ersten freien Feld südlich des Kraters.",
-        "description": "Ein massiver Felssturz versperrt wichtige Wege.",
+        "effectText": "Platziere ein Geröll-Hindernis auf einem zufälligen Feld angrenzend zum Krater.",
+        "description": "Ein massiver Felssturz versperrt wichtige Wege. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
             "obstacle": "geroell",
-            "target": "south_of_crater"
+            "target": "random_direction_from_crater"
           }
         ]
       },
@@ -246,7 +246,7 @@
         "symbol": "🎒",
         "type": "negative",
         "effectText": "Ein zufällig gewählter Held muss alle Gegenstände auf seinem Feld ablegen.",
-        "description": "Ein Rucksack reißt und wertvolle Gegenstände fallen heraus.",
+        "description": "Ein Rucksack reißt und wertvolle Gegenstände fallen heraus. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "drop_all_items",
@@ -295,7 +295,7 @@
         "symbol": "🕷️",
         "type": "negative",
         "effectText": "Ein zufällig gewählter Held kann sich in der nächsten Runde nicht bewegen (andere Aktionen möglich).",
-        "description": "Dunkle Magie umschlingt einen eurer Gefährten.",
+        "description": "Dunkle Magie umschlingt einen eurer Gefährten. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "prevent_movement",
@@ -730,13 +730,13 @@
         "name": "Tsunami der Finsternis",
         "symbol": "🌊",
         "type": "negative",
-        "effectText": "Platziere Überflutungen auf allen Apeiron-Quellen östlich des Kraters.",
-        "description": "Eine gewaltige Welle aus Dunkelheit überflutet die Insel.",
+        "effectText": "Platziere Überflutungen auf allen Apeiron-Quellen in einer zufälligen Himmelsrichtung.",
+        "description": "Eine gewaltige Welle aus Dunkelheit überflutet die Insel. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
             "obstacle": "ueberflutung",
-            "target": "all_apeiron_sources_east"
+            "target": "all_apeiron_sources_random_direction"
           }
         ]
       },

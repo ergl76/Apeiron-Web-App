@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-02 22:30
-**Sprint:** Event System Bugfixes - AP Modification Effects
-**Fortschritt:** ~99% abgeschlossen (1 Feature fehlt für 100% Spielregel-Konformität)
-**Velocity:** ~3-4 Critical Bugfixes/Session
-**Next Focus:** Win/Loss Conditions
+**Letzte Session:** 2025-10-02 23:45 (Extended Debugging Session)
+**Sprint:** React StrictMode Doppelausführung - Card-Draw Event System
+**Fortschritt:** ~95% abgeschlossen (2 kritische Bugs + 1 Feature offen)
+**Velocity:** Komplexe React StrictMode Debugging (8h+ Session)
+**Next Focus:** 🔴 KRITISCH - Doppelte AP-Effekte beheben + Card-Draw UX Fix
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -93,15 +93,90 @@
 - [x] 2025-10-02 KRITISCHER BUGFIX: AP-Modifikations-Events doppelte Anwendung behoben
 - [x] 2025-10-02 Event-Effekte "next_round" duration komplett repariert (einmalige Anwendung statt persistent)
 - [x] 2025-10-02 bonus_ap, reduce_ap, set_ap Events jetzt korrekt für eine Runde wirksam
+- [x] 2025-10-02 Card-Draw System vollständig implementiert (Hero/Direction cards für Events)
+- [x] 2025-10-02 drawnCards State-Management behoben (alte Werte wurden nicht gelöscht)
+- [x] 2025-10-02 Hindernis-Platzierung funktioniert (Geröll, Dornenwald) ✅
+- [⚠️] 2025-10-02 React StrictMode Doppelausführung - TEILWEISE behoben (Hindernisse ✅, AP-Effekte ❌)
 
-## =� In Arbeit
-- [x] **Herz der Finsternis System** - VOLLSTÄNDIG IMPLEMENTIERT & GETESTET
-  - Status: ✅ Implementation & Testing abgeschlossen
-  - Herz der Finsternis Platzierung: ✅ Funktioniert korrekt
-  - Chebyshev-Distanz Ring-Algorithmus: ✅ Funktioniert (8 Felder/Ring, inkl. diagonal)
-  - Movement/Resource Blockierung: ✅ Funktioniert
-  - Heilende Reinigung: ✅ Implementiert (nur N/E/S/W Richtungen)
-  - Validation: ✅ Vollständig getestet in Phase 2 Gameplay
+## 🔴 KRITISCHE BUGS (P0 - HÖCHSTE PRIORITÄT)
+
+### Bug #1: Doppelte AP-Effekte ❌
+**Symptom:** "Günstiges Omen" (+1 AP) gibt +2 AP statt +1 AP
+**Status:** UNGELÖST nach 8+ Debugging-Versuchen
+**Betroffene Events:** Alle `bonus_ap`, `reduce_ap`, `set_ap` Events mit `duration: "next_round"`
+**Letzte Erkenntnis:**
+- Modul-Level Lock `currentlyApplyingEventId` blockiert zweiten Call korrekt (✅ in Logs bestätigt)
+- `applyEventEffect` wird nur EINMAL aufgerufen (✅ in Logs bestätigt)
+- ABER Player hat trotzdem +2 AP statt +1 AP (❌)
+- **Hypothese:** `applyEventEffect` mutiert Player-Objekte ODER es gibt einen ANDEREN Call-Ort
+
+**Erfolglose Fix-Versuche (6 Strategien):**
+1. ❌ useRef Locks (`effectAppliedRef`, `lastAppliedEventRef`) - beide Calls sehen gleichzeitig false
+2. ❌ Check in `applyEventEffect` - Flag wurde vor Call gesetzt, Funktion skipped immer
+3. ❌ Modul-Level Lock im useEffect - Events werden jetzt im onClick angewendet (nicht mehr relevant)
+4. ❌ Effekte direkt im onClick - `setGameState(prev => {...})` wird zweimal aufgerufen
+5. ⚠️ Modul-Level Lock INNERHALB setState - Hindernisse verschwanden (zweiter Call überschrieb)
+6. ✅ Return `prev` unchanged - **Hindernisse funktionieren jetzt**, aber AP-Effekte immer noch doppelt!
+
+**Nächster Schritt:**
+- Prüfen ob `applyEventEffect` an einem ANDEREN Ort aufgerufen wird (grep nach allen Calls)
+- Prüfen ob Player-Objekte korrekt deep-copied werden (Mutation-Check)
+- Event-Logs detailliert analysieren für versteckte zweite Calls
+
+### Bug #2: Doppelklick auf Card erforderlich ❌
+**Symptom:** User muss 2× auf gezogene Karte klicken um zurück zum Event-Modal zu kommen
+**Status:** UNGELÖST
+**Erwartetes Verhalten:** 1× Klick auf Card → Zurück zum Event-Modal mit resolvedEffectText
+**Aktuelles Verhalten:** 1. Klick → nichts, 2. Klick → zurück zum Modal
+**Hypothese:** `cardDrawState` Transition oder onClick Handler Problem
+
+## 📊 **Session 2025-10-02 Abend - Umfassende Debugging-Erkenntnisse**
+
+### Was funktioniert ✅
+1. **Card-Draw System** - Hero/Direction Karten werden korrekt gezogen
+2. **Event-Modal Flow** - Modal erscheint vor/nach Kartenziehen (ABSICHT, kein Bug!)
+3. **Hindernis-Platzierung** - Geröll, Dornenwald erscheinen auf dem Spielfeld
+4. **drawnCards Cleanup** - Alte Kartenwerte werden gelöscht (Fix: Zeile 1873, 5123)
+5. **Modul-Level Lock** - Blockiert zweiten `setGameState` Call korrekt
+6. **Tor der Weisheit** - Card-Draw Integration funktioniert
+
+### Was NICHT funktioniert ❌
+1. **AP-Effekte doppelt** - Trotz Lock-Bestätigung in Logs
+2. **Doppelklick auf Card** - UX-Problem im Card-Draw Modal
+
+### Technische Details der Lock-Implementation
+```javascript
+// Zeile 4600-4607: Card-Draw Modal onClick Handler
+if (currentlyApplyingEventId === eventId) {
+  console.log('🔒 BLOCKED: Effect already applied...');
+  return prev;  // ← WICHTIG: Keine Änderungen, kein spreading!
+}
+
+// Zeile 4614: Lock setzen VOR applyEventEffect
+currentlyApplyingEventId = eventId;
+
+// Zeile 4619: Effekt anwenden
+const stateAfterEffect = applyEventEffect(eventToApply, prev);
+```
+
+**Warum Hindernisse funktionieren:**
+- `newBoard[pos] = { ...tile, obstacle }` erstellt NEUES Objekt
+- Zweiter blockierter Call returniert `prev` ohne Änderung
+- React nimmt ersten Return (mit Hindernis)
+
+**Warum AP-Effekte NICHT funktionieren (Hypothesen):**
+1. **Mutation?** `player.ap += value` mutiert direkt → beide Calls teilen Objekt?
+2. **Zweiter Call-Ort?** `applyEventEffect` wird woanders nochmal aufgerufen?
+3. **Config-Fehler?** Event hat tatsächlich `value: 2` statt `value: 1`? (✅ WIDERLEGT - Config hat `value: 1`)
+4. **Timing?** AP wird an zwei verschiedenen Stellen erhöht (z.B. Rundenwechsel + Event)?
+
+### Code-Locations (für nächste Session)
+- `applyEventEffect`: Zeile 1883-2800
+- Card-Draw Modal onClick: Zeile 4558-4651
+- `triggerRandomEvent`: Zeile 1795-1881
+- `handleCardDraw`: Zeile 3737-3763
+
+## =� In Arbeit (Non-Critical)
 
 ## =� N�chste Schritte (Priorit�t)
 
