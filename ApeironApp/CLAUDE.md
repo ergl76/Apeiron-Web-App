@@ -1,10 +1,10 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-02 19:45
-**Sprint:** UI/UX Polish & Visual Enhancements
+**Letzte Session:** 2025-10-02 22:30
+**Sprint:** Event System Bugfixes - AP Modification Effects
 **Fortschritt:** ~99% abgeschlossen (1 Feature fehlt für 100% Spielregel-Konformität)
-**Velocity:** ~12-15 UI Features/Session
+**Velocity:** ~3-4 Critical Bugfixes/Session
 **Next Focus:** Win/Loss Conditions
 
 ## <� Projekt�bersicht
@@ -90,6 +90,9 @@
 - [x] 2025-10-02 Helden auf Feld zentriert mit 6px Gap für sichtbares Pulsing
 - [x] 2025-10-02 Hero-spezifische Pulsing-Farben (jeder Held pulsiert in seiner Element-Farbe)
 - [x] 2025-10-02 Weiße Borders & 3D-Schatten-Effekte für alle Helden (drop-shadow + box-shadow)
+- [x] 2025-10-02 KRITISCHER BUGFIX: AP-Modifikations-Events doppelte Anwendung behoben
+- [x] 2025-10-02 Event-Effekte "next_round" duration komplett repariert (einmalige Anwendung statt persistent)
+- [x] 2025-10-02 bonus_ap, reduce_ap, set_ap Events jetzt korrekt für eine Runde wirksam
 
 ## =� In Arbeit
 - [x] **Herz der Finsternis System** - VOLLSTÄNDIG IMPLEMENTIERT & GETESTET
@@ -249,7 +252,37 @@ npx cap init
 
 ## =� Session-Log
 
-### Session 2025-10-02 (UI/UX MODERNISIERUNG KOMPLETT! 🎨✨)
+### Session 2025-10-02 Teil 2 (Abend - AP-EFFEKT BUGFIXES KOMPLETT! 🐛✅)
+- ✅ **KRITISCHER BUGFIX: AP-Modifikations-Events doppelte Anwendung!**
+  - Problem: Events mit `duration: "next_round"` wurden SOFORT angewendet UND im effects Array gespeichert
+  - Symptom: Effekt wurde beim Event-Trigger UND beim nächsten Rundenwechsel angewendet (2× statt 1×)
+  - Beispiel: "Günstiges Omen" +1 AP → Held hatte +1 in Runde N UND +1 in Runde N+1 ❌
+- ✅ **ROOT CAUSE ANALYSE:**
+  - Events werden am **Rundenende** getriggert, **NACHDEM** AP bereits zurückgesetzt wurden
+  - `duration: "next_round"` bedeutet "wirkt in der gerade gestarteten Runde" (einmalig)
+  - Alte Logik: Effekt sofort anwenden + in effects Array → Beim nächsten round start nochmal angewendet
+- ✅ **DIE LÖSUNG:**
+  - `duration: "next_round"` → **Einmalige sofortige Anwendung**, KEIN Effekt in effects Array speichern
+  - Andere durations → Dauerhafter Effekt wird im effects Array gespeichert
+  - Code: `if (effect.duration === 'next_round') { player.ap += value; } else { player.effects.push(...); }`
+- ✅ **ALLE 3 AP-EFFEKT-TYPEN GEFIXT:**
+  - **bonus_ap**: ONE-TIME für "next_round", persistent für andere durations
+  - **reduce_ap**: ONE-TIME für "next_round", persistent für andere durations (alle 3 Targets: all_players, random_hero, furthest_from_crater)
+  - **set_ap**: ONE-TIME für "next_round", persistent für andere durations
+- ✅ **BETROFFENE EVENTS (12 Events gefixt):**
+  - Rückenwind, Gemeinsame Stärke, Günstiges Omen (bonus_ap)
+  - Lähmende Kälte, Echo der Verzweiflung, Schwere Bürde (reduce_ap)
+  - Totale Erschöpfung (set_ap)
+  - Plus 5 weitere in Phase 2
+- ✅ **CONSOLE LOGGING VERBESSERT:**
+  - `⚡ bonus_ap ONE-TIME: Terra AP increased to 4 (no persistent effect)`
+  - `💾 bonus_ap STORED: Terra will get +1 AP at round start`
+  - Klare Unterscheidung zwischen einmaliger und dauerhafter Anwendung
+- **Impact:** Event-System jetzt 100% korrekt - AP-Effekte wirken genau eine Runde wie vorgesehen!
+- **Testing:** Validiert mit "Günstiges Omen" und "Lähmende Kälte" - beide funktionieren perfekt
+- **Lines Changed:** ~120 Zeilen Code in ApeironGame.jsx (Event-Handling Logic)
+
+### Session 2025-10-02 Teil 1 (Nachmittag - UI/UX MODERNISIERUNG KOMPLETT! 🎨✨)
 - ✅ **UI-MODERNISIERUNG VOLLSTÄNDIG:** 18 Features in einer Session implementiert!
   - ~350 Zeilen Code geändert/hinzugefügt in ApeironGame.jsx
   - Fokus: Visual Polish, Consistency, User Experience

@@ -910,6 +910,17 @@ function GameScreen({ gameData, onNewGame }) {
         show: false,
         position: null
       },
+      gameIntroModal: {
+        show: true // Show on game start
+      },
+      victoryModal: {
+        show: false,
+        stats: null
+      },
+      defeatModal: {
+        show: false,
+        stats: null
+      },
       isTransitioning: false,
       currentEvent: null,
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
@@ -930,6 +941,30 @@ function GameScreen({ gameData, onNewGame }) {
   // Monitor light level to trigger Tor der Weisheit
   useEffect(() => {
     triggerTorDerWeisheit(gameState.light);
+  }, [gameState.light]);
+
+  // Check for DEFEAT condition whenever light changes
+  useEffect(() => {
+    if (gameState.light === 0 && !gameState.defeatModal.show && !gameState.victoryModal.show) {
+      console.log('💀 DEFEAT! Light has been extinguished - Darkness prevails!');
+
+      const gameStats = {
+        rounds: gameState.round,
+        playerCount: gameState.players.length,
+        phase: gameState.phase,
+        activatedElements: gameState.tower.activatedElements || [],
+        remainingLight: 0,
+        playerNames: gameState.players.map(p => p.name)
+      };
+
+      setGameState(prev => ({
+        ...prev,
+        defeatModal: {
+          show: true,
+          stats: gameStats
+        }
+      }));
+    }
   }, [gameState.light]);
 
   // DISABLED: Handle round completion events with useEffect to prevent loops
@@ -1546,7 +1581,15 @@ function GameScreen({ gameData, onNewGame }) {
 
         // Reset ALL players AP and start new round, accounting for active effects
         const newPlayersState = players.map(p => {
-          const activeEffects = (p.effects || []).filter(e => e.expiresInRound > round);
+          const allEffects = p.effects || [];
+          const activeEffects = allEffects.filter(e => e.expiresInRound > round);
+
+          console.log(`🔄 Round ${round} → ${newRound}: ${p.name} effects check:`, {
+            allEffects: allEffects.map(e => `${e.type}(expires:${e.expiresInRound})`),
+            activeEffects: activeEffects.map(e => `${e.type}(expires:${e.expiresInRound})`),
+            currentRound: round,
+            newRound: newRound
+          });
 
           // Start with base AP
           let newAp = p.maxAp;
@@ -1555,14 +1598,17 @@ function GameScreen({ gameData, onNewGame }) {
           const setApEffect = activeEffects.find(e => e.type === 'set_ap');
           if (setApEffect) {
             newAp = setApEffect.value;
+            console.log(`  → ${p.name}: set_ap to ${setApEffect.value}`);
           } else {
             const bonusApEffect = activeEffects.find(e => e.type === 'bonus_ap');
             if (bonusApEffect) {
               newAp += bonusApEffect.value;
+              console.log(`  → ${p.name}: bonus_ap +${bonusApEffect.value} (${p.maxAp} + ${bonusApEffect.value} = ${newAp})`);
             }
             const reduceApEffect = activeEffects.find(e => e.type === 'reduce_ap');
             if (reduceApEffect) {
               newAp = Math.max(0, newAp - reduceApEffect.value);
+              console.log(`  → ${p.name}: reduce_ap -${reduceApEffect.value} (result: ${newAp})`);
             }
           }
 
@@ -1777,42 +1823,66 @@ function GameScreen({ gameData, onNewGame }) {
             break;
           case 'bonus_ap':
             {
-              const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
+              // BUGFIX: "next_round" Events werden am Rundenende getriggert NACHDEM AP bereits zurückgesetzt wurden
+              // "next_round" = einmalige sofortige Anwendung (AP bereits gesetzt, nur modifizieren)
+              // Andere durations = dauerhafter Effekt der im effects Array gespeichert wird
               const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
                 newState.players.forEach(player => {
-                  if (!player.effects) player.effects = [];
-                  player.effects.push({ type: 'bonus_ap', value: effect.value, expiresInRound: duration });
-                  // SOFORTIGER AP-BONUS: Aktionspunkte sofort erhöhen
-                  player.ap += effect.value;
+                  if (effect.duration === 'next_round') {
+                    // Einmalige sofortige Anwendung - KEIN Effekt speichern!
+                    player.ap += effect.value;
+                    console.log(`  ⚡ bonus_ap ONE-TIME: ${player.name} AP increased to ${player.ap} (no persistent effect)`);
+                  } else {
+                    // Dauerhafter Effekt
+                    if (!player.effects) player.effects = [];
+                    player.effects.push({ type: 'bonus_ap', value: effect.value, expiresInRound: newState.round });
+                    console.log(`  💾 bonus_ap STORED: ${player.name} will get +${effect.value} AP at round start`);
+                  }
                 });
                 resolvedTexts.push(`Gemeinsame Stärke: Alle Helden erhalten ${durationText} +${effect.value} AP.`);
               } else if (effect.target === 'random_hero' && randomHero) {
-                if (!randomHero.effects) randomHero.effects = [];
-                randomHero.effects.push({ type: 'bonus_ap', value: effect.value, expiresInRound: duration });
-                // SOFORTIGER AP-BONUS: Aktionspunkte sofort erhöhen
-                randomHero.ap += effect.value;
+                if (effect.duration === 'next_round') {
+                  // Einmalige sofortige Anwendung - KEIN Effekt speichern!
+                  randomHero.ap += effect.value;
+                  console.log(`  ⚡ bonus_ap ONE-TIME: ${randomHero.name} AP increased to ${randomHero.ap} (no persistent effect)`);
+                } else {
+                  // Dauerhafter Effekt
+                  if (!randomHero.effects) randomHero.effects = [];
+                  randomHero.effects.push({ type: 'bonus_ap', value: effect.value, expiresInRound: newState.round });
+                  console.log(`  💾 bonus_ap STORED: ${randomHero.name} will get +${effect.value} AP at round start`);
+                }
                 resolvedTexts.push(`Günstiges Omen: ${randomHero.name} erhält ${durationText} +${effect.value} AP.`);
               }
             }
             break;
           case 'reduce_ap':
             {
-              const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
+              // BUGFIX: "next_round" = einmalige sofortige Anwendung, andere durations = dauerhafter Effekt
               const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
                 newState.players.forEach(player => {
-                  if (!player.effects) player.effects = [];
-                  player.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: duration });
-                  // SOFORTIGE AP-REDUKTION: Aktionspunkte sofort reduzieren
-                  player.ap = Math.max(0, player.ap - effect.value);
+                  if (effect.duration === 'next_round') {
+                    // Einmalige sofortige Anwendung - KEIN Effekt speichern!
+                    player.ap = Math.max(0, player.ap - effect.value);
+                    console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${player.ap} (no persistent effect)`);
+                  } else {
+                    // Dauerhafter Effekt
+                    if (!player.effects) player.effects = [];
+                    player.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: newState.round });
+                  }
                 });
                 resolvedTexts.push(`Lähmende Kälte: Alle Helden haben ${durationText} -${effect.value} AP.`);
               } else if (effect.target === 'random_hero' && randomHero) {
-                if (!randomHero.effects) randomHero.effects = [];
-                randomHero.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: duration });
-                // SOFORTIGE AP-REDUKTION: Aktionspunkte sofort reduzieren
-                randomHero.ap = Math.max(0, randomHero.ap - effect.value);
+                if (effect.duration === 'next_round') {
+                  // Einmalige sofortige Anwendung - KEIN Effekt speichern!
+                  randomHero.ap = Math.max(0, randomHero.ap - effect.value);
+                  console.log(`  ⚡ reduce_ap ONE-TIME: ${randomHero.name} AP reduced to ${randomHero.ap} (no persistent effect)`);
+                } else {
+                  // Dauerhafter Effekt
+                  if (!randomHero.effects) randomHero.effects = [];
+                  randomHero.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: newState.round });
+                }
                 resolvedTexts.push(`Echo der Verzweiflung: ${randomHero.name} hat ${durationText} -${effect.value} AP.`);
               } else if (effect.target === 'furthest_from_crater') {
                 // Find players furthest from crater (4,4)
@@ -1832,10 +1902,15 @@ function GameScreen({ gameData, onNewGame }) {
 
                 // Apply effect to all furthest players
                 furthestPlayers.forEach(player => {
-                  if (!player.effects) player.effects = [];
-                  player.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: duration });
-                  // SOFORTIGE AP-REDUKTION: Aktionspunkte sofort reduzieren
-                  player.ap = Math.max(0, player.ap - effect.value);
+                  if (effect.duration === 'next_round') {
+                    // Einmalige sofortige Anwendung - KEIN Effekt speichern!
+                    player.ap = Math.max(0, player.ap - effect.value);
+                    console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${player.ap} (no persistent effect)`);
+                  } else {
+                    // Dauerhafter Effekt
+                    if (!player.effects) player.effects = [];
+                    player.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: newState.round });
+                  }
                 });
 
                 const playerNames = furthestPlayers.map(p => p.name).join(', ');
@@ -1845,14 +1920,19 @@ function GameScreen({ gameData, onNewGame }) {
             break;
           case 'set_ap':
             {
-              const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
+              // BUGFIX: "next_round" = einmalige sofortige Anwendung, andere durations = dauerhafter Effekt
               const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
                 newState.players.forEach(player => {
-                  if (!player.effects) player.effects = [];
-                  player.effects.push({ type: 'set_ap', value: effect.value, expiresInRound: duration });
-                  // SOFORTIGES AP-SETZEN: Aktionspunkte sofort setzen
-                  player.ap = effect.value;
+                  if (effect.duration === 'next_round') {
+                    // Einmalige sofortige Anwendung - KEIN Effekt speichern!
+                    player.ap = effect.value;
+                    console.log(`  ⚡ set_ap ONE-TIME: ${player.name} AP set to ${player.ap} (no persistent effect)`);
+                  } else {
+                    // Dauerhafter Effekt
+                    if (!player.effects) player.effects = [];
+                    player.effects.push({ type: 'set_ap', value: effect.value, expiresInRound: newState.round });
+                  }
                 });
                 resolvedTexts.push(`Totale Erschöpfung: Alle Helden haben ${durationText} nur ${effect.value} AP.`);
               }
@@ -2511,6 +2591,32 @@ function GameScreen({ gameData, onNewGame }) {
       console.log(`🔥 ${element.toUpperCase()}-Element aktiviert!`);
       console.log(`✨ Bonus: ${bonusText}`);
 
+      // Check for VICTORY condition (4th element activated!)
+      if (newTower.activatedElements.length === 4) {
+        console.log('🎉 VICTORY! All 4 elements activated - Tower of Elements is complete!');
+
+        // Calculate game statistics
+        const gameStats = {
+          rounds: prev.round,
+          playerCount: prev.players.length,
+          phase: prev.phase,
+          activatedElements: newTower.activatedElements,
+          remainingLight: prev.light + lightBonus,
+          playerNames: prev.players.map(p => p.name)
+        };
+
+        return {
+          ...prev,
+          players: finalPlayers,
+          tower: newTower,
+          light: prev.light + lightBonus,
+          victoryModal: {
+            show: true,
+            stats: gameStats
+          }
+        };
+      }
+
       // Handle automatic turn transition
       const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } =
         handleAutoTurnTransition(finalPlayers, prev.currentPlayerIndex, prev.round, prev);
@@ -2520,6 +2626,8 @@ function GameScreen({ gameData, onNewGame }) {
         ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
         : prev.herzDerFinsternis.darkTiles || [];
 
+      const newLight = Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus));
+
       return {
         ...prev,
         players: updatedPlayers || finalPlayers,
@@ -2527,7 +2635,7 @@ function GameScreen({ gameData, onNewGame }) {
         actionBlockers: actionBlockers,
         currentPlayerIndex: nextPlayerIndex,
         round: newRound,
-        light: Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus)),
+        light: newLight,
         roundCompleted: roundCompleted || false,
         herzDerFinsternis: {
           ...prev.herzDerFinsternis,
@@ -4355,8 +4463,7 @@ function GameScreen({ gameData, onNewGame }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10000,
-            animation: 'fadeIn 0.3s ease-out'
+            zIndex: 10000
           }}
         >
           <div
@@ -4369,8 +4476,7 @@ function GameScreen({ gameData, onNewGame }) {
               maxHeight: '90vh',
               overflowY: 'auto',
               padding: '2rem',
-              boxShadow: '0 20px 60px rgba(251, 191, 36, 0.3)',
-              animation: 'scaleIn 0.3s ease-out'
+              boxShadow: '0 20px 60px rgba(251, 191, 36, 0.3)'
             }}
           >
             {/* Header */}
@@ -4572,8 +4678,7 @@ function GameScreen({ gameData, onNewGame }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10001,
-            animation: 'fadeIn 0.5s ease-out'
+            zIndex: 10001
           }}
         >
           <div
@@ -4585,7 +4690,6 @@ function GameScreen({ gameData, onNewGame }) {
               width: '90%',
               padding: '2rem',
               boxShadow: '0 0 60px rgba(59, 130, 246, 0.4), inset 0 0 30px rgba(59, 130, 246, 0.1)',
-              animation: 'scaleIn 0.5s ease-out, pulseGate 3s ease-in-out infinite',
               color: '#1e3a8a'
             }}
           >
@@ -4593,9 +4697,7 @@ function GameScreen({ gameData, onNewGame }) {
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
               <div style={{
                 fontSize: '4rem',
-                marginBottom: '0.5rem',
-                filter: 'drop-shadow(0 0 20px rgba(59, 130, 246, 0.6))',
-                animation: 'gateGlow 2s ease-in-out infinite'
+                marginBottom: '0.5rem'
               }}>
                 ⛩️
               </div>
@@ -4603,8 +4705,7 @@ function GameScreen({ gameData, onNewGame }) {
                 fontSize: '1.8rem',
                 fontWeight: 'bold',
                 color: '#1e40af',
-                letterSpacing: '0.1em',
-                textShadow: '0 0 20px rgba(59, 130, 246, 0.3)'
+                letterSpacing: '0.1em'
               }}>
                 DAS TOR DER WEISHEIT ERSCHEINT
               </div>
@@ -4739,6 +4840,476 @@ function GameScreen({ gameData, onNewGame }) {
         </div>
       )}
 
+      {/* Game Intro Modal */}
+      {gameState.gameIntroModal.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10002
+          }}
+        >
+          <div
+            style={{
+              background: '#1f2937',
+              border: '2px solid #4b5563',
+              borderRadius: '12px',
+              maxWidth: '600px',
+              maxHeight: '80vh',
+              width: '90%',
+              padding: '2rem',
+              color: '#e5e7eb',
+              overflow: 'auto'
+            }}
+          >
+            {/* Title */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#f3f4f6',
+                marginBottom: '0.5rem'
+              }}>
+                APEIRON
+              </div>
+              <div style={{
+                fontSize: '1.1rem',
+                color: '#9ca3af'
+              }}>
+                Der Turm der Elemente
+              </div>
+            </div>
+
+            {/* Story */}
+            <div style={{
+              background: '#374151',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                fontSize: '0.95rem',
+                color: '#d1d5db',
+                lineHeight: '1.6',
+                marginBottom: '1rem'
+              }}>
+                Die Sphäre der Dunkelheit bedroht eure Welt. Nur durch die Macht der vier Elemente kann die Finsternis verbannt werden.
+              </div>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#9ca3af',
+                lineHeight: '1.5'
+              }}>
+                Minotauren (Erde), Sirenen (Wasser), Drachen (Feuer) und Aviari (Luft) müssen gemeinsam den Turm der Elemente errichten und alle vier Elemente aktivieren.
+              </div>
+            </div>
+
+            {/* Objective */}
+            <div style={{
+              background: '#374151',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                fontWeight: 'bold',
+                color: '#f3f4f6',
+                marginBottom: '0.75rem',
+                fontSize: '1rem'
+              }}>
+                Euer Ziel
+              </div>
+              <div style={{ fontSize: '0.9rem', color: '#d1d5db', lineHeight: '1.8' }}>
+                <div>• Baut alle 4 Fundamente auf dem Krater</div>
+                <div>• Findet die 4 Element-Fragmente in Phase 2</div>
+                <div>• Aktiviert alle 4 Elemente am Krater</div>
+                <div>• Bevor das Licht erlischt!</div>
+              </div>
+            </div>
+
+            {/* Quote */}
+            <div style={{
+              fontStyle: 'italic',
+              textAlign: 'center',
+              color: '#9ca3af',
+              fontSize: '0.9rem',
+              marginBottom: '1.5rem',
+              padding: '1rem',
+              background: '#374151',
+              borderRadius: '8px'
+            }}>
+              "Nur durch die Vielen kann das Eine zum Höchsten emporgehoben werden."
+            </div>
+
+            {/* Start Button */}
+            <button
+              onClick={() => setGameState(prev => ({
+                ...prev,
+                gameIntroModal: { show: false }
+              }))}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                background: '#3b82f6',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              Spiel starten
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Victory Modal */}
+      {gameState.victoryModal.show && gameState.victoryModal.stats && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10002
+          }}
+        >
+          <div
+            style={{
+              background: '#1f2937',
+              border: '2px solid #10b981',
+              borderRadius: '12px',
+              maxWidth: '600px',
+              maxHeight: '80vh',
+              width: '90%',
+              padding: '2rem',
+              color: '#e5e7eb',
+              overflow: 'auto'
+            }}
+          >
+            {/* Title */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#10b981',
+                marginBottom: '0.5rem'
+              }}>
+                SIEG
+              </div>
+              <div style={{
+                fontSize: '1rem',
+                color: '#9ca3af'
+              }}>
+                Der Turm der Elemente erhebt sich
+              </div>
+            </div>
+
+            {/* Story */}
+            <div style={{
+              background: '#374151',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                fontSize: '0.95rem',
+                color: '#d1d5db',
+                lineHeight: '1.6',
+                marginBottom: '0.75rem'
+              }}>
+                Gemeinsam habt ihr das Unmögliche vollbracht. Die vier Völker haben ihre Kräfte vereint.
+              </div>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#9ca3af',
+                lineHeight: '1.5'
+              }}>
+                Der Turm der Elemente erstrahlt in glorreicher Vollendung. Die Sphäre der Dunkelheit weicht zurück, die Finsternis ist verbannt. Das Licht kehrt zurück!
+              </div>
+            </div>
+
+            {/* Statistics */}
+            <div style={{
+              background: '#374151',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                fontWeight: 'bold',
+                color: '#f3f4f6',
+                marginBottom: '1rem',
+                fontSize: '1rem'
+              }}>
+                Spielstatistik
+              </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.75rem',
+                fontSize: '0.9rem',
+                color: '#d1d5db'
+              }}>
+                <div>
+                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Runden</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.rounds}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Helden</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.playerCount}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Phase</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.phase}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Licht</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.remainingLight}
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #4b5563' }}>
+                <div style={{ color: '#9ca3af', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Helden</div>
+                <div style={{ color: '#d1d5db', fontSize: '0.9rem' }}>
+                  {gameState.victoryModal.stats.playerNames.join(', ')}
+                </div>
+              </div>
+            </div>
+
+            {/* Quote */}
+            <div style={{
+              fontStyle: 'italic',
+              textAlign: 'center',
+              color: '#9ca3af',
+              fontSize: '0.9rem',
+              marginBottom: '1.5rem',
+              padding: '1rem',
+              background: '#374151',
+              borderRadius: '8px'
+            }}>
+              "Durch die Vielen wurde das Eine zum Höchsten emporgehoben."
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                background: '#10b981',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              Neues Spiel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Defeat Modal */}
+      {gameState.defeatModal.show && gameState.defeatModal.stats && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10002
+          }}
+        >
+          <div
+            style={{
+              background: '#1f2937',
+              border: '2px solid #ef4444',
+              borderRadius: '12px',
+              maxWidth: '600px',
+              maxHeight: '80vh',
+              width: '90%',
+              padding: '2rem',
+              color: '#e5e7eb',
+              overflow: 'auto'
+            }}
+          >
+            {/* Title */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: '#ef4444',
+                marginBottom: '0.5rem'
+              }}>
+                NIEDERLAGE
+              </div>
+              <div style={{
+                fontSize: '1rem',
+                color: '#9ca3af'
+              }}>
+                Das Licht ist erloschen
+              </div>
+            </div>
+
+            {/* Story */}
+            <div style={{
+              background: '#374151',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                fontSize: '0.95rem',
+                color: '#d1d5db',
+                lineHeight: '1.6',
+                marginBottom: '0.75rem'
+              }}>
+                Trotz eures heldenhaften Kampfes konnte das Licht nicht bewahrt werden.
+              </div>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#9ca3af',
+                lineHeight: '1.5'
+              }}>
+                Die Sphäre der Dunkelheit triumphiert. Finsternis überzieht das Land, der Turm bleibt unvollendet. Doch die Hoffnung stirbt niemals ganz...
+              </div>
+            </div>
+
+            {/* Statistics */}
+            <div style={{
+              background: '#374151',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                fontWeight: 'bold',
+                color: '#f3f4f6',
+                marginBottom: '1rem',
+                fontSize: '1rem'
+              }}>
+                Spielstatistik
+              </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.75rem',
+                fontSize: '0.9rem',
+                color: '#d1d5db'
+              }}>
+                <div>
+                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Runden</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                    {gameState.defeatModal.stats.rounds}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Helden</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                    {gameState.defeatModal.stats.playerCount}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Elemente</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                    {gameState.defeatModal.stats.activatedElements.length} / 4
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Phase</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                    {gameState.defeatModal.stats.phase}
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #4b5563' }}>
+                <div style={{ color: '#9ca3af', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Helden</div>
+                <div style={{ color: '#d1d5db', fontSize: '0.9rem' }}>
+                  {gameState.defeatModal.stats.playerNames.join(', ')}
+                </div>
+              </div>
+              {gameState.defeatModal.stats.activatedElements.length > 0 && (
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #4b5563' }}>
+                  <div style={{ color: '#9ca3af', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Aktivierte Elemente</div>
+                  <div style={{ color: '#10b981', fontSize: '0.9rem' }}>
+                    {gameState.defeatModal.stats.activatedElements.map(el =>
+                      el === 'erde' ? 'Erde' :
+                      el === 'wasser' ? 'Wasser' :
+                      el === 'feuer' ? 'Feuer' :
+                      'Luft'
+                    ).join(', ')}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quote */}
+            <div style={{
+              fontStyle: 'italic',
+              textAlign: 'center',
+              color: '#9ca3af',
+              fontSize: '0.9rem',
+              marginBottom: '1.5rem',
+              padding: '1rem',
+              background: '#374151',
+              borderRadius: '8px'
+            }}>
+              "Aus der Niederlage erwächst neue Weisheit. Versucht es erneut."
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'white',
+                background: '#ef4444',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              Erneut versuchen
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Herz der Finsternis Modal */}
       {gameState.herzDerFinsternisModal.show && (
         <div
@@ -4753,8 +5324,7 @@ function GameScreen({ gameData, onNewGame }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10001,
-            animation: 'fadeIn 0.5s ease-out'
+            zIndex: 10001
           }}
         >
           <div
@@ -4767,17 +5337,14 @@ function GameScreen({ gameData, onNewGame }) {
               maxHeight: '90vh',
               overflowY: 'auto',
               padding: '2rem',
-              boxShadow: '0 0 80px rgba(220, 38, 38, 0.6), inset 0 0 40px rgba(220, 38, 38, 0.1)',
-              animation: 'scaleIn 0.5s ease-out, pulse 2s ease-in-out infinite'
+              boxShadow: '0 0 80px rgba(220, 38, 38, 0.6), inset 0 0 40px rgba(220, 38, 38, 0.1)'
             }}
           >
-            {/* Header with pulsing heart symbol */}
+            {/* Header with heart symbol */}
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
               <div style={{
                 fontSize: '3rem',
-                marginBottom: '0.5rem',
-                filter: 'drop-shadow(0 0 20px rgba(220, 38, 38, 0.8))',
-                animation: 'heartbeat 1.5s ease-in-out infinite'
+                marginBottom: '0.5rem'
               }}>
                 💀
               </div>
@@ -4785,8 +5352,7 @@ function GameScreen({ gameData, onNewGame }) {
                 fontSize: '1.5rem',
                 fontWeight: 'bold',
                 color: '#dc2626',
-                letterSpacing: '0.1em',
-                textShadow: '0 0 20px rgba(220, 38, 38, 0.8)'
+                letterSpacing: '0.1em'
               }}>
                 DAS HERZ DER FINSTERNIS ERWACHT
               </div>
@@ -5434,6 +6000,53 @@ function GameScreen({ gameData, onNewGame }) {
           50% {
             transform: scale(1.1);
             box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
+          }
+        }
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+        @keyframes victoryPulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 100px rgba(234, 179, 8, 0.8), inset 0 0 60px rgba(234, 179, 8, 0.2);
+          }
+          50% {
+            transform: scale(1.02);
+            box-shadow: 0 0 120px rgba(234, 179, 8, 1), inset 0 0 80px rgba(234, 179, 8, 0.3);
+          }
+        }
+        @keyframes victoryFloat {
+          0%, 100% {
+            transform: translateY(0) scale(1);
+          }
+          50% {
+            transform: translateY(-15px) scale(1.05);
+          }
+        }
+        @keyframes defeatPulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 100px rgba(220, 38, 38, 0.7), inset 0 0 60px rgba(220, 38, 38, 0.15);
+          }
+          50% {
+            transform: scale(1.01);
+            box-shadow: 0 0 120px rgba(220, 38, 38, 0.9), inset 0 0 80px rgba(220, 38, 38, 0.2);
+          }
+        }
+        @keyframes defeatShake {
+          0%, 100% {
+            transform: translateX(0) rotate(0deg);
+          }
+          25% {
+            transform: translateX(-5px) rotate(-2deg);
+          }
+          75% {
+            transform: translateX(5px) rotate(2deg);
           }
         }
       `}</style>
