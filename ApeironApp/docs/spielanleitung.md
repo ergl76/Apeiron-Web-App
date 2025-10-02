@@ -146,6 +146,7 @@ Mit dem Bau des vierten Fundaments beginnt Phase 2 und der Spielablauf ändert s
 * Das Team erhält zusätzlich sofort **\+10 Licht** Belohnung  
 * Der Stapel der **Landschaftskarten** wird durch den Stapel von **Phase 2** ersetzt.  
 * Der Stapel der **Ereigniskarten** wird durch den Stapel von **Phase 2** ersetzt.  
+* Es werden alle **Artefakte**, der **nicht mitspielenden Helden**, die **noch nicht entdeckt** wurden auf das **“Tor der Weisheit” platziert**
 * **Das Herz der Finsternis erscheint:**  
   Wie zuvor beim Tor der Weisheit wird eine Himmelsrichtungs-Karte gezogen, um die Position für das Plättchen "Herz der Finsternis" zu bestimmen. Es wird auf das erste freie Feld neben dem Krater in der gezogenen Richtung gelegt. Dieses Plättchen ist der Ursprung der Verderbnis und kann nicht betreten werden.
 
