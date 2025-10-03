@@ -154,14 +154,14 @@
         "name": "Verwirrende Vision",
         "symbol": "👁️",
         "type": "negative",
-        "effectText": "Ein zufällig gewählter Held kann in der nächsten Runde weder entdecken noch spähen.",
+        "effectText": "Ein zufällig gewählter Held kann von nun an weder entdecken noch spähen.",
         "description": "Trugbilder täuschen eure Sinne. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "block_action",
             "action": "discover_and_scout",
             "target": "random_hero",
-            "duration": "next_round"
+            "duration": "permanent"
           }
         ]
       },
@@ -274,7 +274,7 @@
         "name": "Echo der Verzweiflung",
         "symbol": "💀",
         "type": "negative",
-        "effectText": "Das Licht sinkt sofort um 1 Punkt und ein zufällig gewählter Held hat in der nächsten Runde -1 AP.",
+        "effectText": "Das Licht sinkt sofort um 1 Punkt und ein zufällig gewählter Held hat nun ein AP weniger zur Verfügung",
         "description": "Die Schreie vergangener Helden hallen durch die Nacht.",
         "effects": [
           {
@@ -285,7 +285,7 @@
             "type": "reduce_ap",
             "value": 1,
             "target": "random_hero",
-            "duration": "next_round"
+            "duration": "permanent"
           }
         ]
       },

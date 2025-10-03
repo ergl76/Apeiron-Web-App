@@ -1970,8 +1970,10 @@ function GameScreen({ gameData, onNewGame }) {
             {
               // BUGFIX: "next_round" Events werden am Rundenende getriggert NACHDEM AP bereits zurückgesetzt wurden
               // "next_round" = einmalige sofortige Anwendung (AP bereits gesetzt, nur modifizieren)
+              // "permanent" = dauerhafter Effekt mit expiresInRound: 999999
               // Andere durations = dauerhafter Effekt der im effects Array gespeichert wird
-              const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
+              const durationText = effect.duration === 'permanent' ? 'permanent' :
+                                   effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
                 // IMMUTABLE UPDATE: Map over players instead of forEach mutation
                 newState.players = newState.players.map(player => {
@@ -1981,9 +1983,10 @@ function GameScreen({ gameData, onNewGame }) {
                     console.log(`  ⚡ bonus_ap ONE-TIME: ${player.name} AP increased to ${newAp} (no persistent effect)`);
                     return { ...player, ap: newAp };
                   } else {
-                    // Dauerhafter Effekt
-                    const newEffects = [...(player.effects || []), { type: 'bonus_ap', value: effect.value, expiresInRound: newState.round }];
-                    console.log(`  💾 bonus_ap STORED: ${player.name} will get +${effect.value} AP at round start`);
+                    // Dauerhafter Effekt (inkl. permanent mit expiresInRound: 999999)
+                    const expiresInRound = effect.duration === 'permanent' ? 999999 : newState.round;
+                    const newEffects = [...(player.effects || []), { type: 'bonus_ap', value: effect.value, expiresInRound }];
+                    console.log(`  💾 bonus_ap STORED: ${player.name} will get +${effect.value} AP at round start (${effect.duration || 'instant'})`);
                     return { ...player, effects: newEffects };
                   }
                 });
@@ -1999,9 +2002,10 @@ function GameScreen({ gameData, onNewGame }) {
                     console.log(`  ⚡ bonus_ap ONE-TIME: ${player.name} AP increased to ${newAp} (no persistent effect)`);
                     return { ...player, ap: newAp };
                   } else {
-                    // Dauerhafter Effekt
-                    const newEffects = [...(player.effects || []), { type: 'bonus_ap', value: effect.value, expiresInRound: newState.round }];
-                    console.log(`  💾 bonus_ap STORED: ${player.name} will get +${effect.value} AP at round start`);
+                    // Dauerhafter Effekt (inkl. permanent mit expiresInRound: 999999)
+                    const expiresInRound = effect.duration === 'permanent' ? 999999 : newState.round;
+                    const newEffects = [...(player.effects || []), { type: 'bonus_ap', value: effect.value, expiresInRound }];
+                    console.log(`  💾 bonus_ap STORED: ${player.name} will get +${effect.value} AP at round start (${effect.duration || 'instant'})`);
                     return { ...player, effects: newEffects };
                   }
                 });
@@ -2012,7 +2016,9 @@ function GameScreen({ gameData, onNewGame }) {
           case 'reduce_ap':
             {
               // BUGFIX: "next_round" = einmalige sofortige Anwendung, andere durations = dauerhafter Effekt
-              const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
+              // "permanent" = dauerhafter Effekt mit expiresInRound: 999999
+              const durationText = effect.duration === 'permanent' ? 'permanent' :
+                                   effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
                 // IMMUTABLE UPDATE: Map over players instead of forEach mutation
                 newState.players = newState.players.map(player => {
@@ -2022,8 +2028,9 @@ function GameScreen({ gameData, onNewGame }) {
                     console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${newAp} (no persistent effect)`);
                     return { ...player, ap: newAp };
                   } else {
-                    // Dauerhafter Effekt
-                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound: newState.round }];
+                    // Dauerhafter Effekt (inkl. permanent mit expiresInRound: 999999)
+                    const expiresInRound = effect.duration === 'permanent' ? 999999 : newState.round;
+                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound }];
                     return { ...player, effects: newEffects };
                   }
                 });
@@ -2039,8 +2046,9 @@ function GameScreen({ gameData, onNewGame }) {
                     console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${newAp} (no persistent effect)`);
                     return { ...player, ap: newAp };
                   } else {
-                    // Dauerhafter Effekt
-                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound: newState.round }];
+                    // Dauerhafter Effekt (inkl. permanent mit expiresInRound: 999999)
+                    const expiresInRound = effect.duration === 'permanent' ? 999999 : newState.round;
+                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound }];
                     return { ...player, effects: newEffects };
                   }
                 });
@@ -2072,8 +2080,9 @@ function GameScreen({ gameData, onNewGame }) {
                     console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${newAp} (no persistent effect)`);
                     return { ...player, ap: newAp };
                   } else {
-                    // Dauerhafter Effekt
-                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound: newState.round }];
+                    // Dauerhafter Effekt (inkl. permanent mit expiresInRound: 999999)
+                    const expiresInRound = effect.duration === 'permanent' ? 999999 : newState.round;
+                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound }];
                     return { ...player, effects: newEffects };
                   }
                 });
@@ -2086,7 +2095,9 @@ function GameScreen({ gameData, onNewGame }) {
           case 'set_ap':
             {
               // BUGFIX: "next_round" = einmalige sofortige Anwendung, andere durations = dauerhafter Effekt
-              const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
+              // "permanent" = dauerhafter Effekt mit expiresInRound: 999999
+              const durationText = effect.duration === 'permanent' ? 'permanent' :
+                                   effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
                 // IMMUTABLE UPDATE: Map over players instead of forEach mutation
                 newState.players = newState.players.map(player => {
@@ -2095,8 +2106,9 @@ function GameScreen({ gameData, onNewGame }) {
                     console.log(`  ⚡ set_ap ONE-TIME: ${player.name} AP set to ${effect.value} (no persistent effect)`);
                     return { ...player, ap: effect.value };
                   } else {
-                    // Dauerhafter Effekt
-                    const newEffects = [...(player.effects || []), { type: 'set_ap', value: effect.value, expiresInRound: newState.round }];
+                    // Dauerhafter Effekt (inkl. permanent mit expiresInRound: 999999)
+                    const expiresInRound = effect.duration === 'permanent' ? 999999 : newState.round;
+                    const newEffects = [...(player.effects || []), { type: 'set_ap', value: effect.value, expiresInRound }];
                     return { ...player, effects: newEffects };
                   }
                 });
@@ -2324,8 +2336,11 @@ function GameScreen({ gameData, onNewGame }) {
             break;
           case 'skip_turn':
             {
-              const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
-              const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
+              // Support permanent effects: "permanent" → expiresInRound: 999999
+              const duration = effect.duration === 'permanent' ? 999999 :
+                               effect.duration === 'next_round' ? newState.round + 1 : newState.round;
+              const durationText = effect.duration === 'permanent' ? 'permanent' :
+                                   effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'random_hero' && randomHero) {
                 if (!randomHero.effects) randomHero.effects = [];
                 randomHero.effects.push({ type: 'skip_turn', expiresInRound: duration });
@@ -2335,7 +2350,9 @@ function GameScreen({ gameData, onNewGame }) {
             break;
           // This case is handled later in the switch statement
           case 'block_action': {
-            const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
+            // Support permanent effects: "permanent" → expiresInRound: 999999
+            const duration = effect.duration === 'permanent' ? 999999 :
+                             effect.duration === 'next_round' ? newState.round + 1 : newState.round;
             const newBlocker = {
               action: effect.action,
               expiresInRound: duration,
@@ -2357,8 +2374,11 @@ function GameScreen({ gameData, onNewGame }) {
             break;
           }
           case 'block_skills': {
-            const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
-            const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
+            // Support permanent effects: "permanent" → expiresInRound: 999999
+            const duration = effect.duration === 'permanent' ? 999999 :
+                             effect.duration === 'next_round' ? newState.round + 1 : newState.round;
+            const durationText = effect.duration === 'permanent' ? 'permanent' :
+                                 effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
             if (effect.target === 'all_players') {
               // IMMUTABLE UPDATE: Map over players to add block_skills effect
               newState.players = newState.players.map(player => {
@@ -2378,8 +2398,11 @@ function GameScreen({ gameData, onNewGame }) {
             break;
           }
           case 'prevent_movement': {
-            const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
-            const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
+            // Support permanent effects: "permanent" → expiresInRound: 999999
+            const duration = effect.duration === 'permanent' ? 999999 :
+                             effect.duration === 'next_round' ? newState.round + 1 : newState.round;
+            const durationText = effect.duration === 'permanent' ? 'permanent' :
+                                 effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
             if (effect.target === 'all_players') {
               // IMMUTABLE UPDATE: Map over players to add prevent_movement effect
               newState.players = newState.players.map(player => {
@@ -2399,8 +2422,11 @@ function GameScreen({ gameData, onNewGame }) {
             break;
           }
           case 'disable_communication': {
-            const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
-            const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
+            // Support permanent effects: "permanent" → expiresInRound: 999999
+            const duration = effect.duration === 'permanent' ? 999999 :
+                             effect.duration === 'next_round' ? newState.round + 1 : newState.round;
+            const durationText = effect.duration === 'permanent' ? 'permanent' :
+                                 effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
             if (!newState.actionBlockers) newState.actionBlockers = [];
             newState.actionBlockers.push({
               action: 'communication',
@@ -3952,6 +3978,86 @@ function GameScreen({ gameData, onNewGame }) {
     }
   };
 
+  const handleHeilendeReinigungEffekte = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Check if player has the "reinigen" skill
+    if (!currentPlayer.learnedSkills.includes('reinigen')) {
+      console.log('❌ Player does not have "reinigen" skill');
+      return;
+    }
+
+    if (currentPlayer.ap <= 0) {
+      console.log('❌ No AP left');
+      return;
+    }
+
+    // Find all players at same position with negative effects OR action blockers (inkl. current player!)
+    const affectedPlayerIds = [];
+    gameState.players.forEach(player => {
+      if (player.position === currentPlayer.position) {
+        // Check player.effects for negative effects
+        const hasNegativeEffects = player.effects?.some(e =>
+          ['skip_turn', 'reduce_ap', 'set_ap', 'prevent_movement', 'block_skills'].includes(e.type) &&
+          e.expiresInRound > gameState.round
+        );
+
+        // Check actionBlockers for this specific player
+        const hasActionBlocker = gameState.actionBlockers?.some(blocker =>
+          (blocker.target === player.id || blocker.target === 'all_players') &&
+          blocker.expiresInRound > gameState.round
+        );
+
+        if (hasNegativeEffects || hasActionBlocker) {
+          affectedPlayerIds.push(player.id);
+        }
+      }
+    });
+
+    if (affectedPlayerIds.length === 0) {
+      console.log('❌ No players with negative effects at this position');
+      return;
+    }
+
+    setGameState(prev => {
+      // Remove negative effects from all affected players (inkl. permanente Effekte!)
+      const newPlayers = prev.players.map(player => {
+        if (!affectedPlayerIds.includes(player.id)) return player;
+
+        // Filter out negative effects (keep positive ones like bonus_ap)
+        const newEffects = player.effects.filter(e =>
+          e.type === 'bonus_ap' || !['skip_turn', 'reduce_ap', 'set_ap', 'prevent_movement', 'block_skills'].includes(e.type)
+        );
+        return { ...player, effects: newEffects };
+      });
+
+      // Remove action blockers for affected players (inkl. permanente blockers!)
+      const newActionBlockers = (prev.actionBlockers || []).filter(blocker =>
+        !affectedPlayerIds.includes(blocker.target) && blocker.target !== 'all_players'
+      );
+
+      // Reduce AP for current player
+      const playersAfterAp = newPlayers.map((player, index) =>
+        index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
+      );
+
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } =
+        handleAutoTurnTransition(playersAfterAp, prev.currentPlayerIndex, prev.round, prev);
+
+      const affectedNames = prev.players.filter(p => affectedPlayerIds.includes(p.id)).map(p => p.name).join(', ');
+      console.log(`💧 Heilende Reinigung: Removed negative effects + action blockers from ${affectedNames}`);
+
+      return {
+        ...prev,
+        players: updatedPlayers || playersAfterAp,
+        currentPlayerIndex: nextPlayerIndex,
+        round: newRound,
+        actionBlockers: newActionBlockers.filter(b => b.expiresInRound > newRound), // Filter expired blockers
+        light: Math.max(0, prev.light - lightDecrement)
+      };
+    });
+  };
+
   const renderActionButtons = () => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
@@ -4072,7 +4178,29 @@ function GameScreen({ gameData, onNewGame }) {
       }
     }
 
+    // Check if heroes on same field have negative effects (inkl. current player selbst!)
+    const heroesWithNegativeEffects = [];
+    if (currentPlayer.learnedSkills.includes('reinigen') && !areSkillsBlocked && currentPlayer.ap > 0) {
+      gameState.players.forEach(player => {
+        if (player.position === currentPlayer.position) {
+          // Check player.effects for negative effects
+          const hasNegativeEffects = player.effects?.some(e =>
+            ['skip_turn', 'reduce_ap', 'set_ap', 'prevent_movement', 'block_skills'].includes(e.type) &&
+            e.expiresInRound > gameState.round
+          );
 
+          // Check actionBlockers for this specific player
+          const hasActionBlocker = gameState.actionBlockers?.some(blocker =>
+            (blocker.target === player.id || blocker.target === 'all_players') &&
+            blocker.expiresInRound > gameState.round
+          );
+
+          if (hasNegativeEffects || hasActionBlocker) {
+            heroesWithNegativeEffects.push(player);
+          }
+        }
+      });
+    }
 
     // Show simplified scouting mode UI when active
     if (gameState.scoutingMode.active) {
@@ -4437,6 +4565,32 @@ function GameScreen({ gameData, onNewGame }) {
             </button>
           );
         })}
+
+        {/* Player Cleansing Button (Heilende Reinigung für Helden) */}
+        {heroesWithNegativeEffects.length > 0 && (
+          <button
+            onClick={() => handleHeilendeReinigungEffekte()}
+            style={{
+              backgroundColor: '#06b6d4',
+              color: 'white',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '2px solid #67e8f9',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              gridColumn: '1 / -1',
+              marginBottom: '0.5rem',
+              boxShadow: '0 0 8px rgba(6, 182, 212, 0.4)'
+            }}
+            title={`Entferne negative Effekte von: ${heroesWithNegativeEffects.map(p => p.name).join(', ')}`}
+          >
+            💧 Heilende Reinigung {heroesWithNegativeEffects.length === 1 && heroesWithNegativeEffects[0].id === currentPlayer.id
+              ? '(dich selbst)'
+              : `(${heroesWithNegativeEffects.length} ${heroesWithNegativeEffects.length === 1 ? 'Held' : 'Helden'})`
+            } (1 AP)
+          </button>
+        )}
 
         {/* Tor der Weisheit durchschreiten button */}
         {gameState.torDerWeisheit.triggered &&
@@ -6607,13 +6761,16 @@ function GameScreen({ gameData, onNewGame }) {
                         });
 
                         return uniqueEffects.map((effect, index) => {
+                          // Check if effect is permanent (expiresInRound = 999999)
+                          const isPermanent = effect.expiresInRound === 999999;
+
                           const effectInfo = {
-                            skip_turn: { icon: '😴', title: 'Muss nächste Runde aussetzen' },
-                            prevent_movement: { icon: '⛓️', title: 'Kann sich nicht bewegen' },
-                            block_skills: { icon: '🚫', title: 'Spezialfähigkeiten blockiert' },
-                            bonus_ap: { icon: '⚡', title: `Hat +${effect.value} AP in dieser Runde` },
-                            reduce_ap: { icon: '🧊', title: `Hat -${effect.value} AP in dieser Runde` },
-                            set_ap: { icon: '⏸️', title: `AP auf ${effect.value} gesetzt` }
+                            skip_turn: { icon: '😴', title: isPermanent ? 'Muss permanent aussetzen' : 'Muss nächste Runde aussetzen' },
+                            prevent_movement: { icon: '⛓️', title: isPermanent ? 'Kann sich permanent nicht bewegen' : 'Kann sich nicht bewegen' },
+                            block_skills: { icon: '🚫', title: isPermanent ? 'Spezialfähigkeiten permanent blockiert' : 'Spezialfähigkeiten blockiert' },
+                            bonus_ap: { icon: '⚡', title: isPermanent ? `Hat permanent +${effect.value} AP` : `Hat +${effect.value} AP in dieser Runde` },
+                            reduce_ap: { icon: '🧊', title: isPermanent ? `Hat permanent -${effect.value} AP` : `Hat -${effect.value} AP in dieser Runde` },
+                            set_ap: { icon: '⏸️', title: isPermanent ? `AP permanent auf ${effect.value} gesetzt` : `AP auf ${effect.value} gesetzt` }
                           }[effect.type];
 
                           if (!effectInfo) return null;
@@ -6628,10 +6785,14 @@ function GameScreen({ gameData, onNewGame }) {
                                 color: '#fca5a5',
                                 borderRadius: '4px',
                                 padding: '2px 4px',
-                                fontSize: '0.8rem'
+                                fontSize: '0.8rem',
+                                display: 'flex',
+                                gap: '2px',
+                                alignItems: 'center'
                               }}
                             >
                               {effectInfo.icon}
+                              {isPermanent && <span style={{ fontSize: '0.7rem' }}>♾️</span>}
                             </div>
                           );
                         });
