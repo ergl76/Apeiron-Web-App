@@ -128,6 +128,7 @@ function GameSetup({ onStartGame }) {
   const [playerCount, setPlayerCount] = useState(4);
   const [difficulty, setDifficulty] = useState('normal');
   const [selectedCharacters, setSelectedCharacters] = useState([]);
+  const [showStartModal, setShowStartModal] = useState(false);
 
   const handleCharacterSelect = (heroId) => {
     if (selectedCharacters.includes(heroId)) {
@@ -322,7 +323,7 @@ function GameSetup({ onStartGame }) {
         {/* Start Game Button */}
         <section style={{ textAlign: 'center' }}>
           <button
-            onClick={() => canStartGame && onStartGame(playerCount, difficulty, selectedCharacters)}
+            onClick={() => canStartGame && setShowStartModal(true)}
             disabled={!canStartGame}
             style={{
               padding: '16px 40px',
@@ -341,6 +342,259 @@ function GameSetup({ onStartGame }) {
           </button>
         </section>
       </main>
+
+      {/* Game Start Modal */}
+      {showStartModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 2000,
+            backdropFilter: 'blur(8px)'
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #0f0f0f, #1a1200, #1a0f00)',
+              borderRadius: '16px',
+              padding: '48px',
+              maxWidth: '600px',
+              border: '3px solid #eab308',
+              boxShadow: '0 0 80px rgba(234, 179, 8, 0.6)',
+              animation: 'fadeInScale 0.4s ease-out',
+              textAlign: 'center'
+            }}
+          >
+            {/* Title */}
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{
+                fontSize: '2.5rem',
+                fontWeight: 'bold',
+                color: '#eab308',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '3px'
+              }}>
+                APEIRON
+              </div>
+              <div style={{
+                fontSize: '1.3rem',
+                color: '#fbbf24',
+                marginBottom: '4px'
+              }}>
+                Der Turm der Elemente
+              </div>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#fbbf24',
+                fontStyle: 'italic',
+                opacity: 0.8
+              }}>
+                Eine Welt am Rande der Finsternis
+              </div>
+            </div>
+
+            {/* Story Section 1 - Die Ursubstanz */}
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '2px solid #eab308',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '16px'
+            }}>
+              <div style={{
+                fontSize: '0.95rem',
+                color: '#fde047',
+                lineHeight: '1.6',
+                marginBottom: '12px'
+              }}>
+                Apeiron – die Ursubstanz, aus der alle vier Elemente entstanden: Erde, Wasser, Feuer und Luft. Aus den Elementen erwuchsen die großen Völker: Minotauren, Sirenen, Drachen und Aviari.
+              </div>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#fbbf24',
+                lineHeight: '1.5'
+              }}>
+                Doch Krieg entbrannte. Unzählige Jahre, unzählige Opfer, unbeschreibbares Leid.
+              </div>
+            </div>
+
+            {/* Story Section 2 - Die Sphäre */}
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '2px solid #eab308',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '16px'
+            }}>
+              <div style={{
+                fontSize: '0.95rem',
+                color: '#fde047',
+                lineHeight: '1.6',
+                marginBottom: '12px'
+              }}>
+                Und auf einmal war sie da – die Sphäre der Dunkelheit. Mit jeder feindseligen Tat nährte sie sich, wurde größer und mächtiger, verdunkelte die Welt immer weiter.
+              </div>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#fbbf24',
+                lineHeight: '1.5'
+              }}>
+                Ein greller Lichtstrahl blitzte am Firmament auf, als ein Himmelskörper aus reiner Apeiron-Ursubstanz die Sphäre durchdrang. Mit mächtiger Explosion schlug er auf der Insel Elyria ein.
+              </div>
+            </div>
+
+            {/* Story Section 3 - Die Hoffnung */}
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '2px solid #eab308',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '24px'
+            }}>
+              <div style={{
+                fontSize: '0.95rem',
+                color: '#fde047',
+                lineHeight: '1.6'
+              }}>
+                Die Fragmente des Sterns warten auf euch – die Helden der vier Völker – um daraus den Turm der Elemente zu errichten und die Dunkelheit zu beenden.
+              </div>
+            </div>
+
+            {/* Selected Heroes */}
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.15)',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '24px'
+            }}>
+              <div style={{
+                fontSize: '1rem',
+                color: '#fde047',
+                marginBottom: '12px',
+                fontWeight: 'bold',
+                textAlign: 'center'
+              }}>
+                Eure Helden ({playerCount})
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '12px',
+                flexWrap: 'wrap'
+              }}>
+                {selectedCharacters.map(heroId => {
+                  const hero = heroes[heroId];
+                  const raceMap = {
+                    'terra': '🐂 Minotaurin',
+                    'lyra': '🧜‍♀️ Sirene',
+                    'ignis': '🐉 Drache',
+                    'corvus': '🦅 Aviari'
+                  };
+                  return (
+                    <div key={heroId} style={{
+                      background: 'rgba(234, 179, 8, 0.2)',
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      border: `2px solid ${hero.color}`,
+                      textAlign: 'center'
+                    }}>
+                      <div style={{
+                        color: hero.color,
+                        fontWeight: 'bold',
+                        fontSize: '1.1rem',
+                        marginBottom: '4px'
+                      }}>
+                        {hero.name}
+                      </div>
+                      <div style={{
+                        color: '#fbbf24',
+                        fontSize: '0.85rem'
+                      }}>
+                        {raceMap[heroId]}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Objective */}
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '2px solid #eab308',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '24px'
+            }}>
+              <div style={{
+                fontWeight: 'bold',
+                color: '#fde047',
+                marginBottom: '12px',
+                fontSize: '1rem',
+                textAlign: 'center'
+              }}>
+                Euer Ziel
+              </div>
+              <div style={{ fontSize: '0.95rem', color: '#fbbf24', lineHeight: '1.8' }}>
+                <div>• Baut alle 4 Fundamente auf dem Krater</div>
+                <div>• Findet die 4 Element-Fragmente in Phase 2</div>
+                <div>• Aktiviert alle 4 Elemente am Krater</div>
+                <div>• Bevor das Licht erlischt!</div>
+              </div>
+            </div>
+
+            {/* Quote */}
+            <div style={{
+              fontSize: '1rem',
+              color: '#fbbf24',
+              fontStyle: 'italic',
+              marginBottom: '32px',
+              textAlign: 'center',
+              lineHeight: '1.6'
+            }}>
+              "Nur durch die Vielen kann das Eine zum Höchsten emporgehoben werden und Licht zurück in die Welt gebracht werden."
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={() => {
+                setShowStartModal(false);
+                onStartGame(playerCount, difficulty, selectedCharacters);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #eab308, #ca8a04)',
+                color: 'white',
+                padding: '16px 48px',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(234, 179, 8, 0.4)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(234, 179, 8, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(234, 179, 8, 0.4)';
+              }}
+            >
+              ⭐ DIE REISE BEGINNT
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -929,9 +1183,6 @@ function GameScreen({ gameData, onNewGame }) {
         chosenDirection: null,
         awaitingCardDraw: false
       },
-      gameIntroModal: {
-        show: true // Show on game start
-      },
       victoryModal: {
         show: false,
         stats: null
@@ -968,7 +1219,10 @@ function GameScreen({ gameData, onNewGame }) {
       },
       cardDrawQueue: [], // Queue of cards to draw [{type: 'direction'|'hero', options: [...], purpose: 'event_effect'}]
       drawnCards: {}, // Store drawn card results {direction: 'north', hero: 'terra', etc.}
-      cardDrawState: 'none' // 'none' | 'event_shown' | 'drawing' | 'result_shown'
+      cardDrawState: 'none', // 'none' | 'event_shown' | 'drawing' | 'result_shown'
+      gameStartTime: Date.now(), // Track game start for duration calculation
+      totalMoves: 0, // Track total number of moves
+      totalApSpent: 0 // Track total AP spent
     };
   });
 
@@ -1029,13 +1283,18 @@ function GameScreen({ gameData, onNewGame }) {
     if (gameState.light === 0 && !gameState.defeatModal.show && !gameState.victoryModal.show) {
       console.log('💀 DEFEAT! Light has been extinguished - Darkness prevails!');
 
+      const gameDurationMs = Date.now() - gameState.gameStartTime;
       const gameStats = {
         rounds: gameState.round,
         playerCount: gameState.players.length,
         phase: gameState.phase,
         activatedElements: gameState.tower.activatedElements || [],
         remainingLight: 0,
-        playerNames: gameState.players.map(p => p.name)
+        playerNames: gameState.players.map(p => p.name),
+        totalMoves: gameState.totalMoves,
+        totalApSpent: gameState.totalApSpent,
+        durationMinutes: Math.floor(gameDurationMs / 60000),
+        durationSeconds: Math.floor((gameDurationMs % 60000) / 1000)
       };
 
       setGameState(prev => ({
@@ -1127,6 +1386,8 @@ function GameScreen({ gameData, onNewGame }) {
         console.log(`📝 handleTileClick DISCOVERED: ${newTileId} at ${position}. Deck size: ${newTileDeck.length}. Round: ${newRound}`);
         return {
           ...prev,
+          totalMoves: prev.totalMoves + 1, // Track move
+          totalApSpent: prev.totalApSpent + 1, // Track AP (discover costs 1 AP)
           board: {
             ...prev.board,
             [position]: {
@@ -1209,6 +1470,8 @@ function GameScreen({ gameData, onNewGame }) {
 
         return {
           ...prev,
+          totalMoves: prev.totalMoves + 1, // Track move
+          totalApSpent: prev.totalApSpent + 1, // Track AP (movement costs 1 AP)
           players: updatedPlayers || newPlayers,
           currentPlayerIndex: nextPlayerIndex,
           round: newRound,
@@ -2967,13 +3230,18 @@ function GameScreen({ gameData, onNewGame }) {
         console.log('🎉 VICTORY! All 4 elements activated - Tower of Elements is complete!');
 
         // Calculate game statistics
+        const gameDurationMs = Date.now() - prev.gameStartTime;
         const gameStats = {
           rounds: prev.round,
           playerCount: prev.players.length,
           phase: prev.phase,
           activatedElements: newTower.activatedElements,
           remainingLight: prev.light + lightBonus,
-          playerNames: prev.players.map(p => p.name)
+          playerNames: prev.players.map(p => p.name),
+          totalMoves: prev.totalMoves,
+          totalApSpent: prev.totalApSpent,
+          durationMinutes: Math.floor(gameDurationMs / 60000),
+          durationSeconds: Math.floor((gameDurationMs % 60000) / 1000)
         };
 
         return {
@@ -6267,139 +6535,6 @@ function GameScreen({ gameData, onNewGame }) {
         </div>
       )}
 
-      {/* Game Intro Modal */}
-      {gameState.gameIntroModal.show && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10002
-          }}
-        >
-          <div
-            style={{
-              background: '#1f2937',
-              border: '2px solid #4b5563',
-              borderRadius: '12px',
-              maxWidth: '600px',
-              maxHeight: '80vh',
-              width: '90%',
-              padding: '2rem',
-              color: '#e5e7eb',
-              overflow: 'auto'
-            }}
-          >
-            {/* Title */}
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{
-                fontSize: '2rem',
-                fontWeight: 'bold',
-                color: '#f3f4f6',
-                marginBottom: '0.5rem'
-              }}>
-                APEIRON
-              </div>
-              <div style={{
-                fontSize: '1.1rem',
-                color: '#9ca3af'
-              }}>
-                Der Turm der Elemente
-              </div>
-            </div>
-
-            {/* Story */}
-            <div style={{
-              background: '#374151',
-              borderRadius: '8px',
-              padding: '1.25rem',
-              marginBottom: '1.5rem'
-            }}>
-              <div style={{
-                fontSize: '0.95rem',
-                color: '#d1d5db',
-                lineHeight: '1.6',
-                marginBottom: '1rem'
-              }}>
-                Die Sphäre der Dunkelheit bedroht eure Welt. Nur durch die Macht der vier Elemente kann die Finsternis verbannt werden.
-              </div>
-              <div style={{
-                fontSize: '0.9rem',
-                color: '#9ca3af',
-                lineHeight: '1.5'
-              }}>
-                Minotauren (Erde), Sirenen (Wasser), Drachen (Feuer) und Aviari (Luft) müssen gemeinsam den Turm der Elemente errichten und alle vier Elemente aktivieren.
-              </div>
-            </div>
-
-            {/* Objective */}
-            <div style={{
-              background: '#374151',
-              borderRadius: '8px',
-              padding: '1.25rem',
-              marginBottom: '1.5rem'
-            }}>
-              <div style={{
-                fontWeight: 'bold',
-                color: '#f3f4f6',
-                marginBottom: '0.75rem',
-                fontSize: '1rem'
-              }}>
-                Euer Ziel
-              </div>
-              <div style={{ fontSize: '0.9rem', color: '#d1d5db', lineHeight: '1.8' }}>
-                <div>• Baut alle 4 Fundamente auf dem Krater</div>
-                <div>• Findet die 4 Element-Fragmente in Phase 2</div>
-                <div>• Aktiviert alle 4 Elemente am Krater</div>
-                <div>• Bevor das Licht erlischt!</div>
-              </div>
-            </div>
-
-            {/* Quote */}
-            <div style={{
-              fontStyle: 'italic',
-              textAlign: 'center',
-              color: '#9ca3af',
-              fontSize: '0.9rem',
-              marginBottom: '1.5rem',
-              padding: '1rem',
-              background: '#374151',
-              borderRadius: '8px'
-            }}>
-              "Nur durch die Vielen kann das Eine zum Höchsten emporgehoben werden."
-            </div>
-
-            {/* Start Button */}
-            <button
-              onClick={() => setGameState(prev => ({
-                ...prev,
-                gameIntroModal: { show: false }
-              }))}
-              style={{
-                width: '100%',
-                padding: '0.875rem',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                color: 'white',
-                background: '#3b82f6',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Spiel starten
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Victory Modal */}
       {gameState.victoryModal.show && gameState.victoryModal.stats && (
         <div
@@ -6410,118 +6545,142 @@ function GameScreen({ gameData, onNewGame }) {
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(8px)',
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10002
+            alignItems: 'center',
+            zIndex: 10002,
+            backdropFilter: 'blur(8px)'
           }}
         >
           <div
             style={{
-              background: '#1f2937',
-              border: '2px solid #10b981',
-              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #064e3b, #065f46, #047857)',
+              borderRadius: '16px',
+              padding: '48px',
               maxWidth: '600px',
-              maxHeight: '80vh',
-              width: '90%',
-              padding: '2rem',
-              color: '#e5e7eb',
-              overflow: 'auto'
+              border: '3px solid #10b981',
+              boxShadow: '0 0 80px rgba(16, 185, 129, 0.6)',
+              animation: 'fadeInScale 0.4s ease-out',
+              textAlign: 'center'
             }}
           >
+            {/* Icon with pulsing animation */}
+            <div style={{
+              fontSize: '5rem',
+              marginBottom: '24px',
+              animation: 'pulse 2s ease-in-out infinite'
+            }}>
+              ⭐🏛️⭐
+            </div>
+
             {/* Title */}
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{
-                fontSize: '2rem',
-                fontWeight: 'bold',
-                color: '#10b981',
-                marginBottom: '0.5rem'
-              }}>
-                SIEG
-              </div>
-              <div style={{
-                fontSize: '1rem',
-                color: '#9ca3af'
-              }}>
-                Der Turm der Elemente erhebt sich
-              </div>
+            <h2 style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              color: '#10b981',
+              marginBottom: '16px',
+              textTransform: 'uppercase',
+              letterSpacing: '2px'
+            }}>
+              DER TURM IST VOLLENDET
+            </h2>
+
+            {/* Subtitle */}
+            <div style={{
+              fontSize: '1.3rem',
+              color: '#6ee7b7',
+              marginBottom: '32px'
+            }}>
+              Die vier Elemente erstrahlen in Einheit
             </div>
 
             {/* Story */}
             <div style={{
-              background: '#374151',
-              borderRadius: '8px',
-              padding: '1.25rem',
-              marginBottom: '1.5rem'
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '2px solid #10b981',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '32px',
+              textAlign: 'left'
             }}>
               <div style={{
-                fontSize: '0.95rem',
-                color: '#d1d5db',
+                fontSize: '1rem',
+                color: '#d1fae5',
                 lineHeight: '1.6',
-                marginBottom: '0.75rem'
+                marginBottom: '12px'
               }}>
-                Gemeinsam habt ihr das Unmögliche vollbracht. Die vier Völker haben ihre Kräfte vereint.
+                In glorreicher Vollendung erhebt sich der Turm der Elemente. Die Macht der Apeiron-Ursubstanz durchströmt seine Fundamente.
               </div>
               <div style={{
-                fontSize: '0.9rem',
-                color: '#9ca3af',
+                fontSize: '0.95rem',
+                color: '#a7f3d0',
+                lineHeight: '1.5',
+                marginBottom: '12px'
+              }}>
+                Minotauren, Sirenen, Drachen und Aviari – einst getrennt durch Krieg und Missgunst – haben das Unmögliche vollbracht. Durch Zusammenarbeit wurde aus den Vielen wieder das Eine.
+              </div>
+              <div style={{
+                fontSize: '0.95rem',
+                color: '#a7f3d0',
                 lineHeight: '1.5'
               }}>
-                Der Turm der Elemente erstrahlt in glorreicher Vollendung. Die Sphäre der Dunkelheit weicht zurück, die Finsternis ist verbannt. Das Licht kehrt zurück!
+                Die Sphäre der Dunkelheit weicht zurück. Das Licht kehrt nach Elyria zurück. Der Frieden ist wiederhergestellt.
               </div>
             </div>
 
             {/* Statistics */}
             <div style={{
-              background: '#374151',
-              borderRadius: '8px',
-              padding: '1.25rem',
-              marginBottom: '1.5rem'
+              background: 'rgba(16, 185, 129, 0.15)',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '24px'
             }}>
-              <div style={{
-                fontWeight: 'bold',
-                color: '#f3f4f6',
-                marginBottom: '1rem',
-                fontSize: '1rem'
-              }}>
-                Spielstatistik
-              </div>
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '0.75rem',
-                fontSize: '0.9rem',
-                color: '#d1d5db'
+                gap: '16px',
+                marginBottom: '16px'
               }}>
                 <div>
-                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Runden</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>⏱️ Runden</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
                     {gameState.victoryModal.stats.rounds}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Helden</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>🎯 Spielzüge</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.totalMoves}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>👥 Helden</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
                     {gameState.victoryModal.stats.playerCount}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Phase</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
-                    {gameState.victoryModal.stats.phase}
+                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>⚡ AP Verbraucht</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.totalApSpent}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Licht</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>🕐 Dauer</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.durationMinutes}:{String(gameState.victoryModal.stats.durationSeconds).padStart(2, '0')}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>💡 Licht</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
                     {gameState.victoryModal.stats.remainingLight}
                   </div>
                 </div>
               </div>
-              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #4b5563' }}>
-                <div style={{ color: '#9ca3af', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Helden</div>
-                <div style={{ color: '#d1d5db', fontSize: '0.9rem' }}>
+              <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <div style={{ color: '#a7f3d0', fontSize: '0.85rem', marginBottom: '8px' }}>Die Helden von Elyria</div>
+                <div style={{ color: '#d1fae5', fontSize: '1rem', fontWeight: 'bold' }}>
                   {gameState.victoryModal.stats.playerNames.join(', ')}
                 </div>
               </div>
@@ -6531,32 +6690,39 @@ function GameScreen({ gameData, onNewGame }) {
             <div style={{
               fontStyle: 'italic',
               textAlign: 'center',
-              color: '#9ca3af',
-              fontSize: '0.9rem',
-              marginBottom: '1.5rem',
-              padding: '1rem',
-              background: '#374151',
-              borderRadius: '8px'
+              color: '#a7f3d0',
+              fontSize: '1rem',
+              marginBottom: '32px',
+              lineHeight: '1.6'
             }}>
-              "Durch die Vielen wurde das Eine zum Höchsten emporgehoben."
+              "Durch die Vielen wurde das Eine zum Höchsten emporgehoben. Das Licht hat über die Finsternis triumphiert."
             </div>
 
             {/* Button */}
             <button
               onClick={() => window.location.reload()}
               style={{
-                width: '100%',
-                padding: '0.875rem',
-                fontSize: '1rem',
-                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #059669, #047857)',
                 color: 'white',
-                background: '#10b981',
+                padding: '16px 48px',
                 border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
+                borderRadius: '12px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
               }}
             >
-              Neues Spiel
+              🎮 NEUES SPIEL
             </button>
           </div>
         </div>
@@ -6572,131 +6738,155 @@ function GameScreen({ gameData, onNewGame }) {
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(8px)',
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10002
+            alignItems: 'center',
+            zIndex: 10002,
+            backdropFilter: 'blur(8px)'
           }}
         >
           <div
             style={{
-              background: '#1f2937',
-              border: '2px solid #ef4444',
-              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #0f0f0f, #1a0000, #000000)',
+              borderRadius: '16px',
+              padding: '48px',
               maxWidth: '600px',
-              maxHeight: '80vh',
-              width: '90%',
-              padding: '2rem',
-              color: '#e5e7eb',
-              overflow: 'auto'
+              border: '3px solid #dc2626',
+              boxShadow: '0 0 80px rgba(220, 38, 38, 0.6)',
+              animation: 'fadeInScale 0.4s ease-out',
+              textAlign: 'center'
             }}
           >
+            {/* Icon with pulsing animation */}
+            <div style={{
+              fontSize: '5rem',
+              marginBottom: '24px',
+              animation: 'heartbeat 1.5s ease-in-out infinite'
+            }}>
+              🌑⚫🌑
+            </div>
+
             {/* Title */}
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{
-                fontSize: '2rem',
-                fontWeight: 'bold',
-                color: '#ef4444',
-                marginBottom: '0.5rem'
-              }}>
-                NIEDERLAGE
-              </div>
-              <div style={{
-                fontSize: '1rem',
-                color: '#9ca3af'
-              }}>
-                Das Licht ist erloschen
-              </div>
+            <h2 style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              color: '#dc2626',
+              marginBottom: '16px',
+              textTransform: 'uppercase',
+              letterSpacing: '2px'
+            }}>
+              DIE FINSTERNIS TRIUMPHIERT
+            </h2>
+
+            {/* Subtitle */}
+            <div style={{
+              fontSize: '1.3rem',
+              color: '#fca5a5',
+              marginBottom: '32px'
+            }}>
+              Das Licht ist für immer erloschen
             </div>
 
             {/* Story */}
             <div style={{
-              background: '#374151',
-              borderRadius: '8px',
-              padding: '1.25rem',
-              marginBottom: '1.5rem'
+              background: 'rgba(220, 38, 38, 0.1)',
+              border: '2px solid #dc2626',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '32px',
+              textAlign: 'left'
             }}>
               <div style={{
-                fontSize: '0.95rem',
-                color: '#d1d5db',
+                fontSize: '1rem',
+                color: '#fecaca',
                 lineHeight: '1.6',
-                marginBottom: '0.75rem'
+                marginBottom: '12px'
               }}>
-                Trotz eures heldenhaften Kampfes konnte das Licht nicht bewahrt werden.
+                Das Licht konnte nicht bewahrt werden. Der Licht-Marker ist auf Null gefallen.
               </div>
               <div style={{
-                fontSize: '0.9rem',
-                color: '#9ca3af',
+                fontSize: '0.95rem',
+                color: '#fca5a5',
+                lineHeight: '1.5',
+                marginBottom: '12px'
+              }}>
+                Die Sphäre der Dunkelheit hat gesiegt. Ewige Nacht senkt sich über Elyria. Immerwährende Hoffnungslosigkeit legt sich über die Welt. Der Turm bleibt unvollendet – ein Monument des Scheiterns.
+              </div>
+              <div style={{
+                fontSize: '0.95rem',
+                color: '#fca5a5',
                 lineHeight: '1.5'
               }}>
-                Die Sphäre der Dunkelheit triumphiert. Finsternis überzieht das Land, der Turm bleibt unvollendet. Doch die Hoffnung stirbt niemals ganz...
+                Die vier Völker – Minotauren, Sirenen, Drachen und Aviari – konnten ihre Unterschiede nicht überwinden. Die Vielen haben das Eine nicht erreicht.
               </div>
             </div>
 
             {/* Statistics */}
             <div style={{
-              background: '#374151',
-              borderRadius: '8px',
-              padding: '1.25rem',
-              marginBottom: '1.5rem'
+              background: 'rgba(220, 38, 38, 0.15)',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '24px'
             }}>
-              <div style={{
-                fontWeight: 'bold',
-                color: '#f3f4f6',
-                marginBottom: '1rem',
-                fontSize: '1rem'
-              }}>
-                Spielstatistik
-              </div>
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '0.75rem',
-                fontSize: '0.9rem',
-                color: '#d1d5db'
+                gap: '16px',
+                marginBottom: '16px'
               }}>
                 <div>
-                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Runden</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>⏱️ Runden</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
                     {gameState.defeatModal.stats.rounds}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Helden</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>🎯 Spielzüge</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
+                    {gameState.defeatModal.stats.totalMoves}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>👥 Helden</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
                     {gameState.defeatModal.stats.playerCount}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Elemente</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
-                    {gameState.defeatModal.stats.activatedElements.length} / 4
+                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>⚡ AP Verbraucht</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
+                    {gameState.defeatModal.stats.totalApSpent}
                   </div>
                 </div>
                 <div>
-                  <div style={{ color: '#9ca3af', marginBottom: '0.25rem' }}>Phase</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
-                    {gameState.defeatModal.stats.phase}
+                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>🕐 Dauer</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
+                    {gameState.defeatModal.stats.durationMinutes}:{String(gameState.defeatModal.stats.durationSeconds).padStart(2, '0')}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>🔥 Elemente</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
+                    {gameState.defeatModal.stats.activatedElements.length} / 4
                   </div>
                 </div>
               </div>
-              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #4b5563' }}>
-                <div style={{ color: '#9ca3af', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Helden</div>
-                <div style={{ color: '#d1d5db', fontSize: '0.9rem' }}>
+              <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(220, 38, 38, 0.3)' }}>
+                <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginBottom: '8px' }}>Die Helden von Elyria</div>
+                <div style={{ color: '#fecaca', fontSize: '1rem', fontWeight: 'bold' }}>
                   {gameState.defeatModal.stats.playerNames.join(', ')}
                 </div>
               </div>
               {gameState.defeatModal.stats.activatedElements.length > 0 && (
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #4b5563' }}>
-                  <div style={{ color: '#9ca3af', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Aktivierte Elemente</div>
-                  <div style={{ color: '#10b981', fontSize: '0.9rem' }}>
+                <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(220, 38, 38, 0.3)', marginTop: '16px' }}>
+                  <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginBottom: '8px' }}>Erreichte Elemente</div>
+                  <div style={{ color: '#10b981', fontSize: '1rem', fontWeight: 'bold' }}>
                     {gameState.defeatModal.stats.activatedElements.map(el =>
-                      el === 'erde' ? 'Erde' :
-                      el === 'wasser' ? 'Wasser' :
-                      el === 'feuer' ? 'Feuer' :
-                      'Luft'
-                    ).join(', ')}
+                      el === 'erde' ? '🟫 Erde' :
+                      el === 'wasser' ? '🟦 Wasser' :
+                      el === 'feuer' ? '🟥 Feuer' :
+                      '🟪 Luft'
+                    ).join('  ')}
                   </div>
                 </div>
               )}
@@ -6706,32 +6896,39 @@ function GameScreen({ gameData, onNewGame }) {
             <div style={{
               fontStyle: 'italic',
               textAlign: 'center',
-              color: '#9ca3af',
-              fontSize: '0.9rem',
-              marginBottom: '1.5rem',
-              padding: '1rem',
-              background: '#374151',
-              borderRadius: '8px'
+              color: '#fca5a5',
+              fontSize: '1rem',
+              marginBottom: '32px',
+              lineHeight: '1.6'
             }}>
-              "Aus der Niederlage erwächst neue Weisheit. Versucht es erneut."
+              "Als die Einheit zerbrach, nährte sich die Finsternis. Nun herrscht ewige Nacht."
             </div>
 
             {/* Button */}
             <button
               onClick={() => window.location.reload()}
               style={{
-                width: '100%',
-                padding: '0.875rem',
-                fontSize: '1rem',
-                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #b91c1c, #991b1b)',
                 color: 'white',
-                background: '#ef4444',
+                padding: '16px 48px',
                 border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
+                borderRadius: '12px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
               }}
             >
-              Erneut versuchen
+              ⚔️ ERNEUT VERSUCHEN
             </button>
           </div>
         </div>

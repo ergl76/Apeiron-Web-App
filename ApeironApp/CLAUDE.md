@@ -1,10 +1,10 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-03 22:30 (Event-System Completion + UX Success Modals)
-**Sprint:** Event-System 100% komplett + Motivierende Erfolgsmeldungen! 🎉
+**Letzte Session:** 2025-10-03 Nacht (Epic Modal Overhaul - Start/Victory/Defeat)
+**Sprint:** UX/UI Polish - Epische Story-Integration in alle Haupt-Modals! ✨
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 3 große Features in einer Session (~360 Zeilen Code)
+**Velocity:** 3 Modal-Rewrites + Stats-System in einer Session (~400 Zeilen Code)
 **Next Focus:** 🎯 Win/Loss Conditions (P0 - letztes fehlendes Feature!)
 
 ## <� Projekt�bersicht
@@ -130,6 +130,12 @@
 - [x] 2025-10-03 🎉 Foundation Success Modals (Phase 1): 3× motivierende Erfolgsmeldungen beim Fundamentbau
 - [x] 2025-10-03 ⚡ Element Success Modals (Phase 2): 3× element-spezifische Erfolgsmeldungen bei Aktivierung
 - [x] 2025-10-03 🟢 Event-System 100% VOLLSTÄNDIG: Alle 58 Events, 20 Effekt-Typen, 3 Duration-Values
+- [x] 2025-10-03 🎭 Game Start Modal Epic Rewrite: 3-Section Story (Ursubstanz, Sphäre, Hoffnung)
+- [x] 2025-10-03 🏆 Victory Modal Epic Rewrite: Apeiron-Lore Integration + 6 Statistics (3×2 Grid)
+- [x] 2025-10-03 💀 Defeat Modal Epic Rewrite: Apocalyptic Story + 6 Statistics (3×2 Grid)
+- [x] 2025-10-03 📊 Game Statistics System: Tracking für Moves, AP, Duration (gameStartTime, totalMoves, totalApSpent)
+- [x] 2025-10-03 🎨 Cooperative Language: "Die Helden von Elyria" + "Erreichte Elemente" (keine "gefallenen Helden")
+- [x] 2025-10-03 ⭐ Modal-Design Consistency: Gold/Green/Red themes matching Foundation/Element Success modals
 
 ## 🟢 EVENT-SYSTEM 100% KOMPLETT! ✅
 
@@ -361,6 +367,162 @@ onClick={() => {
 - ✅ Event-basierte Finsternis-Ausbreitung: **Identischer** Spiral-Algorithmus
 - ✅ Beide verwenden `calculateNextDarknessPosition()` helper function
 - ✅ Chebyshev-Distanz Ringe (8 Felder pro Ring, clockwise from North)
+
+## 📊 **Session 2025-10-03 Nacht - Epic Modal Overhaul (Start/Victory/Defeat) 🎭✨**
+
+### 🎯 Session-Überblick
+**Dauer:** ~2h
+**Commits:** 1 (Epic Modal Rewrites + Statistics System)
+**Code:** ~400 Zeilen überarbeitet (3 komplette Modal-Rewrites)
+**Impact:** Alle Haupt-Modals jetzt episch, story-konform, mit comprehensive Stats
+
+---
+
+### ✅ **Feature 1: Game Start Modal Epic Rewrite**
+
+**Problem:** Modal hatte keine Story-Integration, erschien direkt mit Heldenauswahl
+
+**Lösung:**
+- **3-Section Epic Story** (Die Ursubstanz, Die Sphäre, Die Hoffnung)
+- Integration Apeiron-Lore: Ursubstanz, Krieg, Himmelskörper, Sphäre der Dunkelheit, Insel Elyria
+- Subtitle: "Eine Welt am Rande der Finsternis"
+- Erweiterte Spielziele mit Story-Kontext
+- **Extended Quote**: "...und Licht zurück in die Welt gebracht werden"
+- **Button Redesign**: "⚔️ ZUM KAMPF!" → "⭐ DIE REISE BEGINNT" (gold gradient)
+
+**Lines:** GameSetup.jsx ~346-597 (252 Zeilen)
+
+---
+
+### ✅ **Feature 2: Victory Modal Epic Rewrite**
+
+**Problem:** Zu technisch, keine Story-Integration, fehlende Statistiken
+
+**Lösung:**
+- **Icons**: ⛰️✨ → ⭐🏛️⭐ (cosmic theme)
+- **Title**: "SIEG!" → "DER TURM IST VOLLENDET"
+- **Subtitle**: "Die vier Elemente erstrahlen in Einheit"
+- **Epic Story**: Apeiron-Ursubstanz durchströmt Turm, four peoples vereint, Frieden über Elyria
+- **3×2 Stats Grid**:
+  - ⏱️ Runden | 🎯 Spielzüge | 👥 Helden
+  - ⚡ AP Verbraucht | 🕐 Dauer (MM:SS) | 💡 Licht
+- **Cooperative Label**: "Die Helden von Elyria" (statt einzelne Namen)
+- **Quote**: "Durch die Vielen wurde das Eine zum Höchsten emporgehoben..."
+
+**Lines:** ApeironGame.jsx ~6538-6720 (183 Zeilen)
+
+---
+
+### ✅ **Feature 3: Defeat Modal Epic Rewrite**
+
+**Problem:** Zu technisch, keine apocalyptic atmosphere, fehlende Statistiken
+
+**Lösung:**
+- **Icons**: 💀🌑 → 🌑⚫🌑 (dark moons)
+- **Title**: "NIEDERLAGE" → "DIE FINSTERNIS TRIUMPHIERT"
+- **Subtitle**: "Das Licht ist für immer erloschen"
+- **Apocalyptic Story**: Licht-Marker auf Null, ewige Nacht, Monument des Scheiterns, Sphäre herrscht
+- **3×2 Stats Grid**:
+  - ⏱️ Runden | 🎯 Spielzüge | 👥 Helden
+  - ⚡ AP Verbraucht | 🕐 Dauer (MM:SS) | 🔥 Erreichte Elemente
+- **Cooperative Labels**: "Die Helden von Elyria", "Erreichte Elemente"
+- **Quote**: "Als die Einheit zerbrach, nährte sich die Finsternis..."
+
+**Lines:** ApeironGame.jsx ~6731-6930 (200 Zeilen)
+
+---
+
+### ✅ **Feature 4: Game Statistics Tracking System**
+
+**Problem:** Keine Erfassung von Spielzügen, AP-Verbrauch, Dauer
+
+**Lösung:**
+
+**State Extension (lines 1172-1174)**:
+```javascript
+gameStartTime: Date.now(), // Track game start
+totalMoves: 0, // Track discovery + movement
+totalApSpent: 0 // Track all AP consumption
+```
+
+**Movement Tracking (lines 1417-1418)**:
+```javascript
+totalMoves: prev.totalMoves + 1,
+totalApSpent: prev.totalApSpent + 1 // Movement costs 1 AP
+```
+
+**Discovery Tracking (lines 1333-1334)**:
+```javascript
+totalMoves: prev.totalMoves + 1,
+totalApSpent: prev.totalApSpent + 1 // Discover costs 1 AP
+```
+
+**Duration Calculation**:
+```javascript
+const gameDurationMs = Date.now() - gameState.gameStartTime;
+const durationMinutes = Math.floor(gameDurationMs / 60000);
+const durationSeconds = Math.floor((gameDurationMs % 60000) / 1000);
+// Display: MM:SS with padded seconds
+```
+
+**Stats Object Extension (Defeat: 1235-1247, Victory: 3182-3194)**:
+```javascript
+const gameStats = {
+  rounds: gameState.round,
+  playerCount: gameState.players.length,
+  phase: gameState.phase,
+  activatedElements: [...],
+  remainingLight: ...,
+  playerNames: gameState.players.map(p => p.name),
+  totalMoves: gameState.totalMoves, // NEW
+  totalApSpent: gameState.totalApSpent, // NEW
+  durationMinutes: ..., // NEW
+  durationSeconds: ... // NEW
+};
+```
+
+---
+
+### 🐛 **Bugfixes**
+
+**Bug 1: Blank Page After Hero Selection**
+- **Error**: `HEROES[heroId]` statt `heroes[heroId]` (line 428)
+- **Fix**: Changed to lowercase `heroes` object
+- **Impact**: Game Start Modal now renders correctly
+
+**Bug 2: Duplicate Old Modal**
+- **Error**: Old `gameIntroModal` still showing after new modal
+- **Fix**: Removed `gameIntroModal` state initialization + rendering block
+- **Impact**: Only new epic modal appears
+
+**Bug 3: Non-Cooperative Language**
+- **Error**: "Gefallene Helden" in Defeat Modal
+- **Fix**: Changed to "Die Helden von Elyria" + "Erreichte Elemente"
+- **Impact**: Matches cooperative game design
+
+---
+
+### 📊 Session-Statistik
+
+**Code-Änderungen:**
+- ~400 Zeilen überarbeitet (3 Modal-Rewrites)
+- 6 neue State-Felder hinzugefügt
+- 2 Tracking-Integrations-Points
+
+**Design-Entscheidungen:**
+- 3-section story structure (Game Start)
+- 3×2 stats grid (Victory/Defeat)
+- Cosmic/Apocalyptic icon sets
+- Cooperative language throughout
+- Time format: MM:SS with padded seconds
+
+**Testing:**
+- ✅ Game Start Modal renders with epic story
+- ✅ Victory Modal shows correct stats + story
+- ✅ Defeat Modal shows correct stats + apocalyptic tone
+- ✅ Statistics tracking works (moves, AP, duration)
+
+---
 
 ## 📊 **Session 2025-10-03 Abend Teil 2 - Event-System 100% Complete + UX Success Modals 🎉**
 
