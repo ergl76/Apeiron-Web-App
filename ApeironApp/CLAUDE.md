@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-03 14:30 (BREAKTHROUGH - Immutability Bugfix!)
-**Sprint:** Event-System Mutation Bugs - ALLE BEHOBEN! ✅
-**Fortschritt:** ~97% abgeschlossen (1 UX-Bug offen, alle kritischen Bugs behoben!)
-**Velocity:** Root Cause Analysis + Systematisches Refactoring (2h Session)
-**Next Focus:** 🟡 Card-Draw Doppelklick UX Fix + Win/Loss Conditions
+**Letzte Session:** 2025-10-03 15:00 (Phase 2 Event-Effekte Implementation)
+**Sprint:** spread_darkness Effekt Spiral-Algorithmus Integration ✅
+**Fortschritt:** ~98% abgeschlossen (1 UX-Bug + Win/Loss Conditions offen)
+**Velocity:** Event-Effekt Refactoring (30min Session)
+**Next Focus:** 🎯 Win/Loss Conditions (P0) + Card-Draw Doppelklick UX Fix (P2)
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -103,6 +103,9 @@
 - [x] 2025-10-03 add_resource, drop_resource, drop_all_items, drop_all_resources immutable
 - [x] 2025-10-03 block_skills, prevent_movement, remove_all_negative_effects immutable
 - [x] 2025-10-03 ALLE 12 AP-Modifikations-Events funktionieren jetzt korrekt (getestet mit "Günstiges Omen")
+- [x] 2025-10-03 spread_darkness Effekt refactored - verwendet jetzt Spiral-Algorithmus
+- [x] 2025-10-03 Phase 2 Events: Welle der Finsternis, Dunkle Metamorphose, Herz pulsiert korrekt
+- [x] 2025-10-03 calculateNextDarknessPosition() Integration für konsistente Finsternis-Ausbreitung
 
 ## 🟢 ALLE KRITISCHEN BUGS BEHOBEN! ✅
 
@@ -180,6 +183,30 @@ newState.players = newState.players.map(player => {
 - ✅ "Lähmende Kälte" Event validiert: Reduziert korrekt -1 AP
 - ✅ Alle 12 AP-Modifikations-Events funktional
 - ✅ Event-System jetzt 100% React StrictMode kompatibel!
+
+## 📊 **Session 2025-10-03 Nachmittag - spread_darkness Effekt Refactoring**
+
+### ✅ Implementation
+**Problem:** `spread_darkness` Event-Effekt verwendete random adjacent field selection
+**Anforderung:** Finsternis soll nach **denselben Spiral-Regeln** ausbreiten wie automatische Ausbreitung
+
+**Lösung:**
+- Refactored `spread_darkness` case in `applyEventEffect` (~40 Zeilen Code)
+- Verwendet jetzt `calculateNextDarknessPosition()` für Spiral-Algorithmus
+- Mehrfacher Aufruf basierend auf `effect.value` (1-3 Felder)
+- Temporärer State-Update pro Iteration für korrekte nächste Position
+
+### 📋 Betroffene Events (4 Events mit spread_darkness)
+1. **Welle der Finsternis** - `value: 2` (breitet 2 Felder aus)
+2. **Herz der Finsternis pulsiert** - `value: 2` (breitet 2 Felder aus)
+3. **Dunkle Metamorphose** - `value: 1` + light_loss (breitet 1 Feld aus)
+4. **Unbekannter Event** - `value: 3` (breitet 3 Felder aus)
+
+### 🎯 Konsistenz hergestellt
+- ✅ Automatische Finsternis-Ausbreitung: Spiral-Algorithmus (nach jedem Spielerzug)
+- ✅ Event-basierte Finsternis-Ausbreitung: **Identischer** Spiral-Algorithmus
+- ✅ Beide verwenden `calculateNextDarknessPosition()` helper function
+- ✅ Chebyshev-Distanz Ringe (8 Felder pro Ring, clockwise from North)
 
 ## =� In Arbeit (Non-Critical)
 
@@ -746,8 +773,8 @@ npx cap init
 - [ ] "Herz der Finsternis" Plättchen fehlt
 
 #### **P2 - Medium Priority**
-- [ ] Heilende Reinigung säubert keine Finsternis-Felder
-- [ ] Phase 2 Event-Effekte (spread_darkness/cleanse_darkness) Testing ausstehend
+- [x] ✅ spread_darkness Event-Effekt (2025-10-03) - Verwendet jetzt Spiral-Algorithmus
+- [ ] cleanse_darkness Event-Effekt Testing ausstehend
 
 ### ✅ ALLE KRITISCHEN BUGS BEHOBEN!
 - [x] **P0:** Round Completion Bug ✅ FIXED (2025-09-29)

@@ -2404,36 +2404,46 @@ function GameScreen({ gameData, onNewGame }) {
           }
           // Phase 2 effects
           case 'spread_darkness': {
+            // UPDATED: Use the same Spiral-Algorithmus as automatic darkness spreading
             const spreadCount = effect.value || 1;
-            const newBoard = { ...newState.board };
             let fieldsSpread = 0;
+            const spreadPositions = [];
 
-            // Find fields adjacent to existing darkness fields to spread to
-            const darkFields = Object.keys(newBoard).filter(pos => newBoard[pos]?.isDark);
-            const adjacentToDark = [];
+            // Use calculateNextDarknessPosition multiple times to spread darkness according to spiral rules
+            // We need to create a temporary state that gets updated with each spread
+            let tempState = { ...newState };
 
-            darkFields.forEach(darkPos => {
-              const [dx, dy] = darkPos.split(',').map(Number);
-              const adjacent = [
-                `${dx-1},${dy}`, `${dx+1},${dy}`, `${dx},${dy-1}`, `${dx},${dy+1}`
-              ].filter(pos => {
-                const [x, y] = pos.split(',').map(Number);
-                return x >= 0 && x < 9 && y >= 0 && y < 9 &&
-                       newBoard[pos] && !newBoard[pos].isDark &&
-                       !adjacentToDark.includes(pos);
-              });
-              adjacentToDark.push(...adjacent);
-            });
+            for (let i = 0; i < spreadCount; i++) {
+              const nextPos = calculateNextDarknessPosition(tempState);
 
-            // Spread darkness to random adjacent fields
-            while (fieldsSpread < spreadCount && adjacentToDark.length > 0) {
-              const randomIndex = Math.floor(Math.random() * adjacentToDark.length);
-              const posToSpread = adjacentToDark.splice(randomIndex, 1)[0];
-              newBoard[posToSpread] = { ...newBoard[posToSpread], isDark: true };
-              fieldsSpread++;
+              if (nextPos) {
+                spreadPositions.push(nextPos);
+
+                // Update tempState to include this new dark tile for next iteration
+                tempState = {
+                  ...tempState,
+                  herzDerFinsternis: {
+                    ...tempState.herzDerFinsternis,
+                    darkTiles: [...(tempState.herzDerFinsternis.darkTiles || []), nextPos]
+                  }
+                };
+
+                fieldsSpread++;
+                console.log(`☠️ spread_darkness Event: Spreading to ${nextPos} (${i+1}/${spreadCount})`);
+              } else {
+                console.log(`☠️ spread_darkness Event: No more valid positions available (spread ${fieldsSpread}/${spreadCount})`);
+                break; // No more valid positions
+              }
             }
 
-            newState.board = newBoard;
+            // Apply all spreads to the actual state
+            if (spreadPositions.length > 0) {
+              newState.herzDerFinsternis = {
+                ...newState.herzDerFinsternis,
+                darkTiles: [...(newState.herzDerFinsternis.darkTiles || []), ...spreadPositions]
+              };
+            }
+
             resolvedTexts.push(`Welle der Finsternis: ${fieldsSpread} Felder wurden von Dunkelheit erfasst.`);
             break;
           }
