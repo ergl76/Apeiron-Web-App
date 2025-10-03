@@ -1,10 +1,10 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-03 15:30 (Card-Draw UX Bugfix + spread_darkness)
-**Sprint:** ALLE kritischen Bugs & UX-Issues behoben! 🎉
+**Letzte Session:** 2025-10-03 17:45 (Tor & Herz UX Verbesserung + Phase Transition Lock)
+**Sprint:** UX Flow komplett modernisiert + React StrictMode Bug behoben! 🎉
 **Fortschritt:** ~98% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 2 Bugfixes in 1h Session
+**Velocity:** 2-Phasen Card-Draw UX + Artefakt-Bug Fix in 2h Session
 **Next Focus:** 🎯 Win/Loss Conditions (P0 - letztes fehlendes Feature!)
 
 ## <� Projekt�bersicht
@@ -109,6 +109,17 @@
 - [x] 2025-10-03 🎉 Card-Draw Doppelklick Bug BEHOBEN! Single-Click UX implementiert
 - [x] 2025-10-03 React State Batching Problem gelöst - cardDrawState update inline im onClick
 - [x] 2025-10-03 Karten flippen jetzt instant beim ersten Klick (keine Verzögerung mehr)
+- [x] 2025-10-03 🎨 Tor der Weisheit 2-Phasen UX Flow implementiert (Modal → Card-Draw → Modal)
+- [x] 2025-10-03 Modal erscheint ZUERST mit Erklärung, dann Button für Card-Draw
+- [x] 2025-10-03 Nach Card-Draw: Modal zeigt "vom Krater aus in Richtung {Norden}" (statt Koordinaten)
+- [x] 2025-10-03 handleTorCardDrawInitiate() Handler für bewussten User-Trigger
+- [x] 2025-10-03 🎨 Herz der Finsternis identischer 2-Phasen UX Flow implementiert
+- [x] 2025-10-03 handleHerzCardDrawInitiate() Handler analog zu Tor
+- [x] 2025-10-03 Richtungs-Mapping hinzugefügt: directionNames {north: 'Norden', east: 'Osten', ...}
+- [x] 2025-10-03 Card-Draw Bug behoben: drawnCards bleiben erhalten bei "No event to apply"
+- [x] 2025-10-03 🔒 KRITISCHER BUGFIX: Phase Transition Lock gegen React StrictMode double-call
+- [x] 2025-10-03 phaseTransitionInProgress Lock verhindert Artefakt-Platzierung Überschreiben
+- [x] 2025-10-03 Artefakte von fehlenden Helden werden korrekt auf Tor der Weisheit platziert
 
 ## 🟢 ALLE KRITISCHEN BUGS BEHOBEN! ✅
 
@@ -197,6 +208,72 @@ newState.players = newState.players.map(player => {
 - ✅ "Lähmende Kälte" Event validiert: Reduziert korrekt -1 AP
 - ✅ Alle 12 AP-Modifikations-Events funktional
 - ✅ Event-System jetzt 100% React StrictMode kompatibel!
+
+## 📊 **Session 2025-10-03 Abend - Tor & Herz 2-Phasen UX + Phase Transition Lock 🎨🔒**
+
+### ✅ Feature 1: Tor der Weisheit UX Modernisierung
+**Problem:** Card-Draw erschien SOFORT ohne Kontext - User verwirrt warum Karte ziehen?
+
+**Lösung - 2-Phasen Flow:**
+1. **Phase 1:** Tor Modal erscheint ZUERST mit Erklärung
+   - Text: "Das Tor materialisiert sich an einem freien Feld neben dem Krater"
+   - Button: "🎴 HIMMELSRICHTUNG ZIEHEN UND TOR PLATZIEREN"
+   - User versteht WARUM er Karte ziehen soll
+2. **Phase 2:** Nach Card-Draw Modal öffnet sich ERNEUT
+   - Zeigt: "Das Tor erscheint am ersten freien Platz **vom Krater aus** in Richtung **{Norden}**"
+   - Statt technischer Koordinaten (z.B. "4,3")
+
+**Implementation:**
+- `torDerWeisheitModal` State erweitert: `{show, position, chosenDirection, awaitingCardDraw}`
+- `handleTorCardDrawInitiate()` Handler: Schließt Modal → startet Card-Draw
+- `placeTorDerWeisheit()` erweitert: Speichert `chosenDirection`, öffnet Modal erneut
+- `directionNames` Mapping: `{north: 'Norden', east: 'Osten', south: 'Süden', west: 'Westen'}`
+
+### ✅ Feature 2: Herz der Finsternis identischer Flow
+**Identische UX-Verbesserung wie Tor der Weisheit:**
+- `herzDerFinsternisModal` State erweitert (analog)
+- `handleHerzCardDrawInitiate()` Handler
+- `placeHeartOfDarknessWithDirection()` erweitert
+- Modal mit 2 Zuständen (awaiting vs. placed)
+
+### 🔒 Bug Fix: Phase Transition Lock
+**Problem:** React StrictMode rief `handlePhaseTransitionConfirm()` **zweimal** auf
+- Erster Call: Platziert Artefakte auf Tor → Board Update
+- Zweiter Call: Nutzt **alten State** (ohne Artefakte) → Überschreibt Board **OHNE** Artefakte!
+
+**Root Cause:**
+```javascript
+// handlePhaseTransitionConfirm wird 2× aufgerufen (StrictMode)
+setGameState(prev => {
+  // Erster Call: prev.board OHNE Artefakte → platziert sie
+  // Zweiter Call: prev.board NOCH OHNE Artefakte → überschreibt!
+});
+```
+
+**Lösung - Module-Level Lock:**
+```javascript
+let phaseTransitionInProgress = false;
+
+const handlePhaseTransitionConfirm = () => {
+  if (phaseTransitionInProgress) {
+    console.log('🔒 Duplicate call blocked');
+    return; // Zweiter Call wird komplett geblockt!
+  }
+  phaseTransitionInProgress = true;
+
+  setGameState(prev => { /* Artefakt-Platzierung */ });
+
+  setTimeout(() => { phaseTransitionInProgress = false; }, 300);
+};
+```
+
+**Impact:** Artefakte werden jetzt korrekt auf Tor der Weisheit platziert! 📦⛩️
+
+### 🎯 Testing & Validation
+- ✅ Tor der Weisheit 2-Phasen Flow getestet
+- ✅ Herz der Finsternis 2-Phasen Flow getestet
+- ✅ Phase Transition Lock verhindert doppelte Ausführung
+- ✅ Console-Logs zeigen: "🔒 Phase transition already in progress - blocking duplicate StrictMode call"
 
 ## 📊 **Session 2025-10-03 Nachmittag Teil 2 - Card-Draw UX Bugfix 🎉**
 

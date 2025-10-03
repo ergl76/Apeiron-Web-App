@@ -7,6 +7,7 @@ import gameRules from './config/gameRules.json';
 // These MUST be outside the component to work across simultaneous calls
 let currentlyApplyingEventId = null;
 let currentlyConfirmingCardDraw = false;
+let phaseTransitionInProgress = false;
 
 // Konter-Informationen aus ereigniskarten.md
 const eventCounters = {
@@ -2677,6 +2678,14 @@ function GameScreen({ gameData, onNewGame }) {
 
   // Phase 2 Transition Confirmation Handler
   const handlePhaseTransitionConfirm = () => {
+    // CRITICAL: Lock to prevent React StrictMode double-call from overwriting artifact placement
+    if (phaseTransitionInProgress) {
+      console.log('🔒 Phase transition already in progress - blocking duplicate StrictMode call');
+      return;
+    }
+    phaseTransitionInProgress = true;
+    console.log('🚀 Phase transition starting - lock acquired');
+
     setGameState(prev => {
       // Create Phase 2 Tile Deck from tiles.json
       const phase2TileDeck = Object.entries(tilesConfig.phase2).flatMap(
@@ -2747,6 +2756,12 @@ function GameScreen({ gameData, onNewGame }) {
         }
       };
     });
+
+    // Release lock after state update
+    setTimeout(() => {
+      phaseTransitionInProgress = false;
+      console.log('🔓 Phase transition lock released');
+    }, 300);
 
     // Immediately place Herz der Finsternis after Phase 2 transition
     setTimeout(() => {
