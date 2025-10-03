@@ -4623,7 +4623,23 @@ function GameScreen({ gameData, onNewGame }) {
                         // First click: Draw and flip card
                         const randomIndex = Math.floor(Math.random() * currentCard.options.length);
                         const drawnValue = currentCard.options[randomIndex];
-                        handleCardDraw(drawnValue, currentCard.type);
+
+                        // BUGFIX: Set cardDrawState in same setGameState call to avoid timing issues
+                        // This prevents need for double-click (state update happens immediately)
+                        setGameState(prev => {
+                          const purpose = currentCard?.purpose;
+                          let newDrawnCards = { ...prev.drawnCards };
+                          newDrawnCards[currentCard.type] = drawnValue;
+
+                          console.log(`🎴 Card drawn: ${currentCard.type} = ${drawnValue}`);
+                          console.log(`📝 Drawn cards so far:`, newDrawnCards);
+
+                          return {
+                            ...prev,
+                            drawnCards: newDrawnCards,
+                            cardDrawState: 'result_shown' // Flip card immediately
+                          };
+                        });
                       } else {
                         // Second click: Remove card from queue and proceed
                         // CRITICAL: Prevent React StrictMode from handling this click twice

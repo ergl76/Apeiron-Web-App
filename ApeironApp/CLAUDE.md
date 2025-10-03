@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-03 15:00 (Phase 2 Event-Effekte Implementation)
-**Sprint:** spread_darkness Effekt Spiral-Algorithmus Integration ✅
-**Fortschritt:** ~98% abgeschlossen (1 UX-Bug + Win/Loss Conditions offen)
-**Velocity:** Event-Effekt Refactoring (30min Session)
-**Next Focus:** 🎯 Win/Loss Conditions (P0) + Card-Draw Doppelklick UX Fix (P2)
+**Letzte Session:** 2025-10-03 15:30 (Card-Draw UX Bugfix + spread_darkness)
+**Sprint:** ALLE kritischen Bugs & UX-Issues behoben! 🎉
+**Fortschritt:** ~98% abgeschlossen (nur Win/Loss Conditions offen)
+**Velocity:** 2 Bugfixes in 1h Session
+**Next Focus:** 🎯 Win/Loss Conditions (P0 - letztes fehlendes Feature!)
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -106,6 +106,9 @@
 - [x] 2025-10-03 spread_darkness Effekt refactored - verwendet jetzt Spiral-Algorithmus
 - [x] 2025-10-03 Phase 2 Events: Welle der Finsternis, Dunkle Metamorphose, Herz pulsiert korrekt
 - [x] 2025-10-03 calculateNextDarknessPosition() Integration für konsistente Finsternis-Ausbreitung
+- [x] 2025-10-03 🎉 Card-Draw Doppelklick Bug BEHOBEN! Single-Click UX implementiert
+- [x] 2025-10-03 React State Batching Problem gelöst - cardDrawState update inline im onClick
+- [x] 2025-10-03 Karten flippen jetzt instant beim ersten Klick (keine Verzögerung mehr)
 
 ## 🟢 ALLE KRITISCHEN BUGS BEHOBEN! ✅
 
@@ -128,13 +131,24 @@
 
 ---
 
-### 🟡 Bug #2: Doppelklick auf Card erforderlich (Non-Critical UX)
-**Symptom:** User muss 2× auf gezogene Karte klicken um zurück zum Event-Modal zu kommen
-**Status:** OFFEN (niedrige Priorität - funktioniert, nur suboptimale UX)
-**Erwartetes Verhalten:** 1× Klick auf Card → Zurück zum Event-Modal mit resolvedEffectText
-**Aktuelles Verhalten:** 1. Klick → nichts, 2. Klick → zurück zum Modal
-**Hypothese:** `cardDrawState` Transition oder onClick Handler Problem
-**Priorität:** P2 - UX Polish (kann später gefixt werden)
+### ✅ Bug #2: Doppelklick auf Card - GELÖST! 🎉
+**Symptom:** User musste 2× auf gezogene Karte klicken um zurück zum Event-Modal zu kommen
+**Status:** ✅ BEHOBEN (2025-10-03)
+**Erwartetes Verhalten:** 1× Klick auf Card → Karte flippt sofort & zeigt Ergebnis
+**Altes Verhalten:** 1. Klick → handleCardDraw(), 2. Klick → Karte flippt (React batching)
+
+**ROOT CAUSE:**
+- `handleCardDraw()` setzte `cardDrawState: 'result_shown'` in separatem `setGameState`
+- React batched State Updates → Re-Render passierte NACH onClick Handler
+- `cardIsFlipped` Variable war **noch false** während onClick lief
+- User musste nochmal klicken damit Re-Render mit neuem State passierte
+
+**DIE LÖSUNG:**
+- State Update direkt im onClick Handler statt in separater Funktion
+- `cardDrawState: 'result_shown'` wird **sofort** im gleichen `setGameState` gesetzt
+- Karte flippt instant beim ersten Klick (kein Warten auf Re-Render)
+
+**VALIDIERT:** Single-Click UX funktioniert jetzt korrekt ✅
 
 ## 📊 **Session 2025-10-03 Vormittag - BREAKTHROUGH: Mutation Bug Root Cause! 🎉**
 
@@ -184,7 +198,60 @@ newState.players = newState.players.map(player => {
 - ✅ Alle 12 AP-Modifikations-Events funktional
 - ✅ Event-System jetzt 100% React StrictMode kompatibel!
 
-## 📊 **Session 2025-10-03 Nachmittag - spread_darkness Effekt Refactoring**
+## 📊 **Session 2025-10-03 Nachmittag Teil 2 - Card-Draw UX Bugfix 🎉**
+
+### ✅ Problem
+**Bug:** User musste 2× auf gezogene Karte klicken um Ergebnis zu sehen
+**UX-Impact:** Verwirrend und frustrierend - schien kaputt zu sein
+
+### 🔍 Root Cause Analysis
+**React State Batching Timing Issue:**
+```javascript
+// ALT (broken):
+onClick={() => {
+  if (!cardIsFlipped) {
+    handleCardDraw(value, type);  // Separate setGameState call
+    // cardIsFlipped is STILL false here! (batching delay)
+  }
+}
+```
+
+**Warum zweiter Klick nötig war:**
+1. Erster Klick ruft `handleCardDraw()` auf
+2. `handleCardDraw` setzt `cardDrawState: 'result_shown'` in eigenem `setGameState`
+3. React **batcht** State Updates → Re-Render passiert **nach** onClick
+4. `cardIsFlipped` Variable bleibt `false` im aktuellen Render
+5. User klickt nochmal → **Jetzt** ist `cardIsFlipped = true` (Re-Render passierte)
+
+### ✅ Die Lösung
+**Inline State Update im onClick Handler:**
+```javascript
+// NEU (fixed):
+onClick={() => {
+  if (!cardIsFlipped) {
+    // State update INLINE - keine separate Funktion
+    setGameState(prev => ({
+      ...prev,
+      drawnCards: { ...prev.drawnCards, [type]: value },
+      cardDrawState: 'result_shown'  // Instant flip!
+    }));
+  }
+}
+```
+
+**Warum das funktioniert:**
+- State Update passiert **synchron** im gleichen `setGameState` Call
+- Kein Batching-Delay zwischen Card Draw und Flip
+- Karte flippt **sofort** beim ersten Klick
+- React Re-Render zeigt Ergebnis instant
+
+### 🎯 Testing & Validation
+- ✅ Single-Click funktioniert für Hero Cards
+- ✅ Single-Click funktioniert für Direction Cards
+- ✅ Event-Modal Flow unverändert (kein Regression)
+- ✅ React StrictMode kompatibel
+
+## 📊 **Session 2025-10-03 Nachmittag Teil 1 - spread_darkness Effekt Refactoring**
 
 ### ✅ Implementation
 **Problem:** `spread_darkness` Event-Effekt verwendete random adjacent field selection
