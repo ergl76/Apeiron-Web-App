@@ -2319,11 +2319,13 @@ function GameScreen({ gameData, onNewGame }) {
               targetPositions.forEach(pos => {
                 // Only place obstacles on REVEALED tiles (not on undiscovered tiles)
                 // Check 1: Tile must exist in board (has been discovered)
-                // Check 2: Tile must have revealed flag set to true
+                // Check 2: Tile must have revealed flag set to true OR be Tor der Weisheit
                 const tile = newBoard[pos];
-                if (tile && tile.revealed === true) {
+                const isTorDerWeisheit = tile?.id === 'tor_der_weisheit';
+
+                if (tile && (tile.revealed === true || isTorDerWeisheit)) {
                   newBoard[pos] = { ...tile, obstacle };
-                  console.log(`🪨 Obstacle "${obstacle}" placed on revealed tile at ${pos} (tile: ${tile.id})`);
+                  console.log(`🪨 Obstacle "${obstacle}" placed on ${isTorDerWeisheit ? 'Tor der Weisheit' : 'revealed tile'} at ${pos} (tile: ${tile.id})`);
                 } else if (!tile) {
                   console.log(`⚠️ Skipped obstacle placement at ${pos} - tile does not exist (not discovered yet)`);
                 } else {
