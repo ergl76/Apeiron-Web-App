@@ -940,6 +940,18 @@ function GameScreen({ gameData, onNewGame }) {
         show: false,
         stats: null
       },
+      foundationSuccessModal: {
+        show: false,
+        foundationType: null,
+        count: 0,
+        lightBonus: 0
+      },
+      elementSuccessModal: {
+        show: false,
+        elementType: null,
+        count: 0,
+        bonus: null
+      },
       isTransitioning: false,
       currentEvent: null,
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
@@ -1144,6 +1156,21 @@ function GameScreen({ gameData, onNewGame }) {
         console.log(`Movement for ${currentPlayer.name} blocked by an effect.`);
         // Optional: Add visual feedback for the user
         return;
+      }
+
+      // Check if this is quick movement (2 fields) - requires schnell_bewegen skill
+      const [fromX, fromY] = currentPlayer.position.split(',').map(Number);
+      const [toX, toY] = position.split(',').map(Number);
+      const manhattanDistance = Math.abs(toX - fromX) + Math.abs(toY - fromY);
+      const isQuickMovement = manhattanDistance === 2;
+
+      // BUGFIX: Block quick movement if skills are blocked (schnell_bewegen is a special skill)
+      if (isQuickMovement) {
+        const areSkillsBlocked = currentPlayer.effects?.some(e => e.type === 'block_skills' && e.expiresInRound > gameState.round);
+        if (areSkillsBlocked) {
+          console.log(`Quick movement for ${currentPlayer.name} blocked - skills are blocked!`);
+          return;
+        }
       }
 
       // Prevent moving to a tile with an obstacle
@@ -2197,6 +2224,42 @@ function GameScreen({ gameData, onNewGame }) {
                 // Remove crystal from inventory immutably
                 return { ...player, inventory: player.inventory.filter((_, idx) => idx !== crystalIndex) };
               });
+            } else if (effect.target === 'heroes_with_fragments') {
+              // BUGFIX: "Verrat der Elemente" - Drop element fragments from heroes who have them
+              const fragmentTypes = ['element_fragment_erde', 'element_fragment_wasser', 'element_fragment_feuer', 'element_fragment_luft'];
+              const dropCount = effect.value || 1; // How many fragments to drop per hero
+
+              // IMMUTABLE UPDATE: Map over players to drop fragments from heroes who have them
+              newState.players = newState.players.map(player => {
+                // Check if player has any fragments
+                const playerFragments = player.inventory.filter(item => fragmentTypes.includes(item));
+                if (playerFragments.length === 0) return player; // No fragments, skip
+
+                // Drop up to 'dropCount' fragments
+                const toDrop = Math.min(dropCount, playerFragments.length);
+                const pos = player.position;
+
+                // Ensure board position exists and has resources array
+                if (!newState.board[pos]) newState.board[pos] = { resources: [] };
+                if (!newState.board[pos].resources) newState.board[pos].resources = [];
+
+                // Drop fragments to current field
+                let newInventory = [...player.inventory];
+                let droppedCount = 0;
+                for (let i = 0; i < newInventory.length && droppedCount < toDrop; i++) {
+                  if (fragmentTypes.includes(newInventory[i])) {
+                    newState.board[pos].resources.push(newInventory[i]);
+                    newInventory.splice(i, 1); // Remove from inventory
+                    i--; // Adjust index after removal
+                    droppedCount++;
+                  }
+                }
+
+                console.log(`💔 ${player.name} dropped ${droppedCount} element fragment(s) at ${pos}`);
+                return { ...player, inventory: newInventory };
+              });
+
+              resolvedTexts.push(`Verrat der Elemente: Alle Helden mit Element-Fragmenten haben eines abgelegt.`);
             }
             break;
           case 'drop_all_items':
@@ -2677,7 +2740,8 @@ function GameScreen({ gameData, onNewGame }) {
 
       // Normal foundation building (not the 4th one)
       const lightBonus = gameRules.foundations.lightBonusPerFoundation;
-      console.log(`🏗️ Foundation built! +${lightBonus} Light bonus`);
+      const foundationCount = Object.keys(newTower.foundations).length;
+      console.log(`🏗️ Foundation built! +${lightBonus} Light bonus (${foundationCount}/4)`);
 
       // Handle automatic turn transition
       const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
@@ -2699,6 +2763,12 @@ function GameScreen({ gameData, onNewGame }) {
         herzDerFinsternis: {
           ...prev.herzDerFinsternis,
           darkTiles: updatedDarkTiles
+        },
+        foundationSuccessModal: {
+          show: true,
+          foundationType: foundationType,
+          count: foundationCount,
+          lightBonus: lightBonus
         }
       };
     });
@@ -2928,6 +2998,7 @@ function GameScreen({ gameData, onNewGame }) {
         : prev.herzDerFinsternis.darkTiles || [];
 
       const newLight = Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus));
+      const elementCount = newTower.activatedElements.length;
 
       return {
         ...prev,
@@ -2941,6 +3012,12 @@ function GameScreen({ gameData, onNewGame }) {
         herzDerFinsternis: {
           ...prev.herzDerFinsternis,
           darkTiles: updatedDarkTiles
+        },
+        elementSuccessModal: {
+          show: true,
+          elementType: element,
+          count: elementCount,
+          bonus: { type: bonusConfig.type, value: bonusConfig.value, text: bonusText }
         }
       };
     });
@@ -4370,7 +4447,7 @@ function GameScreen({ gameData, onNewGame }) {
         )}
 
         {/* Element Activation (Phase 2) */}
-        {gameState.phase === 2 && currentPlayer.learnedSkills.includes('element_aktivieren') && currentPlayer.position === '4,4' && (
+        {gameState.phase === 2 && currentPlayer.learnedSkills.includes('element_aktivieren') && currentPlayer.position === '4,4' && !areSkillsBlocked && (
           <div style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
             <div style={{ fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', marginBottom: '6px' }}>
               Element aktivieren (1 AP + 💎 + Fragment)
@@ -5671,6 +5748,284 @@ function GameScreen({ gameData, onNewGame }) {
           </div>
         </div>
       )}
+
+      {/* Foundation Success Modal (Phase 1 - Fundamente 1-3) */}
+      {gameState.foundationSuccessModal.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 2000,
+            backdropFilter: 'blur(8px)'
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #0f0f0f, #1a1200, #1a0f00)',
+              borderRadius: '16px',
+              padding: '48px',
+              maxWidth: '600px',
+              border: '3px solid #eab308',
+              boxShadow: '0 0 80px rgba(234, 179, 8, 0.6)',
+              animation: 'fadeInScale 0.4s ease-out',
+              textAlign: 'center'
+            }}
+          >
+            {/* Icon with pulsing animation */}
+            <div style={{
+              fontSize: '4rem',
+              marginBottom: '24px',
+              animation: 'pulse 2s ease-in-out infinite'
+            }}>
+              🏗️ {gameState.foundationSuccessModal.foundationType === 'erde' ? '🟫' :
+                   gameState.foundationSuccessModal.foundationType === 'wasser' ? '🟦' :
+                   gameState.foundationSuccessModal.foundationType === 'feuer' ? '🟥' : '🟪'}
+            </div>
+
+            {/* Title */}
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: 'bold',
+              color: '#eab308',
+              marginBottom: '16px',
+              textTransform: 'uppercase',
+              letterSpacing: '2px'
+            }}>
+              FUNDAMENT ERRICHTET!
+            </h2>
+
+            {/* Subtitle */}
+            <div style={{
+              fontSize: '1.2rem',
+              color: '#fbbf24',
+              marginBottom: '24px'
+            }}>
+              {gameState.foundationSuccessModal.foundationType === 'erde' ? 'Erde' :
+               gameState.foundationSuccessModal.foundationType === 'wasser' ? 'Wasser' :
+               gameState.foundationSuccessModal.foundationType === 'feuer' ? 'Feuer' : 'Luft'}-Fundament steht fest
+            </div>
+
+            {/* Progress */}
+            <div style={{
+              fontSize: '1rem',
+              color: '#d1d5db',
+              marginBottom: '24px'
+            }}>
+              Fundament <strong style={{ color: '#eab308' }}>{gameState.foundationSuccessModal.count}/4</strong> gebaut
+            </div>
+
+            {/* Light Bonus */}
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '2px solid #eab308',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '8px' }}>💡</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#eab308' }}>
+                +{gameState.foundationSuccessModal.lightBonus} LICHT
+              </div>
+            </div>
+
+            {/* Motivational Text */}
+            <div style={{
+              fontSize: '1rem',
+              color: '#9ca3af',
+              fontStyle: 'italic',
+              marginBottom: '32px'
+            }}>
+              {['Das Fundament des Turms wächst! Die Hoffnung steigt.',
+                'Stein auf Stein erhebt sich das Licht über die Finsternis.',
+                'Ein weiterer Schritt zur Rettung von Apeiron!',
+                'Die Elemente beginnen, ihre Macht zu zeigen.'][gameState.foundationSuccessModal.count - 1]}
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={() => {
+                setGameState(prev => ({
+                  ...prev,
+                  foundationSuccessModal: { show: false, foundationType: null, count: 0, lightBonus: 0 }
+                }));
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                padding: '16px 48px',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+              }}
+            >
+              ✅ WEITER
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Element Success Modal (Phase 2 - Elemente 1-3) */}
+      {gameState.elementSuccessModal.show && (() => {
+        const elementType = gameState.elementSuccessModal.elementType;
+        const elementInfo = {
+          'erde': { name: 'Erde', emoji: '🟫', color: '#22c55e', text: 'Die Kraft der Erde stärkt euch! Fester Stand, unerschütterlich.' },
+          'wasser': { name: 'Wasser', emoji: '🟦', color: '#3b82f6', text: 'Die Quelle des Lebens leuchtet hell! Heilung und Hoffnung.' },
+          'feuer': { name: 'Feuer', emoji: '🟥', color: '#ef4444', text: 'Die Flammen der Entschlossenheit brennen! Nichts kann euch aufhalten.' },
+          'luft': { name: 'Luft', emoji: '🟪', color: '#a78bfa', text: 'Der Wind des Wandels trägt euch! Schneller und wendiger.' }
+        };
+        const element = elementInfo[elementType];
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 2000,
+              backdropFilter: 'blur(8px)'
+            }}
+          >
+            <div
+              style={{
+                background: `linear-gradient(135deg, #0f0f0f, rgba(${element?.color === '#22c55e' ? '34, 197, 94' : element?.color === '#3b82f6' ? '59, 130, 246' : element?.color === '#ef4444' ? '239, 68, 68' : '167, 139, 250'}, 0.1), #0f0f0f)`,
+                borderRadius: '16px',
+                padding: '48px',
+                maxWidth: '650px',
+                border: `3px solid ${element?.color || '#eab308'}`,
+                boxShadow: `0 0 80px ${element?.color || '#eab308'}66`,
+                animation: 'fadeInScale 0.4s ease-out',
+                textAlign: 'center'
+              }}
+            >
+              {/* Icon with pulsing animation */}
+              <div style={{
+                fontSize: '5rem',
+                marginBottom: '24px',
+                animation: 'pulse 2s ease-in-out infinite',
+                filter: `drop-shadow(0 0 20px ${element?.color || '#eab308'})`
+              }}>
+                ✨ {element?.emoji}
+              </div>
+
+              {/* Title */}
+              <h2 style={{
+                fontSize: '2.2rem',
+                fontWeight: 'bold',
+                color: element?.color || '#eab308',
+                marginBottom: '16px',
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                textShadow: `0 0 20px ${element?.color || '#eab308'}66`
+              }}>
+                {element?.name}-ELEMENT AKTIVIERT!
+              </h2>
+
+              {/* Subtitle */}
+              <div style={{
+                fontSize: '1.2rem',
+                color: '#d1d5db',
+                marginBottom: '24px',
+                fontStyle: 'italic'
+              }}>
+                Die Macht von {element?.name} durchströmt den Turm
+              </div>
+
+              {/* Progress */}
+              <div style={{
+                fontSize: '1rem',
+                color: '#9ca3af',
+                marginBottom: '24px'
+              }}>
+                Element <strong style={{ color: element?.color }}>{gameState.elementSuccessModal.count}/4</strong> aktiviert
+              </div>
+
+              {/* Bonus Box */}
+              <div style={{
+                background: `rgba(${element?.color === '#22c55e' ? '34, 197, 94' : element?.color === '#3b82f6' ? '59, 130, 246' : element?.color === '#ef4444' ? '239, 68, 68' : '167, 139, 250'}, 0.15)`,
+                border: `2px solid ${element?.color}`,
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '8px' }}>
+                  {gameState.elementSuccessModal.bonus?.type === 'light' ? '💡' : '⚡'}
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: element?.color }}>
+                  {gameState.elementSuccessModal.bonus?.text}
+                </div>
+              </div>
+
+              {/* Motivational Text */}
+              <div style={{
+                fontSize: '1.1rem',
+                color: '#d1d5db',
+                fontStyle: 'italic',
+                marginBottom: '32px',
+                lineHeight: '1.6'
+              }}>
+                {element?.text}
+              </div>
+
+              {/* Button */}
+              <button
+                onClick={() => {
+                  setGameState(prev => ({
+                    ...prev,
+                    elementSuccessModal: { show: false, elementType: null, count: 0, bonus: null }
+                  }));
+                }}
+                style={{
+                  background: `linear-gradient(135deg, ${element?.color}, ${element?.color}dd)`,
+                  color: 'white',
+                  padding: '16px 48px',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: `0 4px 12px ${element?.color}66`,
+                  transition: 'all 0.2s ease-in-out'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = `0 6px 16px ${element?.color}99`;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = `0 4px 12px ${element?.color}66`;
+                }}
+              >
+                ⚔️ WEITER ZUM KAMPF
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tor der Weisheit Modal */}
       {gameState.torDerWeisheitModal.show && (
