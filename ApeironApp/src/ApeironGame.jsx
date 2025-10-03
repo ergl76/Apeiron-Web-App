@@ -4911,6 +4911,8 @@ function GameScreen({ gameData, onNewGame }) {
                             }
 
                             const eventToApply = prev.currentEvent;
+                            // BUGFIX: Capture purpose BEFORE applying effect (for Tor/Herz placement)
+                            const currentPurpose = prev.cardDrawQueue[0]?.purpose;
 
                             if (eventToApply && prev.isEventTriggering) {
                               // Set lock IMMEDIATELY before applying effect
@@ -4928,12 +4930,19 @@ function GameScreen({ gameData, onNewGame }) {
                                 console.log(`🔓 Released locks for event ${eventId}`);
                               }, 200);
 
+                              // BUGFIX: Only clear drawnCards for EVENT purposes, not for Tor/Herz special placements
+                              // Events need cleared drawnCards, but Tor/Herz useEffect needs direction card preserved
+                              const shouldClearDrawnCards = currentPurpose !== 'tor_der_weisheit' &&
+                                                             currentPurpose !== 'herz_der_finsternis';
+
+                              console.log(`🎴 drawnCards ${shouldClearDrawnCards ? 'CLEARED' : 'KEPT'} (purpose: ${currentPurpose || 'event'})`);
+
                               // Return state with effect applied AND modal closed
                               return {
                                 ...stateAfterEffect,
                                 cardDrawQueue: newQueue,
                                 cardDrawState: 'none',
-                                drawnCards: {},
+                                drawnCards: shouldClearDrawnCards ? {} : prev.drawnCards, // ✅ Keep for Tor/Herz!
                                 isEventTriggering: false,
                                 currentEvent: {
                                   ...eventToApply,
