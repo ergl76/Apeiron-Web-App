@@ -1924,30 +1924,38 @@ function GameScreen({ gameData, onNewGame }) {
               // Andere durations = dauerhafter Effekt der im effects Array gespeichert wird
               const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
-                newState.players.forEach(player => {
+                // IMMUTABLE UPDATE: Map over players instead of forEach mutation
+                newState.players = newState.players.map(player => {
                   if (effect.duration === 'next_round') {
                     // Einmalige sofortige Anwendung - KEIN Effekt speichern!
-                    player.ap += effect.value;
-                    console.log(`  ⚡ bonus_ap ONE-TIME: ${player.name} AP increased to ${player.ap} (no persistent effect)`);
+                    const newAp = player.ap + effect.value;
+                    console.log(`  ⚡ bonus_ap ONE-TIME: ${player.name} AP increased to ${newAp} (no persistent effect)`);
+                    return { ...player, ap: newAp };
                   } else {
                     // Dauerhafter Effekt
-                    if (!player.effects) player.effects = [];
-                    player.effects.push({ type: 'bonus_ap', value: effect.value, expiresInRound: newState.round });
+                    const newEffects = [...(player.effects || []), { type: 'bonus_ap', value: effect.value, expiresInRound: newState.round }];
                     console.log(`  💾 bonus_ap STORED: ${player.name} will get +${effect.value} AP at round start`);
+                    return { ...player, effects: newEffects };
                   }
                 });
                 resolvedTexts.push(`Gemeinsame Stärke: Alle Helden erhalten ${durationText} +${effect.value} AP.`);
               } else if (effect.target === 'random_hero' && randomHero) {
-                if (effect.duration === 'next_round') {
-                  // Einmalige sofortige Anwendung - KEIN Effekt speichern!
-                  randomHero.ap += effect.value;
-                  console.log(`  ⚡ bonus_ap ONE-TIME: ${randomHero.name} AP increased to ${randomHero.ap} (no persistent effect)`);
-                } else {
-                  // Dauerhafter Effekt
-                  if (!randomHero.effects) randomHero.effects = [];
-                  randomHero.effects.push({ type: 'bonus_ap', value: effect.value, expiresInRound: newState.round });
-                  console.log(`  💾 bonus_ap STORED: ${randomHero.name} will get +${effect.value} AP at round start`);
-                }
+                // IMMUTABLE UPDATE: Map over players to update the specific hero
+                newState.players = newState.players.map(player => {
+                  if (player.id !== randomHero.id) return player;
+
+                  if (effect.duration === 'next_round') {
+                    // Einmalige sofortige Anwendung - KEIN Effekt speichern!
+                    const newAp = player.ap + effect.value;
+                    console.log(`  ⚡ bonus_ap ONE-TIME: ${player.name} AP increased to ${newAp} (no persistent effect)`);
+                    return { ...player, ap: newAp };
+                  } else {
+                    // Dauerhafter Effekt
+                    const newEffects = [...(player.effects || []), { type: 'bonus_ap', value: effect.value, expiresInRound: newState.round }];
+                    console.log(`  💾 bonus_ap STORED: ${player.name} will get +${effect.value} AP at round start`);
+                    return { ...player, effects: newEffects };
+                  }
+                });
                 resolvedTexts.push(`Günstiges Omen: ${randomHero.name} erhält ${durationText} +${effect.value} AP.`);
               }
             }
@@ -1957,59 +1965,71 @@ function GameScreen({ gameData, onNewGame }) {
               // BUGFIX: "next_round" = einmalige sofortige Anwendung, andere durations = dauerhafter Effekt
               const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
-                newState.players.forEach(player => {
+                // IMMUTABLE UPDATE: Map over players instead of forEach mutation
+                newState.players = newState.players.map(player => {
                   if (effect.duration === 'next_round') {
                     // Einmalige sofortige Anwendung - KEIN Effekt speichern!
-                    player.ap = Math.max(0, player.ap - effect.value);
-                    console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${player.ap} (no persistent effect)`);
+                    const newAp = Math.max(0, player.ap - effect.value);
+                    console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${newAp} (no persistent effect)`);
+                    return { ...player, ap: newAp };
                   } else {
                     // Dauerhafter Effekt
-                    if (!player.effects) player.effects = [];
-                    player.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: newState.round });
+                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound: newState.round }];
+                    return { ...player, effects: newEffects };
                   }
                 });
                 resolvedTexts.push(`Lähmende Kälte: Alle Helden haben ${durationText} -${effect.value} AP.`);
               } else if (effect.target === 'random_hero' && randomHero) {
-                if (effect.duration === 'next_round') {
-                  // Einmalige sofortige Anwendung - KEIN Effekt speichern!
-                  randomHero.ap = Math.max(0, randomHero.ap - effect.value);
-                  console.log(`  ⚡ reduce_ap ONE-TIME: ${randomHero.name} AP reduced to ${randomHero.ap} (no persistent effect)`);
-                } else {
-                  // Dauerhafter Effekt
-                  if (!randomHero.effects) randomHero.effects = [];
-                  randomHero.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: newState.round });
-                }
+                // IMMUTABLE UPDATE: Map over players to update the specific hero
+                newState.players = newState.players.map(player => {
+                  if (player.id !== randomHero.id) return player;
+
+                  if (effect.duration === 'next_round') {
+                    // Einmalige sofortige Anwendung - KEIN Effekt speichern!
+                    const newAp = Math.max(0, player.ap - effect.value);
+                    console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${newAp} (no persistent effect)`);
+                    return { ...player, ap: newAp };
+                  } else {
+                    // Dauerhafter Effekt
+                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound: newState.round }];
+                    return { ...player, effects: newEffects };
+                  }
+                });
                 resolvedTexts.push(`Echo der Verzweiflung: ${randomHero.name} hat ${durationText} -${effect.value} AP.`);
               } else if (effect.target === 'furthest_from_crater') {
                 // Find players furthest from crater (4,4)
                 const craterPos = { x: 4, y: 4 };
                 let maxDistance = -1;
-                let furthestPlayers = [];
+                let furthestPlayerIds = [];
 
                 newState.players.forEach(player => {
-                  const distance = Math.abs(player.x - craterPos.x) + Math.abs(player.y - craterPos.y);
+                  const [px, py] = player.position.split(',').map(Number);
+                  const distance = Math.abs(px - craterPos.x) + Math.abs(py - craterPos.y);
                   if (distance > maxDistance) {
                     maxDistance = distance;
-                    furthestPlayers = [player];
+                    furthestPlayerIds = [player.id];
                   } else if (distance === maxDistance) {
-                    furthestPlayers.push(player);
+                    furthestPlayerIds.push(player.id);
                   }
                 });
 
-                // Apply effect to all furthest players
-                furthestPlayers.forEach(player => {
+                // IMMUTABLE UPDATE: Apply effect to all furthest players
+                newState.players = newState.players.map(player => {
+                  if (!furthestPlayerIds.includes(player.id)) return player;
+
                   if (effect.duration === 'next_round') {
                     // Einmalige sofortige Anwendung - KEIN Effekt speichern!
-                    player.ap = Math.max(0, player.ap - effect.value);
-                    console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${player.ap} (no persistent effect)`);
+                    const newAp = Math.max(0, player.ap - effect.value);
+                    console.log(`  ⚡ reduce_ap ONE-TIME: ${player.name} AP reduced to ${newAp} (no persistent effect)`);
+                    return { ...player, ap: newAp };
                   } else {
                     // Dauerhafter Effekt
-                    if (!player.effects) player.effects = [];
-                    player.effects.push({ type: 'reduce_ap', value: effect.value, expiresInRound: newState.round });
+                    const newEffects = [...(player.effects || []), { type: 'reduce_ap', value: effect.value, expiresInRound: newState.round }];
+                    return { ...player, effects: newEffects };
                   }
                 });
 
-                const playerNames = furthestPlayers.map(p => p.name).join(', ');
+                const playerNames = newState.players.filter(p => furthestPlayerIds.includes(p.id)).map(p => p.name).join(', ');
                 resolvedTexts.push(`Schwere Bürde: ${playerNames} (am weitesten vom Krater entfernt) haben ${durationText} -${effect.value} AP.`);
               }
             }
@@ -2019,15 +2039,16 @@ function GameScreen({ gameData, onNewGame }) {
               // BUGFIX: "next_round" = einmalige sofortige Anwendung, andere durations = dauerhafter Effekt
               const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
               if (effect.target === 'all_players') {
-                newState.players.forEach(player => {
+                // IMMUTABLE UPDATE: Map over players instead of forEach mutation
+                newState.players = newState.players.map(player => {
                   if (effect.duration === 'next_round') {
                     // Einmalige sofortige Anwendung - KEIN Effekt speichern!
-                    player.ap = effect.value;
-                    console.log(`  ⚡ set_ap ONE-TIME: ${player.name} AP set to ${player.ap} (no persistent effect)`);
+                    console.log(`  ⚡ set_ap ONE-TIME: ${player.name} AP set to ${effect.value} (no persistent effect)`);
+                    return { ...player, ap: effect.value };
                   } else {
                     // Dauerhafter Effekt
-                    if (!player.effects) player.effects = [];
-                    player.effects.push({ type: 'set_ap', value: effect.value, expiresInRound: newState.round });
+                    const newEffects = [...(player.effects || []), { type: 'set_ap', value: effect.value, expiresInRound: newState.round }];
+                    return { ...player, effects: newEffects };
                   }
                 });
                 resolvedTexts.push(`Totale Erschöpfung: Alle Helden haben ${durationText} nur ${effect.value} AP.`);
@@ -2036,10 +2057,12 @@ function GameScreen({ gameData, onNewGame }) {
             break;
           case 'add_resource':
             if (effect.target === 'active_player') {
-              const currentPlayer = newState.players[newState.currentPlayerIndex];
-              if (currentPlayer.inventory.length < currentPlayer.maxInventory) {
-                currentPlayer.inventory.push(effect.resource);
-              }
+              // IMMUTABLE UPDATE: Map over players to update current player's inventory
+              newState.players = newState.players.map((player, idx) => {
+                if (idx !== newState.currentPlayerIndex) return player;
+                if (player.inventory.length >= player.maxInventory) return player;
+                return { ...player, inventory: [...player.inventory, effect.resource] };
+              });
             } else if (effect.target === 'crater') {
               // Add resources to crater field
               if (!newState.board['4,4'].resources) {
@@ -2069,69 +2092,86 @@ function GameScreen({ gameData, onNewGame }) {
           case 'drop_resource':
             if (effect.target === 'hero_with_most_crystals') {
               let maxCrystals = 0;
-              let heroesWithMost = [];
-              newState.players.forEach((player, index) => {
+              let heroesWithMostIds = [];
+              newState.players.forEach(player => {
                 const crystalCount = player.inventory.filter(item => item === 'kristall').length;
                 if (crystalCount > maxCrystals) {
                   maxCrystals = crystalCount;
-                  heroesWithMost = [index];
+                  heroesWithMostIds = [player.id];
                 } else if (crystalCount === maxCrystals && crystalCount > 0) {
-                  heroesWithMost.push(index);
+                  heroesWithMostIds.push(player.id);
                 }
               });
-              heroesWithMost.forEach(playerIndex => {
-                const player = newState.players[playerIndex];
+
+              // IMMUTABLE UPDATE: Map over players to drop crystal from heroes with most
+              newState.players = newState.players.map(player => {
+                if (!heroesWithMostIds.includes(player.id)) return player;
+
                 const crystalIndex = player.inventory.findIndex(item => item === 'kristall');
-                if (crystalIndex !== -1) {
-                  player.inventory.splice(crystalIndex, 1);
-                  // Add to current field
-                  const pos = player.position;
-                  if (!newState.board[pos].resources) {
-                    newState.board[pos].resources = [];
-                  }
-                  newState.board[pos].resources.push('kristall');
-                }
+                if (crystalIndex === -1) return player;
+
+                // Drop crystal to current field
+                const pos = player.position;
+                if (!newState.board[pos]) newState.board[pos] = { resources: [] };
+                if (!newState.board[pos].resources) newState.board[pos].resources = [];
+                newState.board[pos].resources.push('kristall');
+
+                // Remove crystal from inventory immutably
+                return { ...player, inventory: player.inventory.filter((_, idx) => idx !== crystalIndex) };
               });
             } else if (effect.target === 'heroes_on_crater') {
-              newState.players.forEach(player => {
-                if (player.position === '4,4') {
-                  const crystalIndex = player.inventory.findIndex(item => item === 'kristall');
-                  if (crystalIndex !== -1) {
-                    player.inventory.splice(crystalIndex, 1);
-                    if (!newState.board['4,4'].resources) {
-                      newState.board['4,4'].resources = [];
-                    }
-                    newState.board['4,4'].resources.push('kristall');
-                  }
+              // IMMUTABLE UPDATE: Map over players to drop crystal from heroes on crater
+              newState.players = newState.players.map(player => {
+                if (player.position !== '4,4') return player;
+
+                const crystalIndex = player.inventory.findIndex(item => item === 'kristall');
+                if (crystalIndex === -1) return player;
+
+                // Drop crystal to crater
+                if (!newState.board['4,4'].resources) {
+                  newState.board['4,4'].resources = [];
                 }
+                newState.board['4,4'].resources.push('kristall');
+
+                // Remove crystal from inventory immutably
+                return { ...player, inventory: player.inventory.filter((_, idx) => idx !== crystalIndex) };
               });
             }
             break;
           case 'drop_all_items':
             if (effect.target === 'random_hero' && randomHero) {
-              const player = randomHero;
-              const pos = player.position;
-              if (!newState.board[pos].resources) {
-                newState.board[pos].resources = [];
-              }
-              newState.board[pos].resources.push(...player.inventory);
-              player.inventory = [];
-              resolvedTexts.push(`Zerrissener Beutel: ${player.name} verliert alle Gegenstände.`);
+              // IMMUTABLE UPDATE: Map over players to drop all items from random hero
+              newState.players = newState.players.map(player => {
+                if (player.id !== randomHero.id) return player;
+
+                const pos = player.position;
+                if (!newState.board[pos]) newState.board[pos] = { resources: [] };
+                if (!newState.board[pos].resources) {
+                  newState.board[pos].resources = [];
+                }
+                newState.board[pos].resources.push(...player.inventory);
+
+                return { ...player, inventory: [] };
+              });
+              resolvedTexts.push(`Zerrissener Beutel: ${randomHero.name} verliert alle Gegenstände.`);
             }
             break;
           case 'drop_all_resources': {
             if (effect.target === 'all_players') {
               const resourceType = effect.resource || 'kristall';
-              newState.players.forEach(player => {
+              // IMMUTABLE UPDATE: Map over players to drop all resources of specific type
+              newState.players = newState.players.map(player => {
                 const pos = player.position;
                 const resourcesToDrop = player.inventory.filter(item => item === resourceType);
-                if (resourcesToDrop.length > 0) {
-                  if (!newState.board[pos].resources) {
-                    newState.board[pos].resources = [];
-                  }
-                  newState.board[pos].resources.push(...resourcesToDrop);
-                  player.inventory = player.inventory.filter(item => item !== resourceType);
+                if (resourcesToDrop.length === 0) return player;
+
+                if (!newState.board[pos]) newState.board[pos] = { resources: [] };
+                if (!newState.board[pos].resources) {
+                  newState.board[pos].resources = [];
                 }
+                newState.board[pos].resources.push(...resourcesToDrop);
+
+                return { ...player, inventory: player.inventory.filter(item => item !== resourceType) };
               });
               resolvedTexts.push(`Kristall-Fluch: Alle Helden müssen ihre ${resourceType}e ablegen.`);
             }
@@ -2271,14 +2311,19 @@ function GameScreen({ gameData, onNewGame }) {
             const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
             const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
             if (effect.target === 'all_players') {
-              newState.players.forEach(player => {
-                if (!player.effects) player.effects = [];
-                player.effects.push({ type: 'block_skills', expiresInRound: duration });
+              // IMMUTABLE UPDATE: Map over players to add block_skills effect
+              newState.players = newState.players.map(player => {
+                const newEffects = [...(player.effects || []), { type: 'block_skills', expiresInRound: duration }];
+                return { ...player, effects: newEffects };
               });
               resolvedTexts.push(`Spezialfähigkeiten für alle Helden ${durationText} blockiert.`);
             } else if (effect.target === 'random_hero' && randomHero) {
-              if (!randomHero.effects) randomHero.effects = [];
-              randomHero.effects.push({ type: 'block_skills', expiresInRound: duration });
+              // IMMUTABLE UPDATE: Map over players to add block_skills effect to random hero
+              newState.players = newState.players.map(player => {
+                if (player.id !== randomHero.id) return player;
+                const newEffects = [...(player.effects || []), { type: 'block_skills', expiresInRound: duration }];
+                return { ...player, effects: newEffects };
+              });
               resolvedTexts.push(`Spezialfähigkeiten für ${randomHero.name} ${durationText} blockiert.`);
             }
             break;
@@ -2287,14 +2332,19 @@ function GameScreen({ gameData, onNewGame }) {
             const duration = effect.duration === 'next_round' ? newState.round + 1 : newState.round;
             const durationText = effect.duration === 'next_round' ? 'in der nächsten Runde' : 'sofort';
             if (effect.target === 'all_players') {
-              newState.players.forEach(player => {
-                if (!player.effects) player.effects = [];
-                player.effects.push({ type: 'prevent_movement', expiresInRound: duration });
+              // IMMUTABLE UPDATE: Map over players to add prevent_movement effect
+              newState.players = newState.players.map(player => {
+                const newEffects = [...(player.effects || []), { type: 'prevent_movement', expiresInRound: duration }];
+                return { ...player, effects: newEffects };
               });
               resolvedTexts.push(`Bewegung für alle Helden ${durationText} blockiert.`);
             } else if (effect.target === 'random_hero' && randomHero) {
-              if (!randomHero.effects) randomHero.effects = [];
-              randomHero.effects.push({ type: 'prevent_movement', expiresInRound: duration });
+              // IMMUTABLE UPDATE: Map over players to add prevent_movement effect to random hero
+              newState.players = newState.players.map(player => {
+                if (player.id !== randomHero.id) return player;
+                const newEffects = [...(player.effects || []), { type: 'prevent_movement', expiresInRound: duration }];
+                return { ...player, effects: newEffects };
+              });
               resolvedTexts.push(`Bewegung für ${randomHero.name} ${durationText} blockiert.`);
             }
             break;
@@ -2336,13 +2386,15 @@ function GameScreen({ gameData, onNewGame }) {
           }
           case 'remove_all_negative_effects': {
             if (effect.target === 'all_players') {
-              newState.players.forEach(player => {
-                if (player.effects) {
-                  // Remove negative effects (keep positive ones like bonus_ap)
-                  player.effects = player.effects.filter(e =>
-                    e.type === 'bonus_ap' || !['skip_turn', 'reduce_ap', 'set_ap', 'prevent_movement', 'block_skills'].includes(e.type)
-                  );
-                }
+              // IMMUTABLE UPDATE: Map over players to filter out negative effects
+              newState.players = newState.players.map(player => {
+                if (!player.effects || player.effects.length === 0) return player;
+
+                // Remove negative effects (keep positive ones like bonus_ap)
+                const newEffects = player.effects.filter(e =>
+                  e.type === 'bonus_ap' || !['skip_turn', 'reduce_ap', 'set_ap', 'prevent_movement', 'block_skills'].includes(e.type)
+                );
+                return { ...player, effects: newEffects };
               });
               // Also remove action blockers
               newState.actionBlockers = [];
