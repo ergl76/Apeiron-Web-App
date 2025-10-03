@@ -79,6 +79,14 @@ const eventCounters = {
   "triumph_des_lichts": "-"
 };
 
+// Direction translations (EN → DE)
+const directionNames = {
+  north: 'Norden',
+  east: 'Osten',
+  south: 'Süden',
+  west: 'Westen'
+};
+
 // Game Data
 const heroes = {
   terra: {
@@ -909,11 +917,16 @@ function GameScreen({ gameData, onNewGame }) {
         darkTiles: [] // Array of "x,y" positions that are covered in darkness
       },
       herzDerFinsternisModal: {
-        show: false
+        show: false,
+        position: null,
+        chosenDirection: null,
+        awaitingCardDraw: false
       },
       torDerWeisheitModal: {
         show: false,
-        position: null
+        position: null,
+        chosenDirection: null,
+        awaitingCardDraw: false
       },
       gameIntroModal: {
         show: true // Show on game start
@@ -1427,28 +1440,23 @@ function GameScreen({ gameData, onNewGame }) {
       console.log(`🚪 Triggering Tor der Weisheit at light loss: ${lightLoss}`);
 
       setGameState(prev => {
-        // Check if direction card already drawn
-        if (prev.drawnCards?.torDirection) {
-          // Direction already drawn - place the gate now
-          return placeTorDerWeisheit(prev, prev.drawnCards.torDirection, lightLoss);
-        } else {
-          // Need to draw direction card first
-          console.log('🎴 Tor der Weisheit needs direction card draw');
-          return {
-            ...prev,
-            cardDrawQueue: [{
-              type: 'direction',
-              options: ['north', 'east', 'south', 'west'],
-              purpose: 'tor_der_weisheit'
-            }],
-            cardDrawState: 'drawing',
-            torDerWeisheit: {
-              ...prev.torDerWeisheit,
-              triggered: true,
-              lightLossAtTrigger: lightLoss
-            }
-          };
-        }
+        // Show the Tor modal first (UX improvement - explain before card draw)
+        console.log('⛩️ Showing Tor der Weisheit modal - player needs to initiate card draw');
+        return {
+          ...prev,
+          torDerWeisheit: {
+            ...prev.torDerWeisheit,
+            triggered: true,
+            lightLossAtTrigger: lightLoss
+          },
+          torDerWeisheitModal: {
+            show: true,
+            position: null,
+            chosenDirection: null,
+            awaitingCardDraw: true
+          }
+          // Card draw will be initiated by player clicking button in modal
+        };
       });
     }
   };
@@ -1522,8 +1530,10 @@ function GameScreen({ gameData, onNewGame }) {
           lightLossAtTrigger: lightLoss
         },
         torDerWeisheitModal: {
-          show: true,
-          position: torPosition
+          show: true, // Re-open modal to show final placement
+          position: torPosition,
+          chosenDirection: chosenDirection, // Store chosen direction for display
+          awaitingCardDraw: false // Card has been drawn, now showing result
         },
         board: {
           ...prevState.board,
@@ -1587,6 +1597,44 @@ function GameScreen({ gameData, onNewGame }) {
     // No free position found in this direction
     console.log(`❌ No free position found in direction ${direction} within 4 steps`);
     return null;
+  };
+
+  // Handler to initiate card draw from Tor modal
+  const handleTorCardDrawInitiate = () => {
+    console.log('🎴 Player initiated direction card draw for Tor der Weisheit');
+
+    setGameState(prev => ({
+      ...prev,
+      torDerWeisheitModal: {
+        ...prev.torDerWeisheitModal,
+        show: false // Close modal temporarily during card draw
+      },
+      cardDrawQueue: [{
+        type: 'direction',
+        options: ['north', 'east', 'south', 'west'],
+        purpose: 'tor_der_weisheit'
+      }],
+      cardDrawState: 'drawing'
+    }));
+  };
+
+  // Handler to initiate card draw from Herz modal
+  const handleHerzCardDrawInitiate = () => {
+    console.log('🎴 Player initiated direction card draw for Herz der Finsternis');
+
+    setGameState(prev => ({
+      ...prev,
+      herzDerFinsternisModal: {
+        ...prev.herzDerFinsternisModal,
+        show: false // Close modal temporarily during card draw
+      },
+      cardDrawQueue: [{
+        type: 'direction',
+        options: ['north', 'east', 'south', 'west'],
+        purpose: 'herz_der_finsternis'
+      }],
+      cardDrawState: 'drawing'
+    }));
   };
 
   const handleAutoTurnTransition = (players, currentPlayerIndex, round, prevState) => {
@@ -2653,6 +2701,13 @@ function GameScreen({ gameData, onNewGame }) {
 
       // Place undiscovered artifacts on Tor der Weisheit (if it exists)
       let updatedBoard = { ...prev.board };
+
+      console.log(`📦 Checking artifact placement:`, {
+        undiscoveredArtifacts,
+        torTriggered: prev.torDerWeisheit.triggered,
+        torPosition: prev.torDerWeisheit.position
+      });
+
       if (prev.torDerWeisheit.triggered && prev.torDerWeisheit.position) {
         const torPosition = prev.torDerWeisheit.position;
         const torTile = updatedBoard[torPosition];
@@ -2664,7 +2719,11 @@ function GameScreen({ gameData, onNewGame }) {
           };
 
           console.log(`📦 Platziere ${undiscoveredArtifacts.length} Artefakte auf Tor der Weisheit:`, undiscoveredArtifacts);
+        } else {
+          console.log(`⚠️ Cannot place artifacts - torTile:`, torTile, `artifacts:`, undiscoveredArtifacts.length);
         }
+      } else {
+        console.log(`⚠️ Tor der Weisheit not ready for artifacts - triggered: ${prev.torDerWeisheit.triggered}, position: ${prev.torDerWeisheit.position}`);
       }
 
       console.log(`🎉 Phase 2 transition confirmed!`);
@@ -2852,27 +2911,22 @@ function GameScreen({ gameData, onNewGame }) {
     }
 
     setGameState(prev => {
-      // Check if direction card already drawn
-      if (prev.drawnCards?.herzDirection) {
-        // Direction already drawn - place the heart now
-        return placeHeartOfDarknessWithDirection(prev, prev.drawnCards.herzDirection);
-      } else {
-        // Need to draw direction card first
-        console.log('🎴 Herz der Finsternis needs direction card draw');
-        return {
-          ...prev,
-          cardDrawQueue: [{
-            type: 'direction',
-            options: ['north', 'east', 'south', 'west'],
-            purpose: 'herz_der_finsternis'
-          }],
-          cardDrawState: 'drawing',
-          herzDerFinsternis: {
-            ...prev.herzDerFinsternis,
-            triggered: true
-          }
-        };
-      }
+      // Show the Herz modal first (UX improvement - explain before card draw)
+      console.log('💀 Showing Herz der Finsternis modal - player needs to initiate card draw');
+      return {
+        ...prev,
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          triggered: true
+        },
+        herzDerFinsternisModal: {
+          show: true,
+          position: null,
+          chosenDirection: null,
+          awaitingCardDraw: true
+        }
+        // Card draw will be initiated by player clicking button in modal
+      };
     });
   };
 
@@ -2970,7 +3024,10 @@ function GameScreen({ gameData, onNewGame }) {
         darkTiles: []
       },
       herzDerFinsternisModal: {
-        show: true
+        show: true, // Re-open modal to show final placement
+        position: foundPosition,
+        chosenDirection: chosenDirection, // Store chosen direction for display
+        awaitingCardDraw: false // Card has been drawn, now showing result
       },
       drawnCards: {},
       cardDrawQueue: [],
@@ -4715,12 +4772,13 @@ function GameScreen({ gameData, onNewGame }) {
                                 }
                               };
                             } else {
-                              console.log('⏭️ No event to apply');
+                              console.log('⏭️ No event to apply - keeping drawnCards for special placement (Tor/Herz)');
                               setTimeout(() => { currentlyConfirmingCardDraw = false; }, 200);
                               return {
                                 ...prev,
                                 cardDrawQueue: newQueue,
                                 cardDrawState: 'none'
+                                // IMPORTANT: Keep drawnCards! (Tor/Herz placement needs it)
                               };
                             }
                           }
@@ -5481,8 +5539,36 @@ function GameScreen({ gameData, onNewGame }) {
               </div>
             </div>
 
-            {/* Position Info */}
-            {gameState.torDerWeisheitModal.position && (
+            {/* Position/Direction Info - Different states based on awaitingCardDraw */}
+            {gameState.torDerWeisheitModal.awaitingCardDraw ? (
+              // STATE 1: Awaiting card draw - explain what will happen
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '2px solid #3b82f6',
+                borderRadius: '8px',
+                padding: '1.25rem',
+                margin: '1.5rem 0',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  fontSize: '1rem',
+                  color: '#1e3a8a',
+                  lineHeight: '1.7',
+                  marginBottom: '0.75rem'
+                }}>
+                  Das Tor materialisiert sich an einem freien Feld neben dem Krater.
+                </div>
+                <div style={{
+                  fontSize: '1rem',
+                  color: '#2563eb',
+                  fontWeight: 'bold',
+                  lineHeight: '1.7'
+                }}>
+                  🎴 Ziehe eine Himmelsrichtungskarte, um zu bestimmen, in welcher Richtung das Tor erscheinen soll.
+                </div>
+              </div>
+            ) : gameState.torDerWeisheitModal.chosenDirection ? (
+              // STATE 2: Card drawn - show direction-based placement
               <div style={{
                 background: 'rgba(59, 130, 246, 0.1)',
                 border: '2px solid #3b82f6',
@@ -5491,23 +5577,26 @@ function GameScreen({ gameData, onNewGame }) {
                 margin: '1.5rem 0',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '1.1rem', color: '#2563eb', marginBottom: '0.5rem' }}>
-                  ⛩️ Das Tor materialisiert sich bei:
+                <div style={{ fontSize: '1.1rem', color: '#2563eb', marginBottom: '0.75rem' }}>
+                  ⛩️ Das Tor der Weisheit erscheint
                 </div>
                 <div style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.25rem',
                   fontWeight: 'bold',
                   color: '#1e40af',
-                  fontFamily: 'monospace',
-                  letterSpacing: '0.2em'
+                  lineHeight: '1.6'
                 }}>
-                  {gameState.torDerWeisheitModal.position}
+                  am ersten freien Platz vom Krater aus in Richtung <strong style={{
+                    fontSize: '1.4rem',
+                    color: '#1e40af',
+                    letterSpacing: '0.05em'
+                  }}>{directionNames[gameState.torDerWeisheitModal.chosenDirection]}</strong>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#60a5fa', marginTop: '0.5rem' }}>
+                <div style={{ fontSize: '0.85rem', color: '#60a5fa', marginTop: '0.75rem' }}>
                   (Ein Ort des Lichts und der Transformation)
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Description */}
             <div style={{
@@ -5574,38 +5663,71 @@ function GameScreen({ gameData, onNewGame }) {
               "Durch Weisheit wird das Licht bewahrt, durch Meisterschaft wird es weitergegeben."
             </div>
 
-            {/* Close Button */}
-            <button
-              onClick={() => setGameState(prev => ({
-                ...prev,
-                torDerWeisheitModal: { show: false, position: null }
-              }))}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                color: 'white',
-                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
-              }}
-            >
-              ⛩️ VERSTANDEN - WEITER SPIELEN
-            </button>
+            {/* Action Button - Different states */}
+            {gameState.torDerWeisheitModal.awaitingCardDraw ? (
+              // STATE 1: Button to initiate card draw
+              <button
+                onClick={handleTorCardDrawInitiate}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+                }}
+              >
+                🎴 HIMMELSRICHTUNG ZIEHEN UND TOR PLATZIEREN
+              </button>
+            ) : (
+              // STATE 2: Button to close modal after placement
+              <button
+                onClick={() => setGameState(prev => ({
+                  ...prev,
+                  torDerWeisheitModal: { show: false, position: null, chosenDirection: null, awaitingCardDraw: false }
+                }))}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+                }}
+              >
+                ⛩️ VERSTANDEN - WEITER SPIELEN
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -6155,8 +6277,36 @@ function GameScreen({ gameData, onNewGame }) {
                 Schwärze kriecht über das Land wie ein lebendiger Organismus.
               </p>
 
-              {/* Heart Position Info */}
-              {gameState.herzDerFinsternis.position && (
+              {/* Position/Direction Info - Different states based on awaitingCardDraw */}
+              {gameState.herzDerFinsternisModal.awaitingCardDraw ? (
+                // STATE 1: Awaiting card draw - explain what will happen
+                <div style={{
+                  background: 'rgba(220, 38, 38, 0.15)',
+                  border: '2px solid #dc2626',
+                  borderRadius: '8px',
+                  padding: '1.25rem',
+                  margin: '1.5rem 0',
+                  textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontSize: '1rem',
+                    color: '#d1d5db',
+                    lineHeight: '1.7',
+                    marginBottom: '0.75rem'
+                  }}>
+                    Das Herz materialisiert sich an einem freien Feld neben dem Krater.
+                  </div>
+                  <div style={{
+                    fontSize: '1rem',
+                    color: '#ef4444',
+                    fontWeight: 'bold',
+                    lineHeight: '1.7'
+                  }}>
+                    🎴 Ziehe eine Himmelsrichtungskarte, um zu bestimmen, in welcher Richtung das Herz der Finsternis erscheinen soll.
+                  </div>
+                </div>
+              ) : gameState.herzDerFinsternisModal.chosenDirection ? (
+                // STATE 2: Card drawn - show direction-based placement
                 <div style={{
                   background: 'rgba(220, 38, 38, 0.15)',
                   border: '2px solid #dc2626',
@@ -6165,23 +6315,26 @@ function GameScreen({ gameData, onNewGame }) {
                   margin: '1.5rem 0',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '1.1rem', color: '#ef4444', marginBottom: '0.5rem' }}>
-                    💀 Herz der Finsternis erscheint bei:
+                  <div style={{ fontSize: '1.1rem', color: '#ef4444', marginBottom: '0.75rem' }}>
+                    💀 Das Herz der Finsternis erscheint
                   </div>
                   <div style={{
-                    fontSize: '1.5rem',
+                    fontSize: '1.25rem',
                     fontWeight: 'bold',
                     color: '#dc2626',
-                    fontFamily: 'monospace',
-                    letterSpacing: '0.2em'
+                    lineHeight: '1.6'
                   }}>
-                    {gameState.herzDerFinsternis.position}
+                    am ersten freien Platz vom Krater aus in Richtung <strong style={{
+                      fontSize: '1.4rem',
+                      color: '#dc2626',
+                      letterSpacing: '0.05em'
+                    }}>{directionNames[gameState.herzDerFinsternisModal.chosenDirection]}</strong>
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#fca5a5', marginTop: '0.5rem' }}>
+                  <div style={{ fontSize: '0.85rem', color: '#fca5a5', marginTop: '0.75rem' }}>
                     (Dieses Feld ist unpassierbar und Ursprung der Verderbnis)
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Warning Box */}
               <div style={{
@@ -6254,40 +6407,73 @@ function GameScreen({ gameData, onNewGame }) {
               </div>
             </div>
 
-            {/* Button */}
-            <button
-              onClick={() => {
-                setGameState(prev => ({
-                  ...prev,
-                  herzDerFinsternisModal: { show: false }
-                }));
-              }}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                color: 'white',
-                background: 'linear-gradient(135deg, #dc2626, #991b1b)',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'linear-gradient(135deg, #991b1b, #7f1d1d)';
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.6)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'linear-gradient(135deg, #dc2626, #991b1b)';
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
-              }}
-            >
-              💀 DIE HERAUSFORDERUNG ANNEHMEN
-            </button>
+            {/* Action Button - Different states */}
+            {gameState.herzDerFinsternisModal.awaitingCardDraw ? (
+              // STATE 1: Button to initiate card draw
+              <button
+                onClick={handleHerzCardDrawInitiate}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #991b1b, #7f1d1d)';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #dc2626, #991b1b)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
+                }}
+              >
+                🎴 HIMMELSRICHTUNG ZIEHEN UND HERZ PLATZIEREN
+              </button>
+            ) : (
+              // STATE 2: Button to close modal after placement
+              <button
+                onClick={() => {
+                  setGameState(prev => ({
+                    ...prev,
+                    herzDerFinsternisModal: { show: false, position: null, chosenDirection: null, awaitingCardDraw: false }
+                  }));
+                }}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #991b1b, #7f1d1d)';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #dc2626, #991b1b)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
+                }}
+              >
+                💀 DIE HERAUSFORDERUNG ANNEHMEN
+              </button>
+            )}
           </div>
         </div>
       )}
