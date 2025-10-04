@@ -210,7 +210,144 @@ return config.color || '#6b7280';
 |--------------|---------------|----------------------|----------------------------|---------------------------|
 | **events.json** | App-Start (Build-Time) | Browser-Refresh / Build | ❌ Nein (Deck bereits erstellt) | ❌ Nein |
 | **gameRules.json** | App-Start (Build-Time) | Browser-Refresh / Build | ⚠️ Teilweise (Runtime ja, Initial nein) | ✅ Ja (viele Checks) |
+| **gameRules.phase2** | App-Start (Build-Time) | Browser-Refresh | ✅ **Ja** (Runtime-Abfrage) | ✅ Ja (bei jedem Spielerzug) |
 | **tiles.json** | App-Start (Build-Time) | Browser-Refresh / Build | ⚠️ Phase 2 Deck ja, Phase 1 nein | ❌ Nein |
+
+---
+
+## 4️⃣ Phase 2 Configuration
+
+### Ladezeitpunkt
+```javascript
+// ApeironGame.jsx:1959
+const darknessSpreadCount = gameRules.phase2?.darknessSpreadPerTurn || 1;
+```
+
+**Import-Typ:** Build-Time Import (statisch), Runtime-Abfrage (dynamisch)
+
+### Verwendung im Code
+
+#### Automatische Finsternis-Ausbreitung (Zeile ~1959-1987)
+```javascript
+// ApeironGame.jsx:1959
+const darknessSpreadCount = gameRules.phase2?.darknessSpreadPerTurn || 1;
+const darknessSpreads = [];
+
+if (shouldSpreadDarkness) {
+  let tempState = { ...prevState };
+
+  for (let i = 0; i < darknessSpreadCount; i++) {
+    const nextPos = calculateNextDarknessPosition(tempState);
+
+    if (nextPos) {
+      darknessSpreads.push(nextPos);
+      tempState = {
+        ...tempState,
+        herzDerFinsternis: {
+          ...tempState.herzDerFinsternis,
+          darkTiles: [...tempState.herzDerFinsternis.darkTiles, nextPos]
+        }
+      };
+    } else {
+      break; // No more valid positions
+    }
+  }
+}
+```
+
+### Config-Parameter
+
+| Parameter | Beschreibung | Default | Beispielwerte |
+|-----------|--------------|---------|---------------|
+| `darknessSpreadPerTurn` | Anzahl der Felder die pro Spielerzug von Finsternis befallen werden | `1` | `1` (leicht), `2` (normal), `3` (schwer) |
+
+### Schwierigkeitsgrade
+
+```json
+// gameRules.json - Leichter Modus (Empfohlen für Einsteiger)
+{
+  "phase2": {
+    "darknessSpreadPerTurn": 1
+  }
+}
+
+// gameRules.json - Normaler Modus
+{
+  "phase2": {
+    "darknessSpreadPerTurn": 2
+  }
+}
+
+// gameRules.json - Schwerer Modus (Für Experten)
+{
+  "phase2": {
+    "darknessSpreadPerTurn": 3
+  }
+}
+```
+
+### Wann werden Änderungen wirksam?
+
+| Änderung | Wirksam nach | Bestehendes Spiel betroffen? |
+|----------|--------------|----------------------------|
+| `darknessSpreadPerTurn` | Browser-Refresh | ✅ Ja - wird bei jedem Spielerzug neu abgefragt |
+
+**✅ Dynamisch:** Der Wert wird zur **Runtime** bei jedem Spielerzug-Ende abgefragt.
+
+**Impact:**
+- Wert wird bei jedem `handleAutoTurnTransition` Call neu gelesen
+- Änderungen wirken **sofort** nach Browser-Refresh
+- Bestehendes Spiel übernimmt neue Geschwindigkeit
+
+### Testing-Beispiel
+
+#### Szenario: Finsternis-Ausbreitung von 1 → 2 ändern
+
+**1. Config ändern:**
+```json
+// src/config/gameRules.json
+{
+  "phase2": {
+    "darknessSpreadPerTurn": 2  // ← GEÄNDERT von 1
+  }
+}
+```
+
+**2. Browser refresht** automatisch (HMR)
+
+**3. Im bestehenden Spiel:**
+- Phase 2 bereits aktiv? ✅ Neue Geschwindigkeit gilt sofort!
+- Spielerzug beenden → Console-Log: `☠️ darkness spreads to 4,5 (1/2)` + `☠️ darkness spreads to 4,6 (2/2)`
+
+**4. Validierung:**
+- ✅ Console zeigt 2× spread statt 1×
+- ✅ Board hat 2 neue dunkle Felder (statt 1)
+- ✅ Spiral-Algorithmus funktioniert korrekt für mehrere Felder
+
+### Event-basierte Finsternis vs. Automatische Ausbreitung
+
+**Wichtig:** `darknessSpreadPerTurn` gilt nur für **automatische Ausbreitung nach jedem Spielerzug**.
+
+**Event-basierte Ausbreitung** (`spread_darkness` Events) verwenden **eigene** `value`-Parameter:
+
+```json
+// events.json - Event-basierte Ausbreitung
+{
+  "id": "welle_der_finsternis",
+  "effects": [
+    {
+      "type": "spread_darkness",
+      "value": 2  // ← Event-spezifischer Wert (unabhängig von darknessSpreadPerTurn)
+    }
+  ]
+}
+```
+
+**Unterschied:**
+- **Automatisch** (jeder Spielerzug): `gameRules.phase2.darknessSpreadPerTurn`
+- **Event-basiert** (nur bei Event): `effect.value` aus events.json
+
+**Kombiniert:** Wenn Event mit `spread_darkness: 2` getriggert wird UND Spielerzug endet → Insgesamt 2 (Event) + 1 (Auto) = **3 Felder** werden dunkel!
 
 ---
 

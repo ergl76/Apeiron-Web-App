@@ -1376,11 +1376,11 @@ function GameScreen({ gameData, onNewGame }) {
         );
 
         // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-        // Apply darkness spread if needed
-        const updatedDarkTiles = nextDarkPos
-          ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        // Apply darkness spread if needed (can be multiple positions)
+        const updatedDarkTiles = darknessSpreads.length > 0
+          ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
           : prev.herzDerFinsternis.darkTiles || [];
 
         console.log(`📝 handleTileClick DISCOVERED: ${newTileId} at ${position}. Deck size: ${newTileDeck.length}. Round: ${newRound}`);
@@ -1461,11 +1461,11 @@ function GameScreen({ gameData, onNewGame }) {
         );
 
         // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-        // Apply darkness spread if needed
-        const updatedDarkTiles = nextDarkPos
-          ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        // Apply darkness spread if needed (can be multiple positions)
+        const updatedDarkTiles = darknessSpreads.length > 0
+          ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
           : prev.herzDerFinsternis.darkTiles || [];
 
         return {
@@ -1541,11 +1541,11 @@ function GameScreen({ gameData, onNewGame }) {
         }
       };
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       return {
@@ -1593,11 +1593,11 @@ function GameScreen({ gameData, onNewGame }) {
         }
       };
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       return {
@@ -1684,11 +1684,11 @@ function GameScreen({ gameData, onNewGame }) {
       };
       
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       return {
@@ -1944,7 +1944,7 @@ function GameScreen({ gameData, onNewGame }) {
         roundCompleted: false,
         lightDecrement: 0,
         updatedPlayers: players,
-        spreadDarkness: false
+        darknessSpreads: []
       };
     }
     let lightDecrement = 0;
@@ -1954,12 +1954,36 @@ function GameScreen({ gameData, onNewGame }) {
       // Player completed their turn - decrease light by 1
       lightDecrement = 1;
 
-      // Phase 2: Calculate darkness spread position
+      // Phase 2: Calculate darkness spread positions (configurable count)
       const shouldSpreadDarkness = prevState.phase === 2 && prevState.herzDerFinsternis.triggered;
-      const nextDarkPos = shouldSpreadDarkness ? calculateNextDarknessPosition(prevState) : null;
+      const darknessSpreadCount = gameRules.phase2?.darknessSpreadPerTurn || 1;
+      const darknessSpreads = [];
 
-      if (shouldSpreadDarkness && nextDarkPos) {
-        console.log(`☠️ Player turn completed in Phase 2 - darkness will spread to ${nextDarkPos}`);
+      if (shouldSpreadDarkness) {
+        // Use same loop pattern as spread_darkness event (line 2815-2839)
+        let tempState = { ...prevState };
+
+        for (let i = 0; i < darknessSpreadCount; i++) {
+          const nextPos = calculateNextDarknessPosition(tempState);
+
+          if (nextPos) {
+            darknessSpreads.push(nextPos);
+
+            // Update tempState to include this new dark tile for next iteration
+            tempState = {
+              ...tempState,
+              herzDerFinsternis: {
+                ...tempState.herzDerFinsternis,
+                darkTiles: [...(tempState.herzDerFinsternis.darkTiles || []), nextPos]
+              }
+            };
+
+            console.log(`☠️ Player turn completed in Phase 2 - darkness spreads to ${nextPos} (${i+1}/${darknessSpreadCount})`);
+          } else {
+            console.log(`☠️ No more valid positions available for darkness spread (${i}/${darknessSpreadCount})`);
+            break;
+          }
+        }
       }
 
       // Check if all other players also have 0 AP.
@@ -2063,7 +2087,7 @@ function GameScreen({ gameData, onNewGame }) {
           roundCompleted: shouldTriggerEvent,
           lightDecrement,
           updatedPlayers: newPlayersState,
-          nextDarkPos: nextDarkPos
+          darknessSpreads: darknessSpreads
         };
         roundCompletionCache.current = result;
 
@@ -2105,7 +2129,7 @@ function GameScreen({ gameData, onNewGame }) {
             if (!nextHasSkip) {
               // Found a player who can take a turn
               triggerTurnTransition(skipNextIndex);
-              return { nextPlayerIndex: skipNextIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, nextDarkPos };
+              return { nextPlayerIndex: skipNextIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads };
             }
 
             // This player also needs to skip
@@ -2122,12 +2146,12 @@ function GameScreen({ gameData, onNewGame }) {
         }
 
         triggerTurnTransition(nextPlayerIndex);
-        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, nextDarkPos };
+        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads };
       }
     }
 
     // Current player still has AP, no transition needed
-    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, nextDarkPos: null };
+    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads: [] };
   };
 
   // Event System
@@ -3007,11 +3031,11 @@ function GameScreen({ gameData, onNewGame }) {
       console.log(`🏗️ Foundation built! +${lightBonus} Light bonus (${foundationCount}/4)`);
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       return {
@@ -3257,12 +3281,12 @@ function GameScreen({ gameData, onNewGame }) {
       }
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } =
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } =
         handleAutoTurnTransition(finalPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       const newLight = Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus));
@@ -3553,11 +3577,11 @@ function GameScreen({ gameData, onNewGame }) {
       });
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       console.log(`🚪 ${currentPlayer.name} has become a master of ${currentPlayer.element}!`);
@@ -3657,11 +3681,11 @@ function GameScreen({ gameData, onNewGame }) {
           );
 
           // Handle automatic turn transition with the correct signature
-          const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+          const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-          // Apply darkness spread if needed
-          const updatedDarkTiles = nextDarkPos
-            ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+          // Apply darkness spread if needed (can be multiple positions)
+          const updatedDarkTiles = darknessSpreads.length > 0
+            ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
             : prev.herzDerFinsternis.darkTiles || [];
 
           console.log(`🔍 SCOUTING COMPLETE: Revealed ${newSelectedPositions.length} tiles. Deck size: ${newTileDeck.length}`);
@@ -3725,11 +3749,11 @@ function GameScreen({ gameData, onNewGame }) {
         index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
       );
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       return {
@@ -3822,11 +3846,11 @@ function GameScreen({ gameData, onNewGame }) {
           : player
       );
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       return {
@@ -3929,11 +3953,11 @@ function GameScreen({ gameData, onNewGame }) {
       });
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       return {
@@ -4126,11 +4150,11 @@ function GameScreen({ gameData, onNewGame }) {
       });
 
       // Handle automatic turn transition
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-      // Apply darkness spread if needed
-      const updatedDarkTiles = nextDarkPos
-        ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
         : prev.herzDerFinsternis.darkTiles || [];
 
       console.log(`🎓 ${currentPlayer.name} teaches ${skillToTeach} to ${playersOnSamePosition.length} player(s)`);
@@ -4179,11 +4203,11 @@ function GameScreen({ gameData, onNewGame }) {
           index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
         );
 
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
-        // Apply darkness spread if needed
-        const updatedDarkTiles = nextDarkPos
-          ? [...(prev.herzDerFinsternis.darkTiles || []), nextDarkPos]
+        // Apply darkness spread if needed (can be multiple positions)
+        const updatedDarkTiles = darknessSpreads.length > 0
+          ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
           : prev.herzDerFinsternis.darkTiles || [];
 
         return {
@@ -4296,11 +4320,11 @@ function GameScreen({ gameData, onNewGame }) {
           index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
         );
 
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
         // Apply darkness spread if needed (but AFTER we removed one)
-        const updatedDarkTiles = nextDarkPos
-          ? [...updatedDarkTilesAfterRemoval, nextDarkPos]
+        const updatedDarkTiles = darknessSpreads.length > 0
+          ? [...updatedDarkTilesAfterRemoval, ...darknessSpreads]
           : updatedDarkTilesAfterRemoval;
 
         console.log(`💧 Heilende Reinigung: Darkness removed from ${darknessPosition}`);
@@ -4388,11 +4412,16 @@ function GameScreen({ gameData, onNewGame }) {
         index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
       );
 
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, nextDarkPos } =
+      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } =
         handleAutoTurnTransition(playersAfterAp, prev.currentPlayerIndex, prev.round, prev);
 
       const affectedNames = prev.players.filter(p => affectedPlayerIds.includes(p.id)).map(p => p.name).join(', ');
       console.log(`💧 Heilende Reinigung: Removed negative effects + action blockers from ${affectedNames}`);
+
+      // Apply darkness spread if needed (can be multiple positions)
+      const updatedDarkTiles = darknessSpreads.length > 0
+        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
+        : prev.herzDerFinsternis.darkTiles || [];
 
       return {
         ...prev,
@@ -4400,7 +4429,11 @@ function GameScreen({ gameData, onNewGame }) {
         currentPlayerIndex: nextPlayerIndex,
         round: newRound,
         actionBlockers: newActionBlockers.filter(b => b.expiresInRound > newRound), // Filter expired blockers
-        light: Math.max(0, prev.light - lightDecrement)
+        light: Math.max(0, prev.light - lightDecrement),
+        herzDerFinsternis: {
+          ...prev.herzDerFinsternis,
+          darkTiles: updatedDarkTiles
+        }
       };
     });
   };

@@ -2,18 +2,6 @@
   "light": {
     "maxValue": 30,
     "startValue": 30,
-    "lossPerRound": {
-      "phase1": {
-        "players2": -1,
-        "players3": -2,
-        "players4": -3
-      },
-      "phase2": {
-        "players2": -2,
-        "players3": -3,
-        "players4": -4
-      }
-    },
     "torDerWeisheitTrigger": 8
   },
   "actionPoints": {
@@ -47,13 +35,10 @@
       }
     }
   },
-  "gateOfWisdom": {
-    "appearsAtRound": {
-      "players2": 4,
-      "players3": 3,
-      "players4": 2
-    }
+  "phase2": {
+    "darknessSpreadPerTurn": 2
   },
+
   "difficulty": {
     "easy": {
       "positiveEvents": 0.7,
