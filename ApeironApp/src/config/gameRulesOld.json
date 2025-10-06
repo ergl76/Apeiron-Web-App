@@ -1,0 +1,71 @@
+{
+  "light": {
+    "maxValue": 30,
+    "startValue": 30,
+    "lossPerRound": {
+      "phase1": {
+        "players2": -1,
+        "players3": -2,
+        "players4": -3
+      },
+      "phase2": {
+        "players2": -2,
+        "players3": -3,
+        "players4": -4
+      }
+    },
+    "torDerWeisheitTrigger": 8
+  },
+  "actionPoints": {
+    "perTurn": 3,
+    "maxPerTurn": 3
+  },
+  "inventory": {
+    "slots": 2,
+    "maxSlots": 2
+  },
+  "foundations": {
+    "lightBonusPerFoundation": 4
+  },
+  "elementActivation": {
+    "bonuses": {
+      "wasser": {
+        "type": "light",
+        "value": 4
+      },
+      "feuer": {
+        "type": "light",
+        "value": 4
+      },
+      "luft": {
+        "type": "permanent_ap",
+        "value": 1
+      },
+      "erde": {
+        "type": "permanent_ap",
+        "value": 1
+      }
+    }
+  },
+  "gateOfWisdom": {
+    "appearsAtRound": {
+      "players2": 4,
+      "players3": 3,
+      "players4": 2
+    }
+  },
+  "difficulty": {
+    "easy": {
+      "positiveEvents": 0.7,
+      "negativeEvents": 0.3
+    },
+    "normal": {
+      "positiveEvents": 0.5,
+      "negativeEvents": 0.5
+    },
+    "hard": {
+      "positiveEvents": 0.3,
+      "negativeEvents": 0.7
+    }
+  }
+}
