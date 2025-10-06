@@ -1227,8 +1227,15 @@ function GameScreen({ gameData, onNewGame }) {
       drawnCards: {}, // Store drawn card results {direction: 'north', hero: 'terra', etc.}
       cardDrawState: 'none', // 'none' | 'event_shown' | 'drawing' | 'result_shown'
       gameStartTime: Date.now(), // Track game start for duration calculation
-      totalMoves: 0, // Track total number of moves
-      totalApSpent: 0 // Track total AP spent
+      totalMoves: 0, // Track total number of moves (DEPRECATED - use totalTurns)
+      totalApSpent: 0, // Track total AP spent
+      // NEW: Phase-separated statistics for Victory/Defeat modals
+      totalTurns: 0, // Total number of complete hero turns (Turn = all APs of one hero)
+      phase1TotalTurns: 0, // Turns completed in Phase 1
+      phase2TotalTurns: 0, // Turns completed in Phase 2
+      phase1TotalApSpent: 0, // AP spent in Phase 1
+      phase2TotalApSpent: 0, // AP spent in Phase 2
+      phase1Stats: null // Snapshot of Phase 1 stats when transitioning to Phase 2
     };
   });
 
@@ -1297,10 +1304,24 @@ function GameScreen({ gameData, onNewGame }) {
         activatedElements: gameState.tower.activatedElements || [],
         remainingLight: 0,
         playerNames: gameState.players.map(p => p.name),
-        totalMoves: gameState.totalMoves,
+        totalMoves: gameState.totalMoves, // DEPRECATED - use totalTurns
         totalApSpent: gameState.totalApSpent,
         durationMinutes: Math.floor(gameDurationMs / 60000),
-        durationSeconds: Math.floor((gameDurationMs % 60000) / 1000)
+        durationSeconds: Math.floor((gameDurationMs % 60000) / 1000),
+        // NEW: Phase-separated statistics
+        totalTurns: gameState.totalTurns,
+        phase1: gameState.phase1Stats || {
+          foundations: gameState.tower.foundations.length,
+          totalTurns: gameState.phase1TotalTurns,
+          totalApSpent: gameState.phase1TotalApSpent,
+          roundsInPhase1: gameState.phase === 1 ? gameState.round : 0
+        },
+        phase2: {
+          elements: (gameState.tower.activatedElements || []).length,
+          totalTurns: gameState.phase2TotalTurns,
+          totalApSpent: gameState.phase2TotalApSpent,
+          roundsInPhase2: gameState.phase === 2 ? gameState.round - (gameState.phase1Stats?.roundsInPhase1 || 0) : 0
+        }
       };
 
       setGameState(prev => ({
@@ -1382,7 +1403,7 @@ function GameScreen({ gameData, onNewGame }) {
         );
 
         // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads, completedTurn } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
         // Apply darkness spread if needed (can be multiple positions)
         const updatedDarkTiles = darknessSpreads.length > 0
@@ -1390,10 +1411,15 @@ function GameScreen({ gameData, onNewGame }) {
           : prev.herzDerFinsternis.darkTiles || [];
 
         console.log(`📝 handleTileClick DISCOVERED: ${newTileId} at ${position}. Deck size: ${newTileDeck.length}. Round: ${newRound}`);
+
+        // Update turn statistics (Phase-separated)
+        const newStats = calculateStatsUpdate(prev, completedTurn, 1);
+
         return {
           ...prev,
-          totalMoves: prev.totalMoves + 1, // Track move
+          totalMoves: prev.totalMoves + 1, // Track move (DEPRECATED - use totalTurns)
           totalApSpent: prev.totalApSpent + 1, // Track AP (discover costs 1 AP)
+          ...newStats,
           board: {
             ...prev.board,
             [position]: {
@@ -1467,17 +1493,21 @@ function GameScreen({ gameData, onNewGame }) {
         );
 
         // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads, completedTurn } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
 
         // Apply darkness spread if needed (can be multiple positions)
         const updatedDarkTiles = darknessSpreads.length > 0
           ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
           : prev.herzDerFinsternis.darkTiles || [];
 
+        // Update turn statistics (Phase-separated)
+        const newStats = calculateStatsUpdate(prev, completedTurn, 1);
+
         return {
           ...prev,
-          totalMoves: prev.totalMoves + 1, // Track move
+          totalMoves: prev.totalMoves + 1, // Track move (DEPRECATED - use totalTurns)
           totalApSpent: prev.totalApSpent + 1, // Track AP (movement costs 1 AP)
+          ...newStats,
           players: updatedPlayers || newPlayers,
           currentPlayerIndex: nextPlayerIndex,
           round: newRound,
@@ -1934,6 +1964,32 @@ function GameScreen({ gameData, onNewGame }) {
     }));
   };
 
+  // Helper function to calculate phase-separated statistics updates
+  const calculateStatsUpdate = (prevState, completedTurn, apCost = 1) => {
+    const newStats = {};
+
+    if (completedTurn?.turnCompleted) {
+      // Full turn completed
+      newStats.totalTurns = prevState.totalTurns + 1;
+      if (completedTurn.phase === 1) {
+        newStats.phase1TotalTurns = prevState.phase1TotalTurns + 1;
+        newStats.phase1TotalApSpent = prevState.phase1TotalApSpent + apCost;
+      } else {
+        newStats.phase2TotalTurns = prevState.phase2TotalTurns + 1;
+        newStats.phase2TotalApSpent = prevState.phase2TotalApSpent + apCost;
+      }
+    } else {
+      // Just AP spent, no turn completed
+      if (prevState.phase === 1) {
+        newStats.phase1TotalApSpent = prevState.phase1TotalApSpent + apCost;
+      } else {
+        newStats.phase2TotalApSpent = prevState.phase2TotalApSpent + apCost;
+      }
+    }
+
+    return newStats;
+  };
+
   const handleAutoTurnTransition = (players, currentPlayerIndex, round, prevState) => {
     const callStack = new Error().stack.split('\n').slice(1, 4).map(line => line.trim()).join(' -> ');
     console.log(`🔄 handleAutoTurnTransition called for round ${round}, currentPlayer ${currentPlayerIndex}`);
@@ -1950,7 +2006,8 @@ function GameScreen({ gameData, onNewGame }) {
         roundCompleted: false,
         lightDecrement: 0,
         updatedPlayers: players,
-        darknessSpreads: []
+        darknessSpreads: [],
+        completedTurn: null
       };
     }
     let lightDecrement = 0;
@@ -1959,6 +2016,12 @@ function GameScreen({ gameData, onNewGame }) {
     if (updatedCurrentPlayer.ap <= 0) {
       // Player completed their turn - decrease light by 1
       lightDecrement = 1;
+
+      // Track completed turn (Phase-separated)
+      const completedTurn = {
+        turnCompleted: true,
+        phase: prevState.phase
+      };
 
       // Phase 2: Calculate darkness spread positions (configurable count)
       const shouldSpreadDarkness = prevState.phase === 2 && prevState.herzDerFinsternis.triggered;
@@ -2093,7 +2156,8 @@ function GameScreen({ gameData, onNewGame }) {
           roundCompleted: shouldTriggerEvent,
           lightDecrement,
           updatedPlayers: newPlayersState,
-          darknessSpreads: darknessSpreads
+          darknessSpreads: darknessSpreads,
+          completedTurn: completedTurn // NEW: Track turn completion for stats
         };
         roundCompletionCache.current = result;
 
@@ -2135,7 +2199,7 @@ function GameScreen({ gameData, onNewGame }) {
             if (!nextHasSkip) {
               // Found a player who can take a turn
               triggerTurnTransition(skipNextIndex);
-              return { nextPlayerIndex: skipNextIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads };
+              return { nextPlayerIndex: skipNextIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads, completedTurn };
             }
 
             // This player also needs to skip
@@ -2152,12 +2216,12 @@ function GameScreen({ gameData, onNewGame }) {
         }
 
         triggerTurnTransition(nextPlayerIndex);
-        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads };
+        return { nextPlayerIndex: nextPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads, completedTurn };
       }
     }
 
     // Current player still has AP, no transition needed
-    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads: [] };
+    return { nextPlayerIndex: currentPlayerIndex, newRound: round, actionBlockers: (prevState.actionBlockers || []).filter(b => b.expiresInRound > round), roundCompleted: false, lightDecrement, updatedPlayers: players, darknessSpreads: [], completedTurn: null };
   };
 
   // Event System
@@ -2933,37 +2997,50 @@ function GameScreen({ gameData, onNewGame }) {
           }
           case 'cleanse_darkness': {
             const cleanseCount = effect.value || 1;
-            const newBoard = { ...newState.board };
             let fieldsCleansed = 0;
 
             if (effect.target === 'closest_to_crater') {
               // Find dark fields closest to crater and cleanse them
-              const darkFields = Object.keys(newBoard)
-                .filter(pos => newBoard[pos]?.isDark)
-                .map(pos => {
-                  const [x, y] = pos.split(',').map(Number);
-                  const distance = Math.abs(x - 4) + Math.abs(y - 4); // Manhattan distance to crater
-                  return { pos, distance };
-                })
-                .sort((a, b) => a.distance - b.distance)
-                .slice(0, cleanseCount);
+              const currentDarkTiles = newState.herzDerFinsternis.darkTiles || [];
 
-              darkFields.forEach(field => {
-                delete newBoard[field.pos].isDark;
-                fieldsCleansed++;
-              });
+              if (currentDarkTiles.length > 0) {
+                const darkFieldsWithDistance = currentDarkTiles
+                  .map(pos => {
+                    const [x, y] = pos.split(',').map(Number);
+                    const distance = Math.abs(x - 4) + Math.abs(y - 4); // Manhattan distance to crater
+                    return { pos, distance };
+                  })
+                  .sort((a, b) => a.distance - b.distance)
+                  .slice(0, cleanseCount);
+
+                // Remove these positions from darkTiles array
+                const positionsToRemove = darkFieldsWithDistance.map(f => f.pos);
+                newState.herzDerFinsternis = {
+                  ...newState.herzDerFinsternis,
+                  darkTiles: currentDarkTiles.filter(pos => !positionsToRemove.includes(pos))
+                };
+
+                fieldsCleansed = positionsToRemove.length;
+                console.log(`🔥 Reinigendes Feuer (cleanse_darkness): ${fieldsCleansed} Finsternis-Felder gereinigt (nächste zum Krater):`, positionsToRemove);
+              }
             } else if (effect.target === 'all_adjacent_to_crater') {
               // Cleanse all dark fields adjacent to crater
               const adjacentToCrater = ['3,4', '5,4', '4,3', '4,5'];
-              adjacentToCrater.forEach(pos => {
-                if (newBoard[pos]?.isDark) {
-                  delete newBoard[pos].isDark;
-                  fieldsCleansed++;
-                }
-              });
+              const currentDarkTiles = newState.herzDerFinsternis.darkTiles || [];
+
+              const cleansedPositions = currentDarkTiles.filter(pos => adjacentToCrater.includes(pos));
+
+              if (cleansedPositions.length > 0) {
+                newState.herzDerFinsternis = {
+                  ...newState.herzDerFinsternis,
+                  darkTiles: currentDarkTiles.filter(pos => !adjacentToCrater.includes(pos))
+                };
+
+                fieldsCleansed = cleansedPositions.length;
+                console.log(`🔥 Cleanse Darkness: ${fieldsCleansed} angrenzende Finsternis-Felder gereinigt:`, cleansedPositions);
+              }
             }
 
-            newState.board = newBoard;
             resolvedTexts.push(`Triumph des Lichts: ${fieldsCleansed} Felder wurden von Finsternis gereinigt.`);
             break;
           }
@@ -3184,12 +3261,22 @@ function GameScreen({ gameData, onNewGame }) {
         console.log(`📦 ${undiscoveredArtifacts.length} undiscovered artifacts placed on Tor der Weisheit`);
       }
 
+      // Create Phase 1 stats snapshot for Victory/Defeat modals
+      const phase1Stats = {
+        foundations: prev.tower.foundations.length, // Should be 4
+        totalTurns: prev.phase1TotalTurns,
+        totalApSpent: prev.phase1TotalApSpent,
+        roundsInPhase1: prev.round
+      };
+      console.log(`📊 Phase 1 Stats Snapshot:`, phase1Stats);
+
       return {
         ...prev,
         phase: 2,
         tileDeck: shuffledTileDeck,  // Phase 2 deck replaces Phase 1 deck completely
         eventDeck: phase2EventDeck,
         board: updatedBoard,
+        phase1Stats: phase1Stats, // Save Phase 1 snapshot
         phaseTransitionModal: {
           show: false,
           foundationBonus: 0,
@@ -3325,7 +3412,7 @@ function GameScreen({ gameData, onNewGame }) {
       if (newTower.activatedElements.length === 4) {
         console.log('🎉 VICTORY! All 4 elements activated - Tower of Elements is complete!');
 
-        // Calculate game statistics
+        // Calculate game statistics (Phase-separated)
         const gameDurationMs = Date.now() - prev.gameStartTime;
         const gameStats = {
           rounds: prev.round,
@@ -3334,10 +3421,24 @@ function GameScreen({ gameData, onNewGame }) {
           activatedElements: newTower.activatedElements,
           remainingLight: prev.light + lightBonus,
           playerNames: prev.players.map(p => p.name),
-          totalMoves: prev.totalMoves,
+          totalMoves: prev.totalMoves, // DEPRECATED - use totalTurns
           totalApSpent: prev.totalApSpent,
           durationMinutes: Math.floor(gameDurationMs / 60000),
-          durationSeconds: Math.floor((gameDurationMs % 60000) / 1000)
+          durationSeconds: Math.floor((gameDurationMs % 60000) / 1000),
+          // NEW: Phase-separated statistics
+          totalTurns: prev.totalTurns,
+          phase1: prev.phase1Stats || {
+            foundations: newTower.foundations.length,
+            totalTurns: prev.phase1TotalTurns,
+            totalApSpent: prev.phase1TotalApSpent,
+            roundsInPhase1: 0 // Fallback if phase1Stats missing
+          },
+          phase2: {
+            elements: newTower.activatedElements.length,
+            totalTurns: prev.phase2TotalTurns,
+            totalApSpent: prev.phase2TotalApSpent,
+            roundsInPhase2: prev.round - (prev.phase1Stats?.roundsInPhase1 || 0)
+          }
         };
 
         return {
@@ -4680,8 +4781,11 @@ function GameScreen({ gameData, onNewGame }) {
             'ueberflutung': 'fluss_freimachen'
           };
 
-          // Add each obstacle type to the array if player has the skill
-          adjacentTile.obstacles.forEach(obstacleType => {
+          // Get unique obstacle types (prevent duplicate buttons for same type)
+          const uniqueObstacleTypes = [...new Set(adjacentTile.obstacles)];
+
+          // Add each unique obstacle type to the array if player has the skill
+          uniqueObstacleTypes.forEach(obstacleType => {
             if (currentPlayer.learnedSkills.includes(skillMap[obstacleType]) && !areSkillsBlocked) {
               adjacentObstacles.push({
                 position: pos,
@@ -6814,60 +6918,125 @@ function GameScreen({ gameData, onNewGame }) {
               </div>
             </div>
 
-            {/* Statistics */}
+            {/* Statistics - Phase-separated */}
             <div style={{
               background: 'rgba(16, 185, 129, 0.15)',
               borderRadius: '12px',
               padding: '24px',
               marginBottom: '24px'
             }}>
+              {/* Phase-separated Stats Grid */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '16px',
-                marginBottom: '16px'
+                gap: '24px',
+                marginBottom: '20px'
               }}>
-                <div>
-                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>⏱️ Runden</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
-                    {gameState.victoryModal.stats.rounds}
+                {/* Phase 1 Stats */}
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  border: '1px solid rgba(16, 185, 129, 0.3)'
+                }}>
+                  <div style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    color: '#10b981',
+                    marginBottom: '12px',
+                    textAlign: 'center'
+                  }}>
+                    🏗️ Phase 1: Fundamentbau
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#a7f3d0', marginBottom: '4px' }}>
+                    Fundamente: <span style={{ fontWeight: 'bold', color: '#d1fae5' }}>{gameState.victoryModal.stats.phase1.foundations} / 4</span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#a7f3d0', marginBottom: '4px' }}>
+                    🎯 Spielzüge: <span style={{ fontWeight: 'bold', color: '#d1fae5' }}>{gameState.victoryModal.stats.phase1.totalTurns}</span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#a7f3d0' }}>
+                    ⚡ AP Verbraucht: <span style={{ fontWeight: 'bold', color: '#d1fae5' }}>{gameState.victoryModal.stats.phase1.totalApSpent}</span>
                   </div>
                 </div>
-                <div>
-                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>🎯 Spielzüge</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
-                    {gameState.victoryModal.stats.totalMoves}
+
+                {/* Phase 2 Stats */}
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  border: '1px solid rgba(16, 185, 129, 0.3)'
+                }}>
+                  <div style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    color: '#10b981',
+                    marginBottom: '12px',
+                    textAlign: 'center'
+                  }}>
+                    🔥 Phase 2: Elemente
                   </div>
-                </div>
-                <div>
-                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>👥 Helden</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
-                    {gameState.victoryModal.stats.playerCount}
+                  <div style={{ fontSize: '0.85rem', color: '#a7f3d0', marginBottom: '4px' }}>
+                    Elemente: <span style={{ fontWeight: 'bold', color: '#d1fae5' }}>{gameState.victoryModal.stats.phase2.elements} / 4</span>
                   </div>
-                </div>
-                <div>
-                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>⚡ AP Verbraucht</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
-                    {gameState.victoryModal.stats.totalApSpent}
+                  <div style={{ fontSize: '0.85rem', color: '#a7f3d0', marginBottom: '4px' }}>
+                    🎯 Spielzüge: <span style={{ fontWeight: 'bold', color: '#d1fae5' }}>{gameState.victoryModal.stats.phase2.totalTurns}</span>
                   </div>
-                </div>
-                <div>
-                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>🕐 Dauer</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
-                    {gameState.victoryModal.stats.durationMinutes}:{String(gameState.victoryModal.stats.durationSeconds).padStart(2, '0')}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ color: '#a7f3d0', fontSize: '0.9rem', marginBottom: '4px' }}>💡 Licht</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
-                    {gameState.victoryModal.stats.remainingLight}
+                  <div style={{ fontSize: '0.85rem', color: '#a7f3d0' }}>
+                    ⚡ AP Verbraucht: <span style={{ fontWeight: 'bold', color: '#d1fae5' }}>{gameState.victoryModal.stats.phase2.totalApSpent}</span>
                   </div>
                 </div>
               </div>
+
+              {/* Overall Stats */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '12px',
+                paddingTop: '16px',
+                borderTop: '2px solid rgba(16, 185, 129, 0.3)',
+                marginBottom: '16px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.75rem', marginBottom: '4px' }}>⏱️ Runden</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.rounds}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.75rem', marginBottom: '4px' }}>🎯 Spielzüge</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.totalTurns}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.75rem', marginBottom: '4px' }}>⚡ AP Gesamt</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.totalApSpent}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#a7f3d0', fontSize: '0.75rem', marginBottom: '4px' }}>🕐 Dauer</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                    {gameState.victoryModal.stats.durationMinutes}:{String(gameState.victoryModal.stats.durationSeconds).padStart(2, '0')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Player Info */}
               <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                <div style={{ color: '#a7f3d0', fontSize: '0.85rem', marginBottom: '8px' }}>Die Helden von Elyria</div>
-                <div style={{ color: '#d1fae5', fontSize: '1rem', fontWeight: 'bold' }}>
-                  {gameState.victoryModal.stats.playerNames.join(', ')}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ color: '#a7f3d0', fontSize: '0.85rem', marginBottom: '4px' }}>Die Helden von Elyria</div>
+                    <div style={{ color: '#d1fae5', fontSize: '1rem', fontWeight: 'bold' }}>
+                      {gameState.victoryModal.stats.playerNames.join(', ')}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#a7f3d0', fontSize: '0.85rem', marginBottom: '4px' }}>👥 Helden</div>
+                    <div style={{ color: '#d1fae5', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                      {gameState.victoryModal.stats.playerCount}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -7007,75 +7176,142 @@ function GameScreen({ gameData, onNewGame }) {
               </div>
             </div>
 
-            {/* Statistics */}
+            {/* Statistics - Phase-separated */}
             <div style={{
               background: 'rgba(220, 38, 38, 0.15)',
               borderRadius: '12px',
               padding: '24px',
               marginBottom: '24px'
             }}>
+              {/* Phase-separated Stats Grid */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '16px',
+                gap: '24px',
+                marginBottom: '20px'
+              }}>
+                {/* Phase 1 Stats */}
+                <div style={{
+                  background: 'rgba(220, 38, 38, 0.1)',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  border: '1px solid rgba(220, 38, 38, 0.3)'
+                }}>
+                  <div style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    color: '#dc2626',
+                    marginBottom: '12px',
+                    textAlign: 'center'
+                  }}>
+                    🏗️ Phase 1: Fundamentbau
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#fca5a5', marginBottom: '4px' }}>
+                    Fundamente: <span style={{ fontWeight: 'bold', color: '#fecaca' }}>{gameState.defeatModal.stats.phase1.foundations} / 4</span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#fca5a5', marginBottom: '4px' }}>
+                    🎯 Spielzüge: <span style={{ fontWeight: 'bold', color: '#fecaca' }}>{gameState.defeatModal.stats.phase1.totalTurns}</span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#fca5a5' }}>
+                    ⚡ AP Verbraucht: <span style={{ fontWeight: 'bold', color: '#fecaca' }}>{gameState.defeatModal.stats.phase1.totalApSpent}</span>
+                  </div>
+                </div>
+
+                {/* Phase 2 Stats */}
+                <div style={{
+                  background: 'rgba(220, 38, 38, 0.1)',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  border: '1px solid rgba(220, 38, 38, 0.3)'
+                }}>
+                  <div style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    color: '#dc2626',
+                    marginBottom: '12px',
+                    textAlign: 'center'
+                  }}>
+                    🔥 Phase 2: Elemente
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#fca5a5', marginBottom: '4px' }}>
+                    Elemente: <span style={{ fontWeight: 'bold', color: '#fecaca' }}>{gameState.defeatModal.stats.phase2.elements} / 4</span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#fca5a5', marginBottom: '4px' }}>
+                    🎯 Spielzüge: <span style={{ fontWeight: 'bold', color: '#fecaca' }}>{gameState.defeatModal.stats.phase2.totalTurns}</span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#fca5a5' }}>
+                    ⚡ AP Verbraucht: <span style={{ fontWeight: 'bold', color: '#fecaca' }}>{gameState.defeatModal.stats.phase2.totalApSpent}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Overall Stats */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '12px',
+                paddingTop: '16px',
+                borderTop: '2px solid rgba(220, 38, 38, 0.3)',
                 marginBottom: '16px'
               }}>
-                <div>
-                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>⏱️ Runden</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#fca5a5', fontSize: '0.75rem', marginBottom: '4px' }}>⏱️ Runden</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#dc2626' }}>
                     {gameState.defeatModal.stats.rounds}
                   </div>
                 </div>
-                <div>
-                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>🎯 Spielzüge</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
-                    {gameState.defeatModal.stats.totalMoves}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#fca5a5', fontSize: '0.75rem', marginBottom: '4px' }}>🎯 Spielzüge</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#dc2626' }}>
+                    {gameState.defeatModal.stats.totalTurns}
                   </div>
                 </div>
-                <div>
-                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>👥 Helden</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
-                    {gameState.defeatModal.stats.playerCount}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>⚡ AP Verbraucht</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#fca5a5', fontSize: '0.75rem', marginBottom: '4px' }}>⚡ AP Gesamt</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#dc2626' }}>
                     {gameState.defeatModal.stats.totalApSpent}
                   </div>
                 </div>
-                <div>
-                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>🕐 Dauer</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#fca5a5', fontSize: '0.75rem', marginBottom: '4px' }}>🕐 Dauer</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#dc2626' }}>
                     {gameState.defeatModal.stats.durationMinutes}:{String(gameState.defeatModal.stats.durationSeconds).padStart(2, '0')}
                   </div>
                 </div>
-                <div>
-                  <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '4px' }}>🔥 Elemente</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#dc2626' }}>
-                    {gameState.defeatModal.stats.activatedElements.length} / 4
-                  </div>
-                </div>
               </div>
+
+              {/* Player Info */}
               <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(220, 38, 38, 0.3)' }}>
-                <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginBottom: '8px' }}>Die Helden von Elyria</div>
-                <div style={{ color: '#fecaca', fontSize: '1rem', fontWeight: 'bold' }}>
-                  {gameState.defeatModal.stats.playerNames.join(', ')}
-                </div>
-              </div>
-              {gameState.defeatModal.stats.activatedElements.length > 0 && (
-                <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(220, 38, 38, 0.3)', marginTop: '16px' }}>
-                  <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginBottom: '8px' }}>Erreichte Elemente</div>
-                  <div style={{ color: '#10b981', fontSize: '1rem', fontWeight: 'bold' }}>
-                    {gameState.defeatModal.stats.activatedElements.map(el =>
-                      el === 'erde' ? '🟫 Erde' :
-                      el === 'wasser' ? '🟦 Wasser' :
-                      el === 'feuer' ? '🟥 Feuer' :
-                      '🟪 Luft'
-                    ).join('  ')}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div>
+                    <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginBottom: '4px' }}>Die Helden von Elyria</div>
+                    <div style={{ color: '#fecaca', fontSize: '1rem', fontWeight: 'bold' }}>
+                      {gameState.defeatModal.stats.playerNames.join(', ')}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginBottom: '4px' }}>👥 Helden</div>
+                    <div style={{ color: '#fecaca', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                      {gameState.defeatModal.stats.playerCount}
+                    </div>
                   </div>
                 </div>
-              )}
+
+                {/* Erreichte Elemente */}
+                {gameState.defeatModal.stats.activatedElements.length > 0 && (
+                  <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(220, 38, 38, 0.3)' }}>
+                    <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginBottom: '8px' }}>Erreichte Elemente</div>
+                    <div style={{ color: '#10b981', fontSize: '1rem', fontWeight: 'bold' }}>
+                      {gameState.defeatModal.stats.activatedElements.map(el =>
+                        el === 'erde' ? '🟫 Erde' :
+                        el === 'wasser' ? '🟦 Wasser' :
+                        el === 'feuer' ? '🟥 Feuer' :
+                        '🟪 Luft'
+                      ).join('  ')}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Quote */}

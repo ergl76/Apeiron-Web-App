@@ -1,10 +1,10 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-06 Abend (Documentation Update - config-system.md darknessReduction)
-**Sprint:** Documentation - Finsternis-Zurückdrängung Feature vollständig dokumentiert! 📚
+**Letzte Session:** 2025-10-06 Nacht (UX-Verbesserungen + Critical Bugfixes)
+**Sprint:** Spielergebnis-Statistiken & Event-System Bugfixes! 📊🐛
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 1 große Doku-Session (~285 Zeilen neue Sektion + Beispiele + Updates)
+**Velocity:** 2 große Features + 2 kritische Bugfixes (~400 Zeilen Code)
 **Next Focus:** 🎯 Win/Loss Conditions (P0 - letztes fehlendes Feature!)
 
 ## <� Projekt�bersicht
@@ -153,6 +153,15 @@
 - [x] 2025-10-06 LIFO-Prinzip: Zuletzt erfasste Finsternis-Felder werden zuerst entfernt
 - [x] 2025-10-06 Element Success Modal zeigt Finsternis-Reduktion mit ☀️ Symbol an
 - [x] 2025-10-06 Werte: Wasser (2), Feuer (3), Luft (1), Erde (0) Finsternis-Felder Reduktion
+- [x] 2025-10-06 📊 Phase-getrennte Spielergebnis-Statistiken implementiert (Victory/Defeat Modals)
+- [x] 2025-10-06 Turn-Tracking System: Spielzug = kompletter Heldenzug (alle APs), nicht einzelne AP-Ausgaben
+- [x] 2025-10-06 Phase 1 & Phase 2 Stats separat angezeigt (Fundamente/Elemente, Turns, AP verbraucht)
+- [x] 2025-10-06 Phase 1 Snapshot bei Phase-Übergang für korrekte Statistik-Anzeige
+- [x] 2025-10-06 calculateStatsUpdate() Helper-Funktion für phase-separierte Statistiken
+- [x] 2025-10-06 🐛 BUGFIX: Doppelte "Dornen entfernen" Buttons bei Multi-Obstacle behoben (Set-basierte Deduplizierung)
+- [x] 2025-10-06 🔥 KRITISCHER BUGFIX: "Reinigendes Feuer" Event cleanse_darkness komplett repariert
+- [x] 2025-10-06 cleanse_darkness verwendet jetzt herzDerFinsternis.darkTiles statt veraltete board.isDark Property
+- [x] 2025-10-06 closest_to_crater Target findet korrekt die N nächsten Finsternis-Felder (Manhattan-Distanz)
 
 ## 🟢 EVENT-SYSTEM 100% KOMPLETT! ✅
 
@@ -313,7 +322,138 @@ konfiguriert, getestet und für Balance verwendet wird.
 
 ---
 
+## 📊 **Session 2025-10-06 Nacht - Phase-getrennte Statistiken + Critical Bugfixes 📊🐛**
+
+### ✅ **Feature 1: Phase-getrennte Spielergebnis-Statistiken**
+
+**Aufgabe:** Victory/Defeat Modals zeigen Phase 1 & Phase 2 Erfolge separat an
+
+**Problem:**
+- Alte Anzeige: Nur Gesamt-"Spielzüge" (= einzelne AP-Ausgaben)
+- Keine Unterscheidung zwischen Phase 1 (Fundamentbau) und Phase 2 (Elemente)
+- User-Request: Spielzug = kompletter Helden-Turn (alle APs), nicht einzelne Aktionen
+
+**Lösung - Umfang: ~400 Zeilen Code**
+
+**1. Neue State-Variablen** ([ApeironGame.jsx:1230-1238](src/ApeironGame.jsx#L1230-1238)):
+```javascript
+totalTurns: 0,              // Gesamt-Turns (Turn = kompletter Heldenzug)
+phase1TotalTurns: 0,        // Turns in Phase 1
+phase2TotalTurns: 0,        // Turns in Phase 2
+phase1TotalApSpent: 0,      // AP verbraucht in Phase 1
+phase2TotalApSpent: 0,      // AP verbraucht in Phase 2
+phase1Stats: null           // Snapshot beim Phase-Übergang
+```
+
+**2. Helper-Funktion** ([ApeironGame.jsx:2001-2025](src/ApeironGame.jsx#L2001-2025)):
+```javascript
+calculateStatsUpdate(prevState, completedTurn, apCost)
+// - Unterscheidet Turn completed vs. nur AP verbraucht
+// - Phase-separierte Zähler
+// - Wiederverwendbar an allen AP-Stellen
+```
+
+**3. Phase 1 Snapshot** ([ApeironGame.jsx:3245-3260](src/ApeironGame.jsx#L3245-3260)):
+```javascript
+// Beim Phase-Übergang speichern:
+phase1Stats: {
+  foundations: 4,
+  totalTurns: prev.phase1TotalTurns,
+  totalApSpent: prev.phase1TotalApSpent,
+  roundsInPhase1: prev.round
+}
+```
+
+**4. Victory Modal UI** ([ApeironGame.jsx:6913-7034](src/ApeironGame.jsx#L6913-7034)):
+- **2 Spalten:** Phase 1 (🏗️ Fundamentbau) | Phase 2 (🔥 Elemente)
+- **Pro Phase:** Fundamente/Elemente, 🎯 Spielzüge, ⚡ AP Verbraucht
+- **Gesamt-Stats:** ⏱️ Runden, 🎯 Spielzüge (Turns!), ⚡ AP Gesamt, 🕐 Dauer
+
+**5. Defeat Modal UI** ([ApeironGame.jsx:7171-7307](src/ApeironGame.jsx#L7171-7307)):
+- Identische Struktur wie Victory Modal
+- Rot/Schwarz Theme
+
+**Begriffe:**
+- **Spielzug (Turn):** Kompletter Heldenzug mit allen APs
+- **AP-Ausgabe:** Einzelne Aktion (Movement, Discovery, etc.)
+
+---
+
+### ✅ **Bugfix 1: Doppelte "Dornen entfernen" Buttons**
+
+**Problem:** Button "Dornen entfernen im Westen" erschien 2×, oberer ohne Funktion
+
+**Root Cause:** Multi-Obstacle-System erlaubt mehrere Obstacles pro Feld. Array `['dornenwald', 'dornenwald']` führte zu 2 Buttons.
+
+**Lösung** ([ApeironGame.jsx:4771-4772](src/ApeironGame.jsx#L4771-4772)):
+```javascript
+// Get unique obstacle types (prevent duplicate buttons)
+const uniqueObstacleTypes = [...new Set(adjacentTile.obstacles)];
+```
+
+**Resultat:**
+- ✅ `['dornenwald', 'geroell']` → 2 Buttons (wie erwartet)
+- ✅ `['dornenwald', 'dornenwald']` → 1 Button (kein Duplikat!)
+
+---
+
+### ✅ **Bugfix 2: "Reinigendes Feuer" Event - cleanse_darkness**
+
+**Problem:** Event sollte 2 dem Krater nächste Finsternis-Felder entfernen, aber es passierte **nichts**.
+
+**Root Cause:** Alte Implementation suchte nach `board[pos].isDark` (veraltete Datenstruktur), aber System speichert Finsternis in `herzDerFinsternis.darkTiles` Array.
+
+**Lösung** ([ApeironGame.jsx:2998-3045](src/ApeironGame.jsx#L2998-3045)):
+
+**Vorher (FALSCH):**
+```javascript
+const darkFields = Object.keys(newBoard)
+  .filter(pos => newBoard[pos]?.isDark)  // ❌ isDark existiert nicht!
+```
+
+**Nachher (KORREKT):**
+```javascript
+const currentDarkTiles = newState.herzDerFinsternis.darkTiles || [];
+const darkFieldsWithDistance = currentDarkTiles
+  .map(pos => {
+    const [x, y] = pos.split(',').map(Number);
+    const distance = Math.abs(x - 4) + Math.abs(y - 4); // Manhattan
+    return { pos, distance };
+  })
+  .sort((a, b) => a.distance - b.distance)
+  .slice(0, cleanseCount);
+
+// Entferne aus darkTiles Array
+newState.herzDerFinsternis.darkTiles =
+  currentDarkTiles.filter(pos => !positionsToRemove.includes(pos));
+```
+
+**Resultat:**
+- ✅ Event "Reinigendes Feuer" entfernt korrekt die 2 nächsten Finsternis-Felder
+- ✅ Console-Log: `🔥 Reinigendes Feuer: 2 Finsternis-Felder gereinigt: ['4,3', '4,5']`
+
+---
+
 ### 📊 **Session-Statistik**
+
+**Dauer:** ~3h
+**Features:** 2 (Phase-Stats, Bugfixes)
+**Commits:** Ausstehend
+**Code:** ~400 Zeilen neu/geändert
+**Bugfixes:** 2 kritische Bugs behoben
+
+**Dateien geändert:**
+- `src/ApeironGame.jsx`: +400 Zeilen
+
+**Testing:**
+- ✅ Dev-Server läuft (Port 5174)
+- ✅ Projekt kompiliert ohne Fehler
+- ✅ Phase-Stats Tracking funktional
+- ✅ Beide Bugfixes verifiziert
+
+---
+
+### 📊 **Session 2025-10-06 Abend - Documentation Update (config-system.md) 📚**
 
 **Dauer:** ~30 Minuten
 **Lines Changed:** +425, -3
