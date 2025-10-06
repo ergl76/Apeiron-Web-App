@@ -114,7 +114,34 @@ light: Math.max(0, Math.min(gameRules.light.maxValue, prev.light + totalBonus))
 ```javascript
 // ApeironGame.jsx:2843
 const bonusConfig = gameRules.elementActivation.bonuses[element];
-// z.B. water: {light: 4}, air: {permanentAp: 1}
+// z.B. wasser: {type: "light", value: 4, darknessReduction: 4}
+
+// Light Bonus anwenden
+if (bonusConfig.type === 'light') {
+  newState.light = Math.min(
+    gameRules.light.maxValue,
+    newState.light + bonusConfig.value
+  );
+}
+
+// AP Bonus anwenden
+if (bonusConfig.type === 'permanent_ap') {
+  newState.players = newState.players.map(player => ({
+    ...player,
+    maxAp: player.maxAp + bonusConfig.value
+  }));
+}
+
+// Finsternis-Zurückdrängung (seit 2025-10-06)
+const darknessReduction = bonusConfig.darknessReduction || 0;
+if (darknessReduction > 0 && newState.herzDerFinsternis.darkTiles.length > 0) {
+  const fieldsToRemove = Math.min(
+    darknessReduction,
+    newState.herzDerFinsternis.darkTiles.length
+  );
+  newState.herzDerFinsternis.darkTiles =
+    newState.herzDerFinsternis.darkTiles.slice(0, -fieldsToRemove);
+}
 ```
 
 ### Wann werden Änderungen wirksam?
@@ -348,6 +375,292 @@ if (shouldSpreadDarkness) {
 - **Event-basiert** (nur bei Event): `effect.value` aus events.json
 
 **Kombiniert:** Wenn Event mit `spread_darkness: 2` getriggert wird UND Spielerzug endet → Insgesamt 2 (Event) + 1 (Auto) = **3 Felder** werden dunkel!
+
+---
+
+## 5️⃣ Element-Aktivierung Bonusse (darknessReduction)
+
+### Übersicht
+
+Das **Element-Aktivierung System** (Phase 2) bietet konfigurierbare Boni wenn Spieler Elemente aktivieren. Seit Session 2025-10-06 gibt es zusätzlich das **Finsternis-Zurückdrängung Feature** (`darknessReduction`).
+
+### Ladezeitpunkt
+```javascript
+// ApeironGame.jsx:4
+import gameRules from './config/gameRules.json';
+```
+
+**Import-Typ:** Build-Time Import (statisch), Runtime-Abfrage (dynamisch)
+
+### Config-Struktur
+
+```json
+{
+  "elementActivation": {
+    "bonuses": {
+      "wasser": {
+        "type": "light",           // Art des Bonus (light/permanent_ap)
+        "value": 4,                // Bonus-Wert
+        "darknessReduction": 4     // 🆕 Anzahl Finsternis-Felder zurückdrängen
+      },
+      "feuer": {
+        "type": "light",
+        "value": 4,
+        "darknessReduction": 4
+      },
+      "luft": {
+        "type": "permanent_ap",
+        "value": 1,
+        "darknessReduction": 4
+      },
+      "erde": {
+        "type": "permanent_ap",
+        "value": 1,
+        "darknessReduction": 4
+      }
+    }
+  }
+}
+```
+
+### Verwendung im Code
+
+#### Element-Aktivierung Handler (Zeile ~2843-2900)
+
+```javascript
+// ApeironGame.jsx:2843
+const bonusConfig = gameRules.elementActivation.bonuses[element];
+
+// Haupt-Bonus anwenden (Light oder AP)
+if (bonusConfig.type === 'light') {
+  newState.light = Math.min(
+    gameRules.light.maxValue,
+    newState.light + bonusConfig.value
+  );
+}
+
+// 🆕 Finsternis-Zurückdrängung (LIFO-Prinzip)
+const darknessReduction = bonusConfig.darknessReduction || 0;
+let fieldsRemoved = 0;
+
+if (darknessReduction > 0 && newState.herzDerFinsternis.darkTiles.length > 0) {
+  const currentDarkCount = newState.herzDerFinsternis.darkTiles.length;
+  const fieldsToRemove = Math.min(darknessReduction, currentDarkCount);
+
+  // LIFO: Entfernt zuletzt erfasste Finsternis-Felder zuerst
+  newState.herzDerFinsternis.darkTiles =
+    newState.herzDerFinsternis.darkTiles.slice(0, -fieldsToRemove);
+
+  fieldsRemoved = fieldsToRemove;
+
+  console.log(
+    `🌟 ${element.toUpperCase()}-Element aktiviert: ` +
+    `${fieldsRemoved} Finsternis-Felder zurückgedrängt! ` +
+    `(${currentDarkCount} → ${newState.herzDerFinsternis.darkTiles.length})`
+  );
+}
+```
+
+### LIFO-Prinzip (Last-In-First-Out)
+
+**Warum LIFO?**
+- Finsternis breitet sich **spiral-förmig** vom Herz aus
+- Neueste Finsternis-Felder sind am **weitesten** vom Herz entfernt
+- Zurückdrängung sollte **äußeren Ring** zuerst entfernen (nicht Zentrum)
+
+**Implementierung:**
+```javascript
+// Array: [älteste, ..., neueste]
+// .slice(0, -N) entfernt N Elemente vom ENDE
+darkTiles.slice(0, -2)  // Entfernt 2 neueste Felder
+```
+
+**Beispiel:**
+```javascript
+// Vor Aktivierung (5 dunkle Felder):
+darkTiles = ['4,5', '5,5', '4,6', '5,6', '6,6']
+           // Ring 1  Ring 1  Ring 2  Ring 2  Ring 2
+
+// Element-Aktivierung mit darknessReduction: 2
+darkTiles = ['4,5', '5,5', '4,6']  // ← '5,6' und '6,6' entfernt
+           // Ring 1  Ring 1  Ring 2
+```
+
+### UI-Integration (Element Success Modal)
+
+```javascript
+// ApeironGame.jsx:~5950-5970
+{fieldsRemoved > 0 && (
+  <div className="border-t border-yellow-300/30 pt-3 mt-3">
+    <div className="text-yellow-300 font-semibold text-base">
+      ☀️ {fieldsRemoved} Finsternis-Feld{fieldsRemoved > 1 ? 'er' : ''}
+      zurückgedrängt!
+    </div>
+    <div className="text-yellow-100 text-sm mt-1">
+      Die Macht des Elements vertreibt die Dunkelheit.
+    </div>
+  </div>
+)}
+```
+
+**Design:**
+- Separator-Line mit Border-Top
+- Goldener Text (#fbbf24) matching Element-Farbe
+- Dynamische Pluralisierung ("Feld" vs "Felder")
+- Conditional Rendering (nur wenn `fieldsRemoved > 0`)
+
+### Wann werden Änderungen wirksam?
+
+| Änderung | Wirksam nach | Bestehendes Spiel betroffen? |
+|----------|--------------|----------------------------|
+| `value` (Light/AP Bonus) | Browser-Refresh | ✅ Ja - Runtime-Abfrage bei Aktivierung |
+| `darknessReduction` | Browser-Refresh | ✅ Ja - Runtime-Abfrage bei Aktivierung |
+| `type` (light/permanent_ap) | Browser-Refresh | ✅ Ja - Runtime-Check |
+
+**✅ Dynamisch:** Alle Element-Aktivierung Werte werden zur **Runtime** abgefragt.
+
+**Impact:**
+- Änderungen wirken **sofort** nach Browser-Refresh
+- Bestehendes Spiel übernimmt neue Werte bei nächster Element-Aktivierung
+- Keine Notwendigkeit für neues Spiel
+
+### Balance-Konfiguration
+
+#### Standard-Werte (Aktuell)
+```json
+{
+  "wasser": {"darknessReduction": 4},  // Wasser heilt am meisten
+  "feuer": {"darknessReduction": 4},   // Feuer verbrennt Finsternis
+  "luft": {"darknessReduction": 4},    // Luft vertreibt Schatten
+  "erde": {"darknessReduction": 4}     // Erde festigt Licht
+}
+```
+
+#### Schwierigkeitsgrade-Beispiele
+
+**Leichter Modus** (mehr Finsternis-Zurückdrängung):
+```json
+{
+  "wasser": {"darknessReduction": 5},
+  "feuer": {"darknessReduction": 6},
+  "luft": {"darknessReduction": 4},
+  "erde": {"darknessReduction": 3}
+}
+```
+
+**Normaler Modus** (ausgewogen):
+```json
+{
+  "wasser": {"darknessReduction": 4},
+  "feuer": {"darknessReduction": 4},
+  "luft": {"darknessReduction": 4},
+  "erde": {"darknessReduction": 4}
+}
+```
+
+**Schwerer Modus** (weniger Zurückdrängung):
+```json
+{
+  "wasser": {"darknessReduction": 2},
+  "feuer": {"darknessReduction": 3},
+  "luft": {"darknessReduction": 1},
+  "erde": {"darknessReduction": 0}  // Erde gibt keinen Finsternis-Schutz
+}
+```
+
+### Kombination mit automatischer Ausbreitung
+
+**Wichtig:** Finsternis-Zurückdrängung passiert **VOR** automatischer Ausbreitung!
+
+**Szenario:** Spieler aktiviert Feuer-Element (`darknessReduction: 3`)
+
+1. **Element-Aktivierung:** 3 Finsternis-Felder entfernt (LIFO)
+2. **AP verbraucht → Spielerzug endet**
+3. **Automatische Ausbreitung:** `darknessSpreadPerTurn` Felder werden dunkel
+
+**Beispiel:**
+```javascript
+// Vor Element-Aktivierung: 10 dunkle Felder
+// Nach Element-Aktivierung: 7 dunkle Felder (-3)
+// Nach Turn-Transition: 9 dunkle Felder (+2 von darknessSpreadPerTurn)
+
+// Netto-Effekt: -1 Feld (3 entfernt, 2 hinzugefügt)
+```
+
+### Testing-Beispiel
+
+#### Szenario: Feuer-Element darknessReduction von 4 → 6 ändern
+
+**1. Config ändern:**
+```json
+// src/config/gameRules.json
+{
+  "elementActivation": {
+    "bonuses": {
+      "feuer": {
+        "type": "light",
+        "value": 4,
+        "darknessReduction": 6  // ← GEÄNDERT von 4
+      }
+    }
+  }
+}
+```
+
+**2. Browser refresht** automatisch (HMR)
+
+**3. Im bestehenden Spiel:**
+- Phase 2 aktiv mit 10 dunklen Feldern
+- Spieler aktiviert Feuer-Element (1 AP + Kristall + Fragment)
+
+**4. Validierung:**
+- ✅ Console: `🌟 FEUER-Element aktiviert: 6 Finsternis-Felder zurückgedrängt! (10 → 4)`
+- ✅ Element Success Modal zeigt: "☀️ 6 Finsternis-Felder zurückgedrängt!"
+- ✅ Board hat 6 weniger dunkle Felder (visuell geprüft)
+- ✅ LIFO funktioniert: Äußerster Ring entfernt (nicht Zentrum)
+
+### Console-Logging
+
+```javascript
+// Bei darknessReduction > 0 UND dunkle Felder vorhanden:
+🌟 FEUER-Element aktiviert: 3 Finsternis-Felder zurückgedrängt! (8 → 5)
+
+// Bei darknessReduction > 0 ABER keine Finsternis vorhanden:
+🌟 WASSER-Element aktiviert: Keine Finsternis vorhanden zum Zurückdrängen
+
+// Bei darknessReduction === 0:
+(Kein Log - Feature nicht aktiv für dieses Element)
+```
+
+### Edge Cases
+
+**Fall 1: Mehr Reduktion als Finsternis**
+```javascript
+// darknessReduction: 5, aber nur 2 dunkle Felder
+fieldsToRemove = Math.min(5, 2);  // → 2
+// Resultat: Alle 2 Felder entfernt, keine Fehler
+```
+
+**Fall 2: Keine Finsternis vorhanden**
+```javascript
+if (darknessReduction > 0 && darkTiles.length > 0) {
+  // Code wird NICHT ausgeführt
+}
+// Modal zeigt NICHT die darknessReduction Sektion
+```
+
+**Fall 3: Phase 1 (kein Herz der Finsternis)**
+```javascript
+// herzDerFinsternis.triggered === false
+// darkTiles Array existiert nicht → Feature inaktiv
+```
+
+### Best Practices
+
+1. ✅ **Ausgewogene Werte:** `darknessReduction` sollte < `darknessSpreadPerTurn × 3` sein
+2. ✅ **Element-Thematik:** Feuer/Wasser höhere Werte, Erde/Luft moderate Werte
+3. ✅ **Difficulty Scaling:** Schwerer Modus = niedrigere darknessReduction
+4. ✅ **Testing:** Immer mit verschiedenen darkTiles.length testen (0, 1, 5, 10+)
 
 ---
 
@@ -869,6 +1182,100 @@ Entfernt **ALLE** negativen Effekte inkl. permanente:
 - Dramatischer Boss-Moment in Phase 2
 - Spieler müssen "Apeirons Segen" Event ziehen um zu überleben
 
+### Beispiel 4: Element-Aktivierung Balance-Anpassung (darknessReduction)
+
+**Szenario:** Feuer-Element soll stärker gegen Finsternis wirken
+
+```json
+// gameRules.json - VORHER (Standard)
+{
+  "elementActivation": {
+    "bonuses": {
+      "feuer": {
+        "type": "light",
+        "value": 4,
+        "darknessReduction": 4
+      }
+    }
+  }
+}
+
+// gameRules.json - NACHHER (Buff)
+{
+  "elementActivation": {
+    "bonuses": {
+      "feuer": {
+        "type": "light",
+        "value": 4,
+        "darknessReduction": 7  // ← ERHÖHT von 4 auf 7
+      }
+    }
+  }
+}
+```
+
+**Impact:**
+- Feuer-Element aktivieren entfernt jetzt 7 Finsternis-Felder (statt 4)
+- Strategische Entscheidung: Feuer priorisieren in Phase 2
+- Balance: `darknessSpreadPerTurn: 2` → Netto-Gewinn: 7 - 2 = 5 Felder pro Aktivierung
+
+**Testing:**
+```javascript
+// Vor Änderung (darknessReduction: 4):
+🌟 FEUER-Element aktiviert: 4 Finsternis-Felder zurückgedrängt! (10 → 6)
+
+// Nach Änderung (darknessReduction: 7):
+🌟 FEUER-Element aktiviert: 7 Finsternis-Felder zurückgedrängt! (10 → 3)
+```
+
+### Beispiel 5: Schwierigkeitsgrad-Anpassung (alle 4 Elemente)
+
+**Szenario:** Leichteren Modus erstellen durch höhere darknessReduction
+
+```json
+// gameRules.json - Leichter Modus
+{
+  "elementActivation": {
+    "bonuses": {
+      "wasser": {
+        "type": "light",
+        "value": 5,              // +1 Light (statt 4)
+        "darknessReduction": 6   // +2 Felder (statt 4)
+      },
+      "feuer": {
+        "type": "light",
+        "value": 5,
+        "darknessReduction": 8   // +4 Felder (statt 4) - STÄRKSTER EFFEKT
+      },
+      "luft": {
+        "type": "permanent_ap",
+        "value": 1,
+        "darknessReduction": 5   // +1 Feld (statt 4)
+      },
+      "erde": {
+        "type": "permanent_ap",
+        "value": 1,
+        "darknessReduction": 4   // UNVERÄNDERT
+      }
+    }
+  },
+  "phase2": {
+    "darknessSpreadPerTurn": 2  // Gleichbleibend
+  }
+}
+```
+
+**Resultat:**
+- Durchschnittliche darknessReduction: 5.75 Felder (statt 4)
+- Netto-Effekt pro Aktivierung: +3.75 Felder (statt +2)
+- Strategische Vielfalt: Feuer am stärksten, Erde am schwächsten
+- Spieler können mit 4 Element-Aktivierungen ~23 Finsternis-Felder entfernen
+
+**Gameplay-Impact:**
+- Phase 2 deutlich einfacher → Mehr Raum für Fehler
+- Finsternis-Bedrohung weniger kritisch
+- Empfohlen für: Anfänger, Story-Fokus, Casual-Spieler
+
 ---
 
 ## 🎯 Testing-Checklist
@@ -890,12 +1297,27 @@ Nach Hinzufügen eines neuen Events:
 
 ## 📊 Statistiken
 
-**Aktueller Stand (2025-10-03):**
+**Aktueller Stand (2025-10-06):**
 - 58 implementierte Event-Karten (Phase 1 + Phase 2)
 - 20 verschiedene Effekt-Typen vollautomatisch
 - 15+ verschiedene Target-Varianten
 - 3 Duration-Werte (`next_round`, `permanent`, instant)
 - ♾️ Visual Indicators für permanente Effekte
+- 🆕 **Element-Aktivierung Bonusse:** 4 Elemente mit individuellen darknessReduction Werten
+- 🆕 **Finsternis-Zurückdrängung:** LIFO-Prinzip für strategische Gameplay-Balance
+- 🆕 **Multi-Obstacles System:** Mehrere verschiedene Obstacle-Typen pro Feld möglich
+
+**Config-Dateien:**
+- `events.json`: ~1500 Zeilen, 58 Events
+- `gameRules.json`: 60 Zeilen, 6 Haupt-Kategorien (light, actionPoints, inventory, foundations, elementActivation, phase2)
+- `tiles.json`: ~300 Zeilen, 24 Phase 1 + 24 Phase 2 Karten
+
+**Features dokumentiert:**
+- ✅ Event-System (20 Effekt-Typen)
+- ✅ Game Rules (Runtime-Checks + Initial-Values)
+- ✅ Tile-Deck System (Phase 1 + Phase 2)
+- ✅ Phase 2 Configuration (darknessSpreadPerTurn)
+- ✅ Element-Aktivierung Bonusse (darknessReduction) 🆕
 
 ---
 
@@ -909,4 +1331,4 @@ Nach Hinzufügen eines neuen Events:
 
 ---
 
-*Zuletzt aktualisiert: 2025-10-03 - Permanent Effects Implementation*
+*Zuletzt aktualisiert: 2025-10-06 - Finsternis-Zurückdrängung Feature (darknessReduction)*
