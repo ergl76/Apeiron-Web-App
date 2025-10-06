@@ -3388,10 +3388,11 @@ function GameScreen({ gameData, onNewGame }) {
         bonusText = `Alle Helden erhalten permanent +${apBonus} AP`;
 
         // Apply permanent AP bonus to ALL players
+        // maxAp increases for everyone, but current ap only for players who haven't finished their turn yet
         finalPlayers = newPlayers.map(player => ({
           ...player,
           maxAp: player.maxAp + apBonus,
-          ap: player.ap + apBonus  // Also increase current AP
+          ap: player.ap > 0 ? player.ap + apBonus : player.ap  // Only increase current AP if player has AP left
         }));
       }
 
