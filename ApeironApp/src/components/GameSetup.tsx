@@ -1,10 +1,59 @@
 import React, { useState } from 'react';
-import { Hero } from '../types';
+
+interface Hero {
+  id: string;
+  name: string;
+  element: string;
+  description: string;
+  color: string;
+  image: string;
+  innateSkills: string[];
+}
 
 interface GameSetupProps {
   heroes: Record<string, Hero>;
   onStartGame: (playerCount: number, difficulty: string, selectedCharacters: string[]) => void;
 }
+
+// Hero-Informationen aus spielanleitung.md
+const heroInfo = {
+  terra: {
+    icon: '🌍',
+    subtitle: 'Der Fels in der Brandung',
+    description: 'Stärke und Loyalität. Unerschütterlicher Anker der Gruppe.',
+    skills: [
+      { icon: '🧱', name: 'Grundstein legen' },
+      { icon: '⛏️', name: 'Geröll beseitigen' }
+    ]
+  },
+  ignis: {
+    icon: '🔥',
+    subtitle: 'Die wandelnde Flamme',
+    description: 'Impulsiv, leidenschaftlich, voller Optimismus.',
+    skills: [
+      { icon: '🔥', name: 'Element aktivieren' },
+      { icon: '🌿', name: 'Dornen entfernen' }
+    ]
+  },
+  lyra: {
+    icon: '💧',
+    subtitle: 'Die Stimme der Gezeiten',
+    description: 'Weise, anmutig, voller Empathie.',
+    skills: [
+      { icon: '💧', name: 'Heilende Reinigung' },
+      { icon: '🌊', name: 'Überflutung trockenlegen' }
+    ]
+  },
+  corvus: {
+    icon: '🦅',
+    subtitle: 'Der stille Beobachter',
+    description: 'Scharfsinnig, neugierig, Meister der Beobachtung.',
+    skills: [
+      { icon: '💨', name: 'Schnell bewegen' },
+      { icon: '👁️', name: 'Spähen' }
+    ]
+  }
+};
 
 const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
   const [playerCount, setPlayerCount] = useState(4);
@@ -35,24 +84,30 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 py-8">
+    <div style={{ minHeight: '100vh', backgroundColor: '#1a202c', color: '#e2e8f0', padding: '2rem 1rem' }}>
       {/* Header */}
-      <header className="text-center py-8">
-        <h1 className="text-4xl sm:text-5xl font-bold text-yellow-400 tracking-wider mb-2">
+      <header style={{ textAlign: 'center', marginBottom: '3rem' }}>
+        <h1 style={{
+          fontSize: '3rem',
+          fontWeight: 'bold',
+          color: '#f59e0b',
+          letterSpacing: '0.1em',
+          marginBottom: '0.5rem'
+        }}>
           Apeiron
         </h1>
-        <p className="text-xl sm:text-2xl text-gray-400">
+        <p style={{ fontSize: '1.5rem', color: '#9ca3af' }}>
           Spiel einrichten
         </p>
       </header>
 
-      <main className="container mx-auto p-4 max-w-4xl">
+      <main style={{ maxWidth: '1024px', margin: '0 auto', padding: '0 1rem' }}>
         {/* Player Count Selection */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-center mb-4">
+        <section style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '1rem' }}>
             1. Wählt die Anzahl der Helden
           </h2>
-          <div className="flex justify-center gap-4">
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
             {playerCountOptions.map(count => (
               <button
                 key={count}
@@ -60,11 +115,26 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
                   setPlayerCount(count);
                   setSelectedCharacters([]);
                 }}
-                className={`px-6 py-3 rounded-lg font-bold transition-all duration-200 ${
-                  playerCount === count
-                    ? 'bg-blue-600 border-blue-500'
-                    : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
-                } border-2`}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s',
+                  backgroundColor: playerCount === count ? '#3b82f6' : '#374151',
+                  color: 'white',
+                  border: `2px solid ${playerCount === count ? '#60a5fa' : '#4b5563'}`,
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  if (playerCount !== count) {
+                    e.currentTarget.style.backgroundColor = '#4b5563';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (playerCount !== count) {
+                    e.currentTarget.style.backgroundColor = '#374151';
+                  }
+                }}
               >
                 {count} Spieler
               </button>
@@ -73,20 +143,35 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
         </section>
 
         {/* Difficulty Selection */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-center mb-4">
+        <section style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '1rem' }}>
             2. Wählt die Schwierigkeit
           </h2>
-          <div className="flex justify-center gap-4">
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
             {difficultyOptions.map(diff => (
               <button
                 key={diff.key}
                 onClick={() => setDifficulty(diff.key)}
-                className={`px-6 py-3 rounded-lg font-bold transition-all duration-200 ${
-                  difficulty === diff.key
-                    ? 'bg-blue-600 border-blue-500'
-                    : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
-                } border-2`}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s',
+                  backgroundColor: difficulty === diff.key ? '#3b82f6' : '#374151',
+                  color: 'white',
+                  border: `2px solid ${difficulty === diff.key ? '#60a5fa' : '#4b5563'}`,
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  if (difficulty !== diff.key) {
+                    e.currentTarget.style.backgroundColor = '#4b5563';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (difficulty !== diff.key) {
+                    e.currentTarget.style.backgroundColor = '#374151';
+                  }
+                }}
               >
                 {diff.label}
               </button>
@@ -94,58 +179,117 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
           </div>
         </section>
 
-        {/* Character Selection */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-center mb-4">
+        {/* Character Selection - Vertical Layout */}
+        <section style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '1.5rem' }}>
             3. Wählt eure Helden
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto' }}>
             {Object.values(heroes).map(hero => {
               const isSelected = selectedCharacters.includes(hero.id);
               const isDisabled = !isSelected && selectedCharacters.length >= playerCount;
-              
+              const info = heroInfo[hero.id as keyof typeof heroInfo];
+
               return (
                 <div
                   key={hero.id}
                   onClick={() => !isDisabled && handleCharacterSelect(hero.id)}
-                  className={`relative bg-gray-800 rounded-xl p-4 transition-all duration-300 cursor-pointer border-4 ${
-                    isSelected
-                      ? 'border-blue-400 transform scale-105 shadow-lg shadow-blue-400/50'
-                      : isDisabled
-                      ? 'border-transparent opacity-60 cursor-not-allowed filter grayscale'
-                      : 'border-transparent hover:border-gray-600'
-                  }`}
+                  style={{
+                    display: 'flex',
+                    gap: '1rem',
+                    alignItems: 'center',
+                    padding: '1rem',
+                    backgroundColor: '#1f2937',
+                    border: isSelected ? `3px solid ${hero.color}` : '2px solid #374151',
+                    borderRadius: '12px',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                    opacity: isDisabled ? 0.5 : 1,
+                    filter: isDisabled ? 'grayscale(100%)' : 'none',
+                    transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                    boxShadow: isSelected ? `0 4px 12px ${hero.color}40` : '0 2px 4px rgba(0,0,0,0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isDisabled && !isSelected) {
+                      e.currentTarget.style.borderColor = hero.color;
+                      e.currentTarget.style.boxShadow = `0 4px 8px ${hero.color}20`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.borderColor = '#374151';
+                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                    }
+                  }}
                 >
-                  {/* Hero Image */}
-                  <div className="aspect-square rounded-lg overflow-hidden mb-3">
-                    <img
-                      src={hero.image}
-                      alt={hero.name}
-                      className="w-full h-full object-cover"
-                    />
+                  {/* Hero Icon Circle */}
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    backgroundColor: hero.color,
+                    border: '3px solid white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '24px',
+                    flexShrink: 0,
+                    boxShadow: `0 2px 8px ${hero.color}60`
+                  }}>
+                    {info.icon}
                   </div>
 
-                  {/* Hero Info */}
-                  <h3 className="text-lg font-bold text-center mb-2" style={{ color: hero.color }}>
-                    {hero.name}
-                  </h3>
-                  
-                  <p className="text-sm text-gray-400 text-center mb-3">
-                    {hero.description}
-                  </p>
+                  {/* Hero Content */}
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{
+                      fontSize: '1.25rem',
+                      fontWeight: 'bold',
+                      color: hero.color,
+                      marginBottom: '0.25rem'
+                    }}>
+                      {hero.name} - {info.subtitle}
+                    </h3>
 
-                  {/* Skills */}
-                  <div className="space-y-1">
-                    {hero.innateSkills.map(skillId => (
-                      <div key={skillId} className="text-xs text-gray-500 text-center">
-                        • {skillId.replace('_', ' ')}
-                      </div>
-                    ))}
+                    <p style={{
+                      fontSize: '0.875rem',
+                      color: '#9ca3af',
+                      marginBottom: '0.5rem'
+                    }}>
+                      {info.description}
+                    </p>
+
+                    {/* Skills with Icons */}
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                      {info.skills.map((skill, index) => (
+                        <div key={index} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          fontSize: '0.75rem',
+                          color: '#6b7280'
+                        }}>
+                          <span>{skill.icon}</span>
+                          <span>{skill.name}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Selection Indicator */}
                   {isSelected && (
-                    <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: hero.color,
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      flexShrink: 0
+                    }}>
                       ✓
                     </div>
                   )}
@@ -155,23 +299,49 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
           </div>
 
           {/* Selection Counter */}
-          <div className="text-center mt-4 text-gray-400">
+          <div style={{
+            textAlign: 'center',
+            marginTop: '1rem',
+            color: '#9ca3af',
+            fontSize: '0.875rem'
+          }}>
             {selectedCharacters.length} von {playerCount} Helden ausgewählt
           </div>
         </section>
 
         {/* Start Game Button */}
-        <section className="text-center">
+        <section style={{ textAlign: 'center' }}>
           <button
             onClick={handleStartGame}
             disabled={!canStartGame}
-            className={`px-10 py-4 text-2xl font-bold rounded-lg transition-all duration-200 ${
-              canStartGame
-                ? 'bg-green-600 hover:bg-green-700 text-white hover:transform hover:-translate-y-1 hover:shadow-lg'
-                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            }`}
+            style={{
+              padding: '1rem 2.5rem',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              borderRadius: '8px',
+              transition: 'all 0.2s',
+              backgroundColor: canStartGame ? '#10b981' : '#4b5563',
+              color: canStartGame ? 'white' : '#9ca3af',
+              border: 'none',
+              cursor: canStartGame ? 'pointer' : 'not-allowed',
+              boxShadow: canStartGame ? '0 4px 6px rgba(16, 185, 129, 0.3)' : 'none'
+            }}
+            onMouseEnter={(e) => {
+              if (canStartGame) {
+                e.currentTarget.style.backgroundColor = '#059669';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 12px rgba(16, 185, 129, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (canStartGame) {
+                e.currentTarget.style.backgroundColor = '#10b981';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px rgba(16, 185, 129, 0.3)';
+              }
+            }}
           >
-            Abenteuer beginnen
+            ⚔️ Abenteuer beginnen
           </button>
         </section>
       </main>

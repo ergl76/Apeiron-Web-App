@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import eventsConfig from './config/events.json';
 import tilesConfig from './config/tiles.json';
 import gameRules from './config/gameRules.json';
+import LightMeter from './components/ui/LightMeter';
+import ActivePlayerCard from './components/ui/ActivePlayerCard';
+import TowerDisplay from './components/ui/TowerDisplay';
+import ActionPanel from './components/ui/ActionPanel';
 
 // MODULE-LEVEL LOCKS: Prevent React StrictMode from executing handlers twice
 // These MUST be outside the component to work across simultaneous calls
@@ -1235,7 +1239,8 @@ function GameScreen({ gameData, onNewGame }) {
       phase2TotalTurns: 0, // Turns completed in Phase 2
       phase1TotalApSpent: 0, // AP spent in Phase 1
       phase2TotalApSpent: 0, // AP spent in Phase 2
-      phase1Stats: null // Snapshot of Phase 1 stats when transitioning to Phase 2
+      phase1Stats: null, // Snapshot of Phase 1 stats when transitioning to Phase 2
+      selectedPlayerTab: null // Index des ausgewählten Spieler-Tabs (null = aktiver Spieler)
     };
   });
 
@@ -5318,6 +5323,14 @@ function GameScreen({ gameData, onNewGame }) {
     );
   };
 
+  // Handler für Player Tab Navigation
+  const handlePlayerTabClick = (tabIndex) => {
+    setGameState(prev => ({
+      ...prev,
+      selectedPlayerTab: tabIndex === prev.currentPlayerIndex ? null : tabIndex
+    }));
+  };
+
   const handleEndTurn = () => {
     setGameState(prev => {
       if (prev.currentEvent) {
@@ -5370,27 +5383,6 @@ function GameScreen({ gameData, onNewGame }) {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#1a202c', color: '#e2e8f0' }}>
-      {/* Header */}
-      <header style={{ textAlign: 'center', padding: '1rem 0' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b', marginBottom: '0.5rem' }}>
-          Apeiron
-        </h1>
-        <button
-          onClick={onNewGame}
-          style={{
-            backgroundColor: '#ea580c',
-            color: 'white',
-            padding: '6px 12px',
-            borderRadius: '4px',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 'bold'
-          }}
-        >
-          Neues Spiel einrichten
-        </button>
-      </header>
 
       {/* Card Draw Modal - only show when in 'drawing' or 'result_shown' state */}
       {gameState.cardDrawQueue && gameState.cardDrawQueue.length > 0 && (gameState.cardDrawState === 'drawing' || gameState.cardDrawState === 'result_shown') && (
@@ -7633,426 +7625,107 @@ function GameScreen({ gameData, onNewGame }) {
       )}
 
       {/* Mobile-friendly Layout */}
-      <div style={{ 
+      <div style={{
         display: 'flex',
         flexDirection: 'row',
-        minHeight: 'calc(100vh - 120px)',
+        minHeight: '100vh',
         gap: '1rem',
-        padding: '0 1rem',
+        padding: '1rem',
         maxWidth: '1400px',
         margin: '0 auto'
       }}>
-        
-        {/* Game Summary - Top on mobile, right on desktop */}
+
+        {/* NEW UI COMPONENTS - Modernized Sidebar */}
         <div style={{
-          backgroundColor: '#374151',
-          borderRadius: '8px',
-          padding: '1rem',
           width: '350px',
-          flexShrink: 0
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem'
         }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#fbbf24', marginBottom: '1rem' }}>
-            Übersicht
-          </h3>
-          
-          {/* Round and Light */}
-          <div style={{ marginBottom: '1rem' }}>
-            <h4 style={{ fontSize: '1rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem' }}>
-              Runde {gameState.round}
-            </h4>
-            <div style={{ 
-              width: '100%', 
-              backgroundColor: '#000', 
-              borderRadius: '9999px', 
-              height: '16px', 
-              border: '2px solid #6b7280',
-              overflow: 'hidden'
-            }}>
-              <div 
-                style={{ 
-                  backgroundColor: '#e5e7eb', 
-                  height: '100%', 
-                  width: `${(gameState.light / gameRules.light.maxValue) * 100}%`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  paddingRight: '4px'
-                }}
-              >
-                <span style={{ fontWeight: 'bold', color: '#1f2937', fontSize: '0.75rem' }}>
-                  {gameState.light}
-                </span>
-              </div>
-            </div>
-          </div>
+          {/* 2. ActivePlayerCard - Aktiver Spieler mit Tab-Navigation */}
+          <ActivePlayerCard
+            players={gameState.players}
+            heroes={heroes}
+            currentPlayerIndex={gameState.currentPlayerIndex}
+            currentRound={gameState.round}
+            selectedTab={gameState.selectedPlayerTab}
+            onTabClick={handlePlayerTabClick}
+            shouldPlayerSkipTurn={shouldPlayerSkipTurn}
+            actionBlockers={gameState.actionBlockers || []}
+          />
 
-          {/* All Players Overview */}
-          <div style={{ marginBottom: '1rem' }}>
-            <h4 style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              Alle Spieler
-            </h4>
-            {gameState.players.map((player, index) => {
-              const isCurrentPlayer = index === gameState.currentPlayerIndex;
-              return (
-                <div
-                  key={player.id}
-                  style={{
-                    backgroundColor: isCurrentPlayer ? 'rgba(59, 130, 246, 0.2)' : '#374151',
-                    padding: '0.75rem',
-                    borderRadius: '8px',
-                    marginBottom: '0.75rem',
-                    border: isCurrentPlayer ? '2px solid #3b82f6' : '2px solid #4b5563',
-                    transition: 'all 0.3s ease',
-                    boxShadow: isCurrentPlayer ? '0 4px 8px rgba(59, 130, 246, 0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
-                    transform: isCurrentPlayer ? 'translateY(-2px)' : 'translateY(0)'
-                  }}
-                >
-                  {/* Player Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <div style={{ 
-                      width: '12px', 
-                      height: '12px', 
-                      borderRadius: '50%', 
-                      backgroundColor: heroes[player.id].color 
-                    }}></div>
-                    <span style={{ fontWeight: 'bold', fontSize: '0.75rem' }}>
-                      {player.name}
-                      {isCurrentPlayer && shouldPlayerSkipTurn(player, gameState.round) && (
-                        <span style={{ color: '#fbbf24', marginLeft: '6px', fontSize: '0.7rem' }}>
-                          (Aussetzen) 😴
-                        </span>
-                      )}
-                    </span>
-                    <div style={{ fontSize: '0.7rem', color: '#d1d5db' }}>
-                      AP: {player.ap}/{player.maxAp}
-                    </div>
-                  </div>
-                  
-                  {/* Active Effects */}
-                  {player.effects && player.effects.filter(e => e.expiresInRound > gameState.round).length > 0 && (
-                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                      {(() => {
-                        // Deduplicate effects by type to prevent double display
-                        const activeEffects = player.effects.filter(e => e.expiresInRound > gameState.round);
-                        const uniqueEffects = [];
-                        const seen = new Set();
+          {/* 4. ActionPanel - Aktionsbereich (jetzt über dem Turm) */}
+          <ActionPanel
+            renderActionButtons={renderActionButtons}
+          />
 
-                        activeEffects.forEach(effect => {
-                          const key = `${effect.type}-${effect.value || ''}-${effect.expiresInRound}`;
-                          if (!seen.has(key)) {
-                            seen.add(key);
-                            uniqueEffects.push(effect);
-                          }
-                        });
-
-                        return uniqueEffects.map((effect, index) => {
-                          // Check if effect is permanent (expiresInRound = 999999)
-                          const isPermanent = effect.expiresInRound === 999999;
-
-                          const effectInfo = {
-                            skip_turn: { icon: '😴', title: isPermanent ? 'Muss permanent aussetzen' : 'Muss nächste Runde aussetzen' },
-                            prevent_movement: { icon: '⛓️', title: isPermanent ? 'Kann sich permanent nicht bewegen' : 'Kann sich nicht bewegen' },
-                            block_skills: { icon: '🚫', title: isPermanent ? 'Spezialfähigkeiten permanent blockiert' : 'Spezialfähigkeiten blockiert' },
-                            bonus_ap: { icon: '⚡', title: isPermanent ? `Hat permanent +${effect.value} AP` : `Hat +${effect.value} AP in dieser Runde` },
-                            reduce_ap: { icon: '🧊', title: isPermanent ? `Hat permanent -${effect.value} AP` : `Hat -${effect.value} AP in dieser Runde` },
-                            set_ap: { icon: '⏸️', title: isPermanent ? `AP permanent auf ${effect.value} gesetzt` : `AP auf ${effect.value} gesetzt` }
-                          }[effect.type];
-
-                          if (!effectInfo) return null;
-
-                          return (
-                            <div
-                              key={`${effect.type}-${effect.value || ''}-${index}`}
-                              title={effectInfo.title}
-                              style={{
-                                backgroundColor: effect.type.includes('bonus') ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                border: effect.type.includes('bonus') ? '1px solid #22c55e' : '1px solid #ef4444',
-                                color: '#fca5a5',
-                                borderRadius: '4px',
-                                padding: '2px 4px',
-                                fontSize: '0.8rem',
-                                display: 'flex',
-                                gap: '2px',
-                                alignItems: 'center'
-                              }}
-                            >
-                              {effectInfo.icon}
-                              {isPermanent && <span style={{ fontSize: '0.7rem' }}>♾️</span>}
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-                  )}
-                  {/* Action Blockers */}
-                  {gameState.actionBlockers && gameState.actionBlockers.filter(b => b.target === player.id || b.target === 'all_players').length > 0 && (
-                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                      {gameState.actionBlockers.filter(b => b.target === player.id || b.target === 'all_players').map((blocker, index) => {
-                        const blockerInfo = {
-                          discover_and_scout: { icon: '🚫', title: 'Entdecken/Spähen blockiert' },
-                          discover: { icon: '🚫', title: 'Entdecken blockiert' },
-                          spaehen: { icon: '🚫', title: 'Spähen blockiert' },
-                          communication: { icon: '🔇', title: 'Kommunikation nicht erlaubt' },
-                          learn_skills: { icon: '📚', title: 'Fähigkeiten lernen blockiert' }
-                        }[blocker.action];
-
-                        if (!blockerInfo) return null;
-
-                        return (
-                          <div
-                            key={`blocker-${index}`}
-                            title={blockerInfo.title}
-                            style={{
-                              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                              border: '1px solid #ef4444',
-                              borderRadius: '4px',
-                              padding: '2px 4px',
-                              fontSize: '0.8rem'
-                            }}
-                          >
-                            {blockerInfo.icon}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Inventory Slots */}
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    {Array.from({ length: player.maxInventory }, (_, slotIndex) => {
-                      const item = player.inventory[slotIndex];
-                      const isEmpty = !item;
-                      
-                      return (
-                        <div
-                          key={slotIndex}
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            backgroundColor: isEmpty ? '#2d3748' : 'rgba(59, 130, 246, 0.1)',
-                            border: isEmpty ? '2px dashed #4a5568' : `2px solid ${item === 'kristall' ? '#3b82f6' : '#ca8a04'}`,
-                            borderRadius: '6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '14px',
-                            cursor: 'pointer',
-                            position: 'relative',
-                            transition: 'all 0.2s ease-in-out',
-                            boxShadow: isEmpty ? 'inset 0 2px 4px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.2)'
-                          }}
-                          title={isEmpty ? 'Leerer Inventar-Slot' :
-                                item === 'kristall' ? 'Apeiron-Kristall' :
-                                item === 'bauplan_erde' ? 'Bauplan: Erde' :
-                                item === 'bauplan_wasser' ? 'Bauplan: Wasser' :
-                                item === 'bauplan_feuer' ? 'Bauplan: Feuer' :
-                                item === 'bauplan_luft' ? 'Bauplan: Luft' :
-                                item === 'artefakt_terra' ? 'Hammer der Erbauerin' :
-                                item === 'artefakt_ignis' ? 'Herz des Feuers' :
-                                item === 'artefakt_lyra' ? 'Kelch der Reinigung' :
-                                item === 'artefakt_corvus' ? 'Auge des Spähers' :
-                                item === 'element_fragment_erde' ? 'Erd-Fragment' :
-                                item === 'element_fragment_wasser' ? 'Wasser-Fragment' :
-                                item === 'element_fragment_feuer' ? 'Feuer-Fragment' :
-                                item === 'element_fragment_luft' ? 'Luft-Fragment' :
-                                item}
-                        >
-                          {isEmpty ? (
-                            <div style={{ width: '8px', height: '8px', backgroundColor: '#6b7280', borderRadius: '2px' }}></div>
-                          ) : (
-                            <span style={{ color: 'white', fontWeight: 'bold' }}>
-                              {item === 'kristall' ? '💎' :
-                               item === 'artefakt_terra' ? '🔨' :
-                               item === 'artefakt_ignis' ? '🔥' :
-                               item === 'artefakt_lyra' ? '🏺' :
-                               item === 'artefakt_corvus' ? '👁️' :
-                               item === 'element_fragment_erde' ? '🟩' :
-                               item === 'element_fragment_wasser' ? '🟦' :
-                               item === 'element_fragment_feuer' ? '🟥' :
-                               item === 'element_fragment_luft' ? '🟨' :
-                               item.startsWith('bauplan_') ? '📋' : '📦'}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Skills indicator - Split into Abilities and Knowledge */}
-                  <div style={{ marginTop: '6px' }}>
-                    {/* Abilities (Real Skills) */}
-                    {(() => {
-                      const abilities = player.learnedSkills.filter(skill =>
-                        skill !== 'aufdecken' && !skill.startsWith('kenntnis_bauplan_')
-                      );
-
-                      if (abilities.length === 0) return null;
-
-                      return (
-                        <div style={{ marginBottom: '4px' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginBottom: '2px' }}>
-                            Fähigkeiten:
-                          </div>
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: '#fbbf24',
-                            display: 'flex',
-                            gap: '4px',
-                            flexWrap: 'wrap'
-                          }}>
-                            {abilities.map((skill) => {
-                              const skillEmojis = {
-                                'grundstein_legen': '🧱',
-                                'geroell_beseitigen': '⛏️',
-                                'spaehen': '👁️',
-                                'schnell_bewegen': '💨',
-                                'element_aktivieren': '🔥',
-                                'dornen_entfernen': '🌿',
-                                'reinigen': '💧',
-                                'fluss_freimachen': '🌊',
-                                'lehren': '🎓'
-                              };
-                              return (
-                                <span
-                                  key={skill}
-                                  style={{
-                                    backgroundColor: 'rgba(251, 191, 36, 0.2)',
-                                    padding: '2px 4px',
-                                    borderRadius: '3px',
-                                    fontSize: '0.7rem'
-                                  }}
-                                  title={skill.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                >
-                                  {skillEmojis[skill] || '⚡'}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Knowledge (Foundation Building) */}
-                    {(() => {
-                      const knowledge = player.learnedSkills.filter(skill =>
-                        skill.startsWith('kenntnis_bauplan_')
-                      );
-
-                      if (knowledge.length === 0) return null;
-
-                      return (
-                        <div>
-                          <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginBottom: '2px' }}>
-                            Wissen:
-                          </div>
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: '#a78bfa',
-                            display: 'flex',
-                            gap: '4px',
-                            flexWrap: 'wrap'
-                          }}>
-                            {knowledge.map((skill) => {
-                              const knowledgeEmojis = {
-                                'kenntnis_bauplan_erde': '🗿',
-                                'kenntnis_bauplan_feuer': '🔥',
-                                'kenntnis_bauplan_wasser': '💧',
-                                'kenntnis_bauplan_luft': '💨'
-                              };
-                              return (
-                                <span
-                                  key={skill}
-                                  style={{
-                                    backgroundColor: 'rgba(167, 139, 250, 0.2)',
-                                    padding: '2px 4px',
-                                    borderRadius: '3px',
-                                    fontSize: '0.7rem'
-                                  }}
-                                  title={skill.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                >
-                                  {knowledgeEmojis[skill] || '📚'}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              );
-            })}
-            
-            {/* Turn transition indicator */}
-            {gameState.isTransitioning && (
-              <div style={{
-                backgroundColor: '#fbbf24',
-                color: '#1f2937',
-                padding: '8px',
-                borderRadius: '4px',
-                textAlign: 'center',
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                animation: 'fadeInOut 1.5s ease-in-out'
-              }}>
-                🔄 {gameState.players[gameState.currentPlayerIndex].name} ist dran!
-              </div>
-            )}
-          </div>
-
-          {/* Tower Status */}
-          <div style={{ marginBottom: '1rem' }}>
-            <h4 style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              Turm der Elemente
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.25rem' }}>
-              {['erde', 'wasser', 'feuer', 'luft'].map(element => {
-                const hasFoundation = gameState.tower?.foundations?.includes(element);
-                const isActivated = gameState.tower?.activatedElements?.includes(element);
-                
-                return (
-                  <div
-                    key={element}
-                    style={{
-                      height: '2rem',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1rem',
-                      border: '2px solid',
-                      backgroundColor: isActivated ? '#16a34a' : hasFoundation ? '#ca8a04' : '#4b5563',
-                      borderColor: isActivated ? '#4ade80' : hasFoundation ? '#fbbf24' : '#6b7280',
-                      color: 'white'
-                    }}
-                    title={`${element}: ${isActivated ? 'Aktiviert' : hasFoundation ? 'Fundament' : 'Nicht gebaut'}`}
-                  >
-                    {element === 'erde' ? '⛰️' : element === 'wasser' ? '💧' : element === 'feuer' ? '🔥' : '💨'}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div>
-            <h4 style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              Aktionen
-            </h4>
-            {renderActionButtons()}
-          </div>
+          {/* 3. TowerDisplay - Vertikaler Turm */}
+          <TowerDisplay
+            tower={gameState.tower}
+            players={gameState.players}
+          />
         </div>
 
-        {/* Game Board - Bottom on mobile, left on desktop */}
+        {/* Game Board mit LightMeter oben */}
         <div style={{
           flex: 1,
           display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
+          flexDirection: 'column',
+          gap: '1rem'
         }}>
-          <GameBoard gameState={gameState} onTileClick={handleTileClick} />
+          {/* 1. LightMeter - Eigenständige Lichtleiste (jetzt oben über dem Spielfeld) */}
+          <LightMeter
+            light={gameState.light}
+            maxLight={gameRules.light.maxValue}
+            round={gameState.round}
+          />
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flex: 1
+          }}>
+            <GameBoard gameState={gameState} onTileClick={handleTileClick} />
+          </div>
         </div>
 
+      </div>
+
+      {/* Neues Spiel Button - ganz unten */}
+      <div style={{
+        textAlign: 'center',
+        padding: '2rem 0',
+        borderTop: '1px solid #374151'
+      }}>
+        <button
+          onClick={onNewGame}
+          style={{
+            backgroundColor: '#ea580c',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            transition: 'all 0.2s ease-in-out',
+            boxShadow: '0 4px 6px rgba(234, 88, 12, 0.3)'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#dc2626';
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 6px 10px rgba(234, 88, 12, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#ea580c';
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 4px 6px rgba(234, 88, 12, 0.3)';
+          }}
+        >
+          🔄 Neues Spiel einrichten
+        </button>
       </div>
 
       {/* CSS Animations for Modals */}
@@ -8149,66 +7822,20 @@ function GameScreen({ gameData, onNewGame }) {
           }
           50% {
             transform: scale(1.02);
-            box-shadow: 0 0 120px rgba(234, 179, 8, 1), inset 0 0 80px rgba(234, 179, 8, 0.3);
+            box-shadow: 0 0 140px rgba(234, 179, 8, 1), inset 0 0 80px rgba(234, 179, 8, 0.3);
           }
         }
-        @keyframes victoryFloat {
+        @keyframes fadeInOut {
           0%, 100% {
-            transform: translateY(0) scale(1);
+            opacity: 0;
           }
           50% {
-            transform: translateY(-15px) scale(1.05);
-          }
-        }
-        @keyframes defeatPulse {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 0 100px rgba(220, 38, 38, 0.7), inset 0 0 60px rgba(220, 38, 38, 0.15);
-          }
-          50% {
-            transform: scale(1.01);
-            box-shadow: 0 0 120px rgba(220, 38, 38, 0.9), inset 0 0 80px rgba(220, 38, 38, 0.2);
-          }
-        }
-        @keyframes defeatShake {
-          0%, 100% {
-            transform: translateX(0) rotate(0deg);
-          }
-          25% {
-            transform: translateX(-5px) rotate(-2deg);
-          }
-          75% {
-            transform: translateX(5px) rotate(2deg);
+            opacity: 1;
           }
         }
       `}</style>
     </div>
   );
-}
+};
 
-function ApeironGame() {
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameData, setGameData] = useState(null);
-
-  const handleStartGame = (playerCount, difficulty, selectedCharacters) => {
-    setGameData({
-      playerCount,
-      difficulty,
-      selectedCharacters
-    });
-    setGameStarted(true);
-  };
-
-  const handleNewGame = () => {
-    setGameStarted(false);
-    setGameData(null);
-  };
-
-  if (gameStarted && gameData) {
-    return <GameScreen gameData={gameData} onNewGame={handleNewGame} />;
-  }
-
-  return <GameSetup onStartGame={handleStartGame} />;
-}
-
-export default ApeironGame;
+export default GameScreen;

@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-06 Nacht (UX-Verbesserungen + Critical Bugfixes)
-**Sprint:** Spielergebnis-Statistiken & Event-System Bugfixes! 📊🐛
+**Letzte Session:** 2025-10-06 Fortsetzung (UI/UX Optimierung - Sidebar Restrukturierung)
+**Sprint:** UI/UX Modernisierung - Phase 1 abgeschlossen! 🎨✨
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 2 große Features + 2 kritische Bugfixes (~400 Zeilen Code)
-**Next Focus:** 🎯 Win/Loss Conditions (P0 - letztes fehlendes Feature!)
+**Velocity:** 3 UI-Komponenten modularisiert + 3 kritische UX-Verbesserungen (~200 Zeilen Code)
+**Next Focus:** 🎯 Mobile-First UX/UI (Phase 2) oder Win/Loss Conditions (P0)
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -162,6 +162,18 @@
 - [x] 2025-10-06 🔥 KRITISCHER BUGFIX: "Reinigendes Feuer" Event cleanse_darkness komplett repariert
 - [x] 2025-10-06 cleanse_darkness verwendet jetzt herzDerFinsternis.darkTiles statt veraltete board.isDark Property
 - [x] 2025-10-06 closest_to_crater Target findet korrekt die N nächsten Finsternis-Felder (Manhattan-Distanz)
+- [x] 2025-10-06 🎨 UI/UX Restrukturierung Phase 1: Sidebar in 4 unabhängige Bereiche aufgeteilt
+- [x] 2025-10-06 Header & Top-Button entfernt, "Neues Spiel" Button nach unten verschoben
+- [x] 2025-10-06 Light-Meter von Sidebar nach oben über Spielfeld verschoben
+- [x] 2025-10-06 ActionPanel jetzt ÜBER TowerDisplay (statt darunter) positioniert
+- [x] 2025-10-06 GameSetup Screen modernisiert: Vertikale Hero-Cards mit Icons & Story-Texte
+- [x] 2025-10-06 Corvus Icon von ⚔️ zu 🦅 korrigiert (konsistent mit In-Game)
+- [x] 2025-10-06 ActivePlayerCard: Tab-Navigation für alle Spieler implementiert
+- [x] 2025-10-06 ⚠️ Negative Effekte Sektion in ActivePlayerCard hinzugefügt (zeigt ALLE negativen Effekte)
+- [x] 2025-10-06 ActionBlockers Integration: Zeigt block_action Effekte (z.B. discover_and_scout blockiert)
+- [x] 2025-10-06 TowerDisplay: 5-Stufen Status-System implementiert (Nicht entdeckt → Entdeckt → Gelernt → Fundament → Aktiv)
+- [x] 2025-10-06 Blueprint-Status transparent: "📋 ENTDECKT" (grau) wenn Bauplan im Inventar
+- [x] 2025-10-06 Blueprint-Status transparent: "✅ GELERNT" (bronze) wenn kenntnis_bauplan_* Skill gelernt
 
 ## 🟢 EVENT-SYSTEM 100% KOMPLETT! ✅
 
@@ -450,6 +462,131 @@ newState.herzDerFinsternis.darkTiles =
 - ✅ Projekt kompiliert ohne Fehler
 - ✅ Phase-Stats Tracking funktional
 - ✅ Beide Bugfixes verifiziert
+
+---
+
+### 🎨 **Session 2025-10-06 Fortsetzung - UI/UX Optimierung (Sidebar Restrukturierung) 🎨✨**
+
+**Dauer:** ~2h
+**Features:** 3 (GameSetup Modernisierung, ActivePlayerCard Tabs, TowerDisplay 5-Status)
+**Commits:** 1
+**Code:** ~200 Zeilen neu/geändert
+**Bugfixes:** 3 UI-Korrekturen
+
+---
+
+### ✅ **Feature 1: Sidebar Restrukturierung & Layout-Optimierung**
+
+**Aufgabe:** Sidebar in 4 unabhängige Bereiche aufteilen + Layout-Umstrukturierung
+
+**Änderungen:**
+1. **Header entfernt:** "Apeiron" Überschrift + "Neues Spiel einrichten" Button oben entfernt
+2. **Button nach unten:** "🔄 Neues Spiel einrichten" Button jetzt am unteren Seitenende mit Hover-Effekten
+3. **Light-Meter verschoben:** Von Sidebar OBEN über das Spielfeld verschoben
+4. **Action-Panel Position:** Jetzt ÜBER TowerDisplay (statt darunter)
+
+**Sidebar-Struktur (neue Reihenfolge):**
+1. ActivePlayerCard (mit Tab-Navigation)
+2. ActionPanel (Aktionen)
+3. TowerDisplay (Turm der Elemente)
+
+**Dateien geändert:**
+- `src/ApeironGame.jsx`: Lines 5386-5406 (Header entfernt), 7628-7727 (Layout-Restructure + Bottom-Button)
+
+---
+
+### ✅ **Feature 2: GameSetup Screen Modernisierung**
+
+**Aufgabe:** Setup-Screen an In-Game UI-Stil anpassen
+
+**Änderungen:**
+1. **Vertikale Hero-Cards:** Von Grid-Layout zu vertikalem Stack mit flexDirection: 'column'
+2. **Icons statt Bilder:** Circular Icons (50px) mit Emojis (konsistent mit In-Game)
+3. **Story-Texte:** Beschreibungen aus spielanleitung.md integriert
+4. **Hero-Color Borders:** Selection Border verwendet Hero-Farbe (nicht blau)
+5. **Skill-Icons:** 🧱, ⛏️, 🔥, 🌿, 💧, 🌊, 💨, 👁️
+
+**Bugfix:** Corvus Icon von ⚔️ zu 🦅 korrigiert (Line 48)
+
+**Dateien geändert:**
+- `src/components/GameSetup.tsx`: Lines 19-56 (heroInfo Object), 187-299 (Vertical Hero Cards)
+
+---
+
+### ✅ **Feature 3: Negative Effekte Anzeige in ActivePlayerCard**
+
+**Aufgabe:** ALLE negativen Effekte transparent anzeigen (nicht nur player.effects)
+
+**Problem:** ActionBlockers (z.B. discover_and_scout blockiert) wurden nicht angezeigt
+
+**Lösung:**
+- Neuer "⚠️ Negative Effekte" Bereich mit rotem Design
+- Sammelt BEIDE Quellen:
+  - `player.effects` (reduce_ap, set_ap, skip_turn, block_skills, prevent_movement, disable_communication)
+  - `actionBlockers` (targeting player.id oder all_players)
+- Zeigt Ablauf-Runde: (R${expiresInRound}) oder (∞) für permanent
+- Dunkelroter Hintergrund (#7f1d1d) mit roten Borders
+
+**Prop hinzugefügt:**
+- `actionBlockers` an ActivePlayerCard übergeben (ApeironGame.jsx:7655)
+
+**Dateien geändert:**
+- `src/components/ui/ActivePlayerCard.jsx`: Lines 407-535 (Negative + Positive Effects Sections)
+- `src/ApeironGame.jsx`: Line 7655 (actionBlockers prop)
+
+---
+
+### ✅ **Feature 4: TowerDisplay 5-Stufen Status-System**
+
+**Aufgabe:** Blueprint-Fortschritt transparent anzeigen (2 neue Status-Stufen)
+
+**Problem:** User wusste nicht, ob Bauplan gefunden/gelernt wurde
+
+**Lösung - 5 Status-Hierarchie:**
+1. **Nicht entdeckt** (❌) - Grau #374151
+2. **Bauplan entdeckt** (📋 ENTDECKT) - Dunkelgrau #4b5563
+3. **Bauplan gelernt** (✅ GELERNT) - Bronze #78716c
+4. **Fundament gebaut** (🏗️ FUNDAMENT) - Gold #ca8a04
+5. **Element aktiviert** (✅ AKTIV) - Element-Farbe
+
+**Blueprint-Status Check:**
+- `blueprintDiscovered`: `players.some(p => p.inventory.includes('bauplan_${element}'))`
+- `blueprintLearned`: `players.some(p => p.learnedSkills.includes('kenntnis_bauplan_${element}'))`
+
+**Design-Constraint eingehalten:**
+- ✅ Keine zusätzlichen UI-Elemente
+- ✅ Nur Background-Farben und Badge-Text geändert
+- ✅ Exakt gleiches Single-Card-Design
+
+**Prop hinzugefügt:**
+- `players` an TowerDisplay übergeben (ApeironGame.jsx:7666)
+
+**Dateien geändert:**
+- `src/components/ui/TowerDisplay.jsx`: Lines 15 (players prop), 78-139 (5-Stufen getStyles), 159-210 (Badge-Text)
+- `src/ApeironGame.jsx`: Line 7666 (players prop)
+
+---
+
+### 📊 **Session-Statistik**
+
+**Dauer:** ~2h
+**Commits:** Ausstehend
+**Code:** ~200 Zeilen neu/geändert
+**Features:** 4 (Layout-Restrukturierung, GameSetup Modernisierung, Negative Effekte, Blueprint-Status)
+**Bugfixes:** 1 (Corvus Icon)
+
+**Dateien geändert:**
+- `src/ApeironGame.jsx`: ~80 Zeilen (Layout + Props)
+- `src/components/GameSetup.tsx`: ~40 Zeilen (Vertical Cards + Icon)
+- `src/components/ui/ActivePlayerCard.jsx`: ~130 Zeilen (Negative Effects Section)
+- `src/components/ui/TowerDisplay.jsx`: ~60 Zeilen (5-Stufen Status)
+
+**Testing:**
+- ✅ Dev-Server läuft (Port 5173)
+- ✅ Keine Console-Errors
+- ✅ Corvus Icon korrekt (🦅)
+- ✅ Layout-Restrukturierung funktional
+- ✅ Blueprint-Status System bereit (benötigt Gameplay-Test)
 
 ---
 
