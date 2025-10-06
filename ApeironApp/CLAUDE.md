@@ -1,10 +1,10 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-06 Vormittag (Critical Bugfixes - Heilende Reinigung + Drop Events)
-**Sprint:** Bug Smashing - React StrictMode Mutation Bugs systematisch eliminiert! 🐛
+**Letzte Session:** 2025-10-06 Nachmittag (Multiple Obstacles + Finsternis-Reduktion Features)
+**Sprint:** Feature Implementation - Mehrfach-Hindernisse + konfigurierbares Gameplay! 🎮
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 3 kritische Bugfixes in einer Session (Heilende Reinigung, Lernen-Auswahl, Drop-Events)
+**Velocity:** 3 Features in einer Session (Mehrere Obstacles, Tor Items Fix, Finsternis-Reduktion)
 **Next Focus:** 🎯 Win/Loss Conditions (P0 - letztes fehlendes Feature!)
 
 ## <� Projekt�bersicht
@@ -143,6 +143,16 @@
 - [x] 2025-10-06 🐛 KRITISCHER BUGFIX: "Zerrissener Beutel" - Items erschienen doppelt (React StrictMode)
 - [x] 2025-10-06 5× Drop-Events zu immutable Board-Updates refactored (drop_all_items, drop_resource, drop_all_resources)
 - [x] 2025-10-06 Root Cause: Shallow Copy + .push() Mutation → React StrictMode doppelte Ausführung
+- [x] 2025-10-06 ✨ Mehrfach-Hindernisse System: Mehrere verschiedene Obstacle-Typen auf einem Feld möglich
+- [x] 2025-10-06 Datenstruktur obstacle (String) → obstacles (Array) mit max 1 pro Typ
+- [x] 2025-10-06 Event-System für add_obstacle, remove_obstacles, handleRemoveObstacle angepasst
+- [x] 2025-10-06 Adjacent Obstacles Detection zeigt alle entfernbaren Obstacles als separate Buttons
+- [x] 2025-10-06 🔧 Tor der Weisheit z-index Fix: Items jetzt sichtbar (z-index 11 → 6)
+- [x] 2025-10-06 ☀️ Finsternis-Zurückdrängung bei Element-Aktivierung implementiert
+- [x] 2025-10-06 Konfigurierbar via gameRules.json (darknessReduction Property pro Element)
+- [x] 2025-10-06 LIFO-Prinzip: Zuletzt erfasste Finsternis-Felder werden zuerst entfernt
+- [x] 2025-10-06 Element Success Modal zeigt Finsternis-Reduktion mit ☀️ Symbol an
+- [x] 2025-10-06 Werte: Wasser (2), Feuer (3), Luft (1), Erde (0) Finsternis-Felder Reduktion
 
 ## 🟢 EVENT-SYSTEM 100% KOMPLETT! ✅
 
@@ -1138,6 +1148,47 @@ npx cap init
 
 ## =� Session-Log
 
+### Session 2025-10-06 Nachmittag (Multiple Obstacles + Finsternis-Reduktion Features 🎮✨)
+- ✅ **FEATURE 1: Mehrfach-Hindernisse System implementiert!**
+  - **Problem:** Nur 1 Obstacle-Typ pro Feld möglich
+  - **Lösung:** Datenstruktur von `obstacle` (String) → `obstacles` (Array) geändert
+  - **Regel:** Max 1 Hindernis des **selben** Typs, aber mehrere **verschiedene** Typen gleichzeitig
+  - **Beispiel:** Feld kann jetzt Geröll UND Dornenwald gleichzeitig haben
+- ✅ **Code-Änderungen Obstacles System:**
+  - **Rendering:** Flex-Layout mit gap: 4px für multiple Icons nebeneinander
+  - **add_obstacle:** Prüft `.includes()` bevor neues Obstacle hinzugefügt wird
+  - **remove_obstacles:** Filtert spezifischen Typ aus Array
+  - **remove_all_obstacles:** Entfernt gesamtes obstacles-Array via destructuring
+  - **Movement-Blockierung:** Prüft `obstacles.length > 0`
+  - **handleRemoveObstacle:** Filtert spezifischen Typ aus Array
+  - **Adjacent Detection:** Iteriert über alle Obstacles pro Tile, zeigt separate Buttons
+- ✅ **FEATURE 2: Tor der Weisheit Items jetzt sichtbar!**
+  - **Problem:** z-index Hierarchie war falsch (Tor: 11, Items: 10)
+  - **Lösung:** Tor z-index: 11 → 6 (Items bleiben bei 10)
+  - **Z-Index Hierarchy:** Darkness (5) → Tor (6) → Obstacles (8) → Items (10) → Herz (11) → Heroes (20)
+  - **Impact:** Items auf Tor der Weisheit sind jetzt sichtbar!
+- ✅ **FEATURE 3: Finsternis-Zurückdrängung bei Element-Aktivierung!**
+  - **Konfigurierbar via gameRules.json:** Neue `darknessReduction` Property pro Element
+  - **Werte:** Wasser (2), Feuer (3), Luft (1), Erde (0) Finsternis-Felder Reduktion
+  - **LIFO-Prinzip:** Zuletzt erfasste Finsternis-Felder werden zuerst entfernt
+  - **Implementierung:** `.slice(0, -N)` Array-Operation für LIFO
+  - **Kombination:** Finsternis-Reduktion PLUS automatische Ausbreitung kombiniert
+- ✅ **UI-Integration Finsternis-Reduktion:**
+  - **Element Success Modal:** Zeigt Finsternis-Reduktion mit ☀️ Symbol
+  - **Design:** Goldener Text (#fbbf24) mit Border-Top Separator
+  - **Dynamisch:** "X Finsternis-Feld" vs "X Finsternis-Felder" (Pluralisierung)
+  - **Conditional Rendering:** Nur sichtbar wenn `fieldsRemoved > 0`
+- ✅ **Console-Logging hinzugefügt:**
+  - `🌟 FEUER-Element aktiviert: 3 Finsternis-Felder zurückgedrängt! (5 → 2)`
+  - `🌟 WASSER-Element aktiviert: Keine Finsternis vorhanden zum Zurückdrängen`
+- **Lines Changed:** ~214 Zeilen
+  - gameRules.json: 4 Zeilen (darknessReduction Properties)
+  - ApeironGame.jsx: ~210 Zeilen (Obstacles System + Finsternis-Reduktion + Modal UI)
+- **Impact:** Gameplay jetzt flexibler - mehrere Obstacles kombinierbar + strategische Finsternis-Bekämpfung!
+- **Testing:** ✅ App startet ohne Fehler, keine Console-Errors
+
+---
+
 ### Session 2025-10-02 Teil 2 (Abend - AP-EFFEKT BUGFIXES KOMPLETT! 🐛✅)
 - ✅ **KRITISCHER BUGFIX: AP-Modifikations-Events doppelte Anwendung!**
   - Problem: Events mit `duration: "next_round"` wurden SOFORT angewendet UND im effects Array gespeichert
@@ -1596,7 +1647,7 @@ npx cap init
 - **URL:** http://localhost:5173
 
 ---
-*Auto-updated by Claude - 2025-10-06 09:30*
+*Auto-updated by Claude - 2025-10-06 15:30*
 
 ## 📚 **Zusätzliche Referenzen für nächste Session**
 

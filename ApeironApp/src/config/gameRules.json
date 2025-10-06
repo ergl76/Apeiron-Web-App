@@ -19,19 +19,23 @@
     "bonuses": {
       "wasser": {
         "type": "light",
-        "value": 4
+        "value": 4,
+        "darknessReduction": 4
       },
       "feuer": {
         "type": "light",
-        "value": 4
+        "value": 4,
+        "darknessReduction": 4
       },
       "luft": {
         "type": "permanent_ap",
-        "value": 1
+        "value": 1,
+        "darknessReduction": 4
       },
       "erde": {
         "type": "permanent_ap",
-        "value": 1
+        "value": 1,
+        "darknessReduction": 4
       }
     }
   },

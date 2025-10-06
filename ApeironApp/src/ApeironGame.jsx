@@ -837,15 +837,21 @@ function GameBoard({ gameState, onTileClick }) {
           </div>
         )}
 
-        {/* Obstacle on tile */}
-        {tile?.obstacle && (
+        {/* Obstacles on tile (multiple possible) */}
+        {tile?.obstacles && tile.obstacles.length > 0 && (
           <div style={{
             position: 'absolute',
+            display: 'flex',
+            gap: '4px',
             fontSize: '24px',
             filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
             zIndex: 8 // Below items but above darkness
           }}>
-            {tile.obstacle === 'geroell' ? '🪨' : tile.obstacle === 'dornenwald' ? '🌿' : tile.obstacle === 'ueberflutung' ? '🌊' : '🚧'}
+            {tile.obstacles.map((obstacle, idx) => (
+              <div key={idx}>
+                {obstacle === 'geroell' ? '🪨' : obstacle === 'dornenwald' ? '🌿' : obstacle === 'ueberflutung' ? '🌊' : '🚧'}
+              </div>
+            ))}
           </div>
         )}
 
@@ -889,7 +895,7 @@ function GameBoard({ gameState, onTileClick }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 11,
+            zIndex: 6, // Below items (z-index: 10) so items are visible
             animation: 'pulseGate 3s ease-in-out infinite',
             pointerEvents: 'none',
             boxShadow: '0 0 30px rgba(59, 130, 246, 0.5), inset 0 0 20px rgba(59, 130, 246, 0.2)'
@@ -1434,9 +1440,9 @@ function GameScreen({ gameData, onNewGame }) {
         }
       }
 
-      // Prevent moving to a tile with an obstacle
-      if (tile.obstacle) {
-        console.log(`Movement to ${position} blocked by obstacle: ${tile.obstacle}`);
+      // Prevent moving to a tile with obstacles
+      if (tile.obstacles && tile.obstacles.length > 0) {
+        console.log(`Movement to ${position} blocked by obstacles: ${tile.obstacles.join(', ')}`);
         return;
       }
 
@@ -2710,8 +2716,17 @@ function GameScreen({ gameData, onNewGame }) {
                 const isTorDerWeisheit = tile?.id === 'tor_der_weisheit';
 
                 if (tile && (tile.revealed === true || isTorDerWeisheit)) {
-                  newBoard[pos] = { ...tile, obstacle };
-                  console.log(`🪨 Obstacle "${obstacle}" placed on ${isTorDerWeisheit ? 'Tor der Weisheit' : 'revealed tile'} at ${pos} (tile: ${tile.id})`);
+                  // Add obstacle to array (max 1 of each type)
+                  const currentObstacles = tile.obstacles || [];
+                  if (!currentObstacles.includes(obstacle)) {
+                    newBoard[pos] = {
+                      ...tile,
+                      obstacles: [...currentObstacles, obstacle]
+                    };
+                    console.log(`🪨 Obstacle "${obstacle}" placed on ${isTorDerWeisheit ? 'Tor der Weisheit' : 'revealed tile'} at ${pos} (tile: ${tile.id})`);
+                  } else {
+                    console.log(`⚠️ Skipped obstacle placement at ${pos} - "${obstacle}" already exists on this tile`);
+                  }
                 } else if (!tile) {
                   console.log(`⚠️ Skipped obstacle placement at ${pos} - tile does not exist (not discovered yet)`);
                 } else {
@@ -2828,8 +2843,12 @@ function GameScreen({ gameData, onNewGame }) {
             const obstacleType = effect.obstacle;
             const newBoard = { ...newState.board };
             Object.keys(newBoard).forEach(pos => {
-              if (newBoard[pos]?.obstacle === obstacleType) {
-                delete newBoard[pos].obstacle;
+              if (newBoard[pos]?.obstacles?.includes(obstacleType)) {
+                // Remove specific obstacle type from array
+                newBoard[pos] = {
+                  ...newBoard[pos],
+                  obstacles: newBoard[pos].obstacles.filter(o => o !== obstacleType)
+                };
               }
             });
             newState.board = newBoard;
@@ -2839,8 +2858,10 @@ function GameScreen({ gameData, onNewGame }) {
           case 'remove_all_obstacles': {
             const newBoard = { ...newState.board };
             Object.keys(newBoard).forEach(pos => {
-              if (newBoard[pos]?.obstacle) {
-                delete newBoard[pos].obstacle;
+              if (newBoard[pos]?.obstacles && newBoard[pos].obstacles.length > 0) {
+                // Remove obstacles array completely
+                const { obstacles, ...rest } = newBoard[pos];
+                newBoard[pos] = rest;
               }
             });
             newState.board = newBoard;
@@ -3282,6 +3303,21 @@ function GameScreen({ gameData, onNewGame }) {
         }));
       }
 
+      // Finsternis-Zurückdrängung (LIFO: zuletzt erfasste Felder zuerst)
+      const darknessReduction = bonusConfig.darknessReduction || 0;
+      let updatedDarkTilesAfterElementActivation = prev.herzDerFinsternis.darkTiles || [];
+
+      if (darknessReduction > 0 && updatedDarkTilesAfterElementActivation.length > 0) {
+        const fieldsToRemove = Math.min(darknessReduction, updatedDarkTilesAfterElementActivation.length);
+
+        // Entferne die LETZTEN N Felder (LIFO: zuletzt hinzugefügt = zuerst entfernt)
+        updatedDarkTilesAfterElementActivation = updatedDarkTilesAfterElementActivation.slice(0, -fieldsToRemove);
+
+        console.log(`🌟 ${element.toUpperCase()}-Element aktiviert: ${fieldsToRemove} Finsternis-Felder zurückgedrängt! (${prev.herzDerFinsternis.darkTiles.length} → ${updatedDarkTilesAfterElementActivation.length})`);
+      } else if (darknessReduction > 0) {
+        console.log(`🌟 ${element.toUpperCase()}-Element aktiviert: Keine Finsternis vorhanden zum Zurückdrängen`);
+      }
+
       console.log(`🔥 ${element.toUpperCase()}-Element aktiviert!`);
       console.log(`✨ Bonus: ${bonusText}`);
 
@@ -3321,9 +3357,10 @@ function GameScreen({ gameData, onNewGame }) {
         handleAutoTurnTransition(finalPlayers, prev.currentPlayerIndex, prev.round, prev);
 
       // Apply darkness spread if needed (can be multiple positions)
+      // WICHTIG: Kombiniere Element-Reduktion MIT automatischer Ausbreitung
       const updatedDarkTiles = darknessSpreads.length > 0
-        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
-        : prev.herzDerFinsternis.darkTiles || [];
+        ? [...updatedDarkTilesAfterElementActivation, ...darknessSpreads]
+        : updatedDarkTilesAfterElementActivation;
 
       const newLight = Math.max(0, Math.min(gameRules.light.maxValue, prev.light - lightDecrement + lightBonus));
       const elementCount = newTower.activatedElements.length;
@@ -3345,7 +3382,13 @@ function GameScreen({ gameData, onNewGame }) {
           show: true,
           elementType: element,
           count: elementCount,
-          bonus: { type: bonusConfig.type, value: bonusConfig.value, text: bonusText }
+          bonus: {
+            type: bonusConfig.type,
+            value: bonusConfig.value,
+            text: bonusText,
+            darknessReduction: darknessReduction,
+            fieldsRemoved: darknessReduction > 0 ? Math.min(darknessReduction, (prev.herzDerFinsternis.darkTiles || []).length) : 0
+          }
         }
       };
     });
@@ -3863,7 +3906,7 @@ function GameScreen({ gameData, onNewGame }) {
 
     const targetTile = gameState.board[newPosition];
     if (!targetTile) return; // Target field not yet discovered
-    if (targetTile.obstacle) return; // Target field has obstacle
+    if (targetTile.obstacles && targetTile.obstacles.length > 0) return; // Target field has obstacles
 
     // Check if path is clear (both intermediate and target fields)
     const [midX, midY] = direction === 'north' ? [x, y-1] :
@@ -3872,7 +3915,7 @@ function GameScreen({ gameData, onNewGame }) {
                         [x-1, y]; // west
     const midPosition = `${midX},${midY}`;
     const midTile = gameState.board[midPosition];
-    if (!midTile || midTile.obstacle) return; // Path blocked
+    if (!midTile || (midTile.obstacles && midTile.obstacles.length > 0)) return; // Path blocked
 
     // Perform the fast movement
     setGameState(prev => {
@@ -4262,12 +4305,22 @@ function GameScreen({ gameData, onNewGame }) {
     const [obstacleX, obstacleY] = obstaclePosition.split(',').map(Number);
     const isAdjacent = Math.abs(playerX - obstacleX) + Math.abs(playerY - obstacleY) === 1;
 
-    if (isAdjacent && currentPlayer.ap > 0 && targetTile?.obstacle === obstacleType && currentPlayer.learnedSkills.includes(requiredSkill)) {
+    if (isAdjacent && currentPlayer.ap > 0 && targetTile?.obstacles?.includes(obstacleType) && currentPlayer.learnedSkills.includes(requiredSkill)) {
       setGameState(prev => {
         const newBoard = { ...prev.board };
-        const { [obstaclePosition]: tileToUpdate, ...restOfBoard } = newBoard;
-        const { obstacle, ...restOfTile } = tileToUpdate;
-        newBoard[obstaclePosition] = restOfTile;
+        const tileToUpdate = newBoard[obstaclePosition];
+
+        // Remove the specific obstacle type from the obstacles array
+        const updatedObstacles = tileToUpdate.obstacles.filter(o => o !== obstacleType);
+        newBoard[obstaclePosition] = {
+          ...tileToUpdate,
+          obstacles: updatedObstacles.length > 0 ? updatedObstacles : undefined
+        };
+        // Clean up undefined obstacles property
+        if (!newBoard[obstaclePosition].obstacles) {
+          const { obstacles, ...rest } = newBoard[obstaclePosition];
+          newBoard[obstaclePosition] = rest;
+        }
 
         const newPlayers = prev.players.map((player, index) =>
           index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
@@ -4619,21 +4672,24 @@ function GameScreen({ gameData, onNewGame }) {
       for (const [direction, pos] of Object.entries(adjacentPositions)) {
         const adjacentTile = gameState.board[pos];
 
-        // Check for obstacles
-        if (adjacentTile?.obstacle) {
-          const obstacleType = adjacentTile.obstacle;
+        // Check for obstacles (can have multiple per tile now)
+        if (adjacentTile?.obstacles && adjacentTile.obstacles.length > 0) {
           const skillMap = {
             'geroell': 'geroell_beseitigen',
             'dornenwald': 'dornen_entfernen',
             'ueberflutung': 'fluss_freimachen'
           };
-          if (currentPlayer.learnedSkills.includes(skillMap[obstacleType]) && !areSkillsBlocked) {
-            adjacentObstacles.push({
-              position: pos,
-              type: obstacleType,
-              direction: direction
-            });
-          }
+
+          // Add each obstacle type to the array if player has the skill
+          adjacentTile.obstacles.forEach(obstacleType => {
+            if (currentPlayer.learnedSkills.includes(skillMap[obstacleType]) && !areSkillsBlocked) {
+              adjacentObstacles.push({
+                position: pos,
+                type: obstacleType,
+                direction: direction
+              });
+            }
+          });
         }
 
         // Check for darkness (Phase 2) - also only cardinal directions
@@ -6355,6 +6411,27 @@ function GameScreen({ gameData, onNewGame }) {
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: element?.color }}>
                   {gameState.elementSuccessModal.bonus?.text}
                 </div>
+
+                {/* Finsternis-Zurückdrängung */}
+                {gameState.elementSuccessModal.bonus?.fieldsRemoved > 0 && (
+                  <div style={{
+                    marginTop: '16px',
+                    paddingTop: '16px',
+                    borderTop: `1px solid ${element?.color}44`,
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    color: '#fbbf24',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{ fontSize: '1.8rem' }}>☀️</span>
+                    <span>
+                      {gameState.elementSuccessModal.bonus.fieldsRemoved} Finsternis-Feld{gameState.elementSuccessModal.bonus.fieldsRemoved > 1 ? 'er' : ''} zurückgedrängt!
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Motivational Text */}
