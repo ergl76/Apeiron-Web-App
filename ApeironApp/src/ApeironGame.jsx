@@ -3,6 +3,7 @@ import eventsConfig from './config/events.json';
 import tilesConfig from './config/tiles.json';
 import gameRules from './config/gameRules.json';
 import LightMeter from './components/ui/LightMeter';
+import VerticalLightMeter from './components/ui/VerticalLightMeter';
 import ActivePlayerCard from './components/ui/ActivePlayerCard';
 import TowerDisplay from './components/ui/TowerDisplay';
 import ActionPanel from './components/ui/ActionPanel';
@@ -1127,6 +1128,15 @@ function GameScreen({ gameData, onNewGame }) {
   const eventTriggeredForRound = useRef(0);
   // Global flag to prevent multiple simultaneous triggerRandomEvent calls
   const isTriggeringEvent = useRef(false);
+
+  // Mobile-First: Detect mobile viewport
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 800);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 800);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const [gameState, setGameState] = useState(() => {
     const phase1TileDeck = Object.entries(tilesConfig.phase1).flatMap(([tileId, config]) => {
@@ -7628,21 +7638,57 @@ function GameScreen({ gameData, onNewGame }) {
       {/* Mobile-friendly Layout */}
       <div style={{
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: isMobile ? 'column' : 'row',     // ✅ Responsive!
         minHeight: '100vh',
         gap: '1rem',
-        padding: '1rem',
-        maxWidth: '1400px',
+        padding: isMobile ? '0.5rem' : '1rem',          // ✅ Weniger Padding auf Mobile
+        maxWidth: isMobile ? '100%' : '1400px',         // ✅ Volle Breite auf Mobile
         margin: '0 auto'
       }}>
 
-        {/* NEW UI COMPONENTS - Modernized Sidebar */}
+        {/* Game Board - Mobile First (oben) */}
         <div style={{
-          width: '350px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          order: isMobile ? 1 : 2,                      // ✅ Mobile: oben, Desktop: rechts
+          minHeight: isMobile ? '70vh' : 'auto'         // ✅ Mobile: Min-Höhe für Spielfeld
+        }}>
+          {/* VerticalLightMeter ist fixed, kein Platz nötig */}
+          <VerticalLightMeter
+            light={gameState.light}
+            maxLight={gameRules.light.maxValue}
+            round={gameState.round}
+          />
+
+          {/* Desktop: Auch horizontal meter */}
+          {!isMobile && (
+            <LightMeter
+              light={gameState.light}
+              maxLight={gameRules.light.maxValue}
+              round={gameState.round}
+            />
+          )}
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flex: 1
+          }}>
+            <GameBoard gameState={gameState} onTileClick={handleTileClick} />
+          </div>
+        </div>
+
+        {/* Sidebar - Desktop links / Mobile unten */}
+        <div style={{
+          width: isMobile ? '100%' : '350px',           // ✅ Mobile: volle Breite
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: '1rem'
+          gap: '1rem',
+          order: isMobile ? 2 : 1                       // ✅ Mobile: unten, Desktop: links
         }}>
           {/* 2. ActivePlayerCard - Aktiver Spieler mit Tab-Navigation */}
           <ActivePlayerCard
@@ -7666,30 +7712,6 @@ function GameScreen({ gameData, onNewGame }) {
             tower={gameState.tower}
             players={gameState.players}
           />
-        </div>
-
-        {/* Game Board mit LightMeter oben */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem'
-        }}>
-          {/* 1. LightMeter - Eigenständige Lichtleiste (jetzt oben über dem Spielfeld) */}
-          <LightMeter
-            light={gameState.light}
-            maxLight={gameRules.light.maxValue}
-            round={gameState.round}
-          />
-
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flex: 1
-          }}>
-            <GameBoard gameState={gameState} onTileClick={handleTileClick} />
-          </div>
         </div>
 
       </div>
