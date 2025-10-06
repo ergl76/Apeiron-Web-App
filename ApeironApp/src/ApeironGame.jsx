@@ -2485,11 +2485,18 @@ function GameScreen({ gameData, onNewGame }) {
                 const crystalIndex = player.inventory.findIndex(item => item === 'kristall');
                 if (crystalIndex === -1) return player;
 
-                // Drop crystal to current field
+                // ✅ BUGFIX: Immutable board update to prevent duplication in React StrictMode
                 const pos = player.position;
-                if (!newState.board[pos]) newState.board[pos] = { resources: [] };
-                if (!newState.board[pos].resources) newState.board[pos].resources = [];
-                newState.board[pos].resources.push('kristall');
+                newState.board = {
+                  ...newState.board,
+                  [pos]: {
+                    ...newState.board[pos],
+                    resources: [
+                      ...(newState.board[pos]?.resources || []),
+                      'kristall'
+                    ]
+                  }
+                };
 
                 // Remove crystal from inventory immutably
                 return { ...player, inventory: player.inventory.filter((_, idx) => idx !== crystalIndex) };
@@ -2502,11 +2509,17 @@ function GameScreen({ gameData, onNewGame }) {
                 const crystalIndex = player.inventory.findIndex(item => item === 'kristall');
                 if (crystalIndex === -1) return player;
 
-                // Drop crystal to crater
-                if (!newState.board['4,4'].resources) {
-                  newState.board['4,4'].resources = [];
-                }
-                newState.board['4,4'].resources.push('kristall');
+                // ✅ BUGFIX: Immutable board update to prevent duplication in React StrictMode
+                newState.board = {
+                  ...newState.board,
+                  '4,4': {
+                    ...newState.board['4,4'],
+                    resources: [
+                      ...(newState.board['4,4']?.resources || []),
+                      'kristall'
+                    ]
+                  }
+                };
 
                 // Remove crystal from inventory immutably
                 return { ...player, inventory: player.inventory.filter((_, idx) => idx !== crystalIndex) };
@@ -2526,20 +2539,31 @@ function GameScreen({ gameData, onNewGame }) {
                 const toDrop = Math.min(dropCount, playerFragments.length);
                 const pos = player.position;
 
-                // Ensure board position exists and has resources array
-                if (!newState.board[pos]) newState.board[pos] = { resources: [] };
-                if (!newState.board[pos].resources) newState.board[pos].resources = [];
-
                 // Drop fragments to current field
                 let newInventory = [...player.inventory];
+                let droppedFragments = [];
                 let droppedCount = 0;
                 for (let i = 0; i < newInventory.length && droppedCount < toDrop; i++) {
                   if (fragmentTypes.includes(newInventory[i])) {
-                    newState.board[pos].resources.push(newInventory[i]);
+                    droppedFragments.push(newInventory[i]);
                     newInventory.splice(i, 1); // Remove from inventory
                     i--; // Adjust index after removal
                     droppedCount++;
                   }
+                }
+
+                // ✅ BUGFIX: Immutable board update to prevent duplication in React StrictMode
+                if (droppedFragments.length > 0) {
+                  newState.board = {
+                    ...newState.board,
+                    [pos]: {
+                      ...newState.board[pos],
+                      resources: [
+                        ...(newState.board[pos]?.resources || []),
+                        ...droppedFragments
+                      ]
+                    }
+                  };
                 }
 
                 console.log(`💔 ${player.name} dropped ${droppedCount} element fragment(s) at ${pos}`);
@@ -2556,11 +2580,17 @@ function GameScreen({ gameData, onNewGame }) {
                 if (player.id !== randomHero.id) return player;
 
                 const pos = player.position;
-                if (!newState.board[pos]) newState.board[pos] = { resources: [] };
-                if (!newState.board[pos].resources) {
-                  newState.board[pos].resources = [];
-                }
-                newState.board[pos].resources.push(...player.inventory);
+                // ✅ BUGFIX: Immutable board update to prevent duplication in React StrictMode
+                newState.board = {
+                  ...newState.board,
+                  [pos]: {
+                    ...newState.board[pos],
+                    resources: [
+                      ...(newState.board[pos]?.resources || []),
+                      ...player.inventory
+                    ]
+                  }
+                };
 
                 return { ...player, inventory: [] };
               });
@@ -2576,11 +2606,17 @@ function GameScreen({ gameData, onNewGame }) {
                 const resourcesToDrop = player.inventory.filter(item => item === resourceType);
                 if (resourcesToDrop.length === 0) return player;
 
-                if (!newState.board[pos]) newState.board[pos] = { resources: [] };
-                if (!newState.board[pos].resources) {
-                  newState.board[pos].resources = [];
-                }
-                newState.board[pos].resources.push(...resourcesToDrop);
+                // ✅ BUGFIX: Immutable board update to prevent duplication in React StrictMode
+                newState.board = {
+                  ...newState.board,
+                  [pos]: {
+                    ...newState.board[pos],
+                    resources: [
+                      ...(newState.board[pos]?.resources || []),
+                      ...resourcesToDrop
+                    ]
+                  }
+                };
 
                 return { ...player, inventory: player.inventory.filter(item => item !== resourceType) };
               });
@@ -3869,6 +3905,40 @@ function GameScreen({ gameData, onNewGame }) {
     });
   };
 
+  const handleLearnCombined = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+    // Find ALL learnable items (blueprints + artifacts)
+    const availableBlueprints = currentPlayer.inventory.filter(item => item.startsWith('bauplan_'));
+    const availableArtifacts = currentPlayer.inventory.filter(item => item.startsWith('artefakt_'));
+    const allLearnableItems = [...availableBlueprints, ...availableArtifacts];
+
+    if (allLearnableItems.length === 0 || currentPlayer.ap < 1) return;
+
+    // If multiple learnable items, show selection modal
+    if (allLearnableItems.length > 1) {
+      setGameState(prev => ({
+        ...prev,
+        currentEvent: {
+          type: 'learn_item_selection',
+          title: 'Item zum Lernen wählen',
+          description: 'Wähle einen Bauplan oder ein Artefakt zum Lernen (1 AP):',
+          availableItems: allLearnableItems,
+          itemType: 'combined' // Indicates mixed selection
+        }
+      }));
+      return;
+    }
+
+    // Only one learnable item, learn it directly
+    const singleItem = allLearnableItems[0];
+    if (singleItem.startsWith('bauplan_')) {
+      learnSelectedItem(singleItem);
+    } else if (singleItem.startsWith('artefakt_')) {
+      learnSelectedArtifact(singleItem);
+    }
+  };
+
   const handleLearn = () => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
@@ -4403,9 +4473,25 @@ function GameScreen({ gameData, onNewGame }) {
       });
 
       // Remove action blockers for affected players (inkl. permanente blockers!)
-      const newActionBlockers = (prev.actionBlockers || []).filter(blocker =>
-        !affectedPlayerIds.includes(blocker.target) && blocker.target !== 'all_players'
-      );
+      // Special handling for 'all_players' blockers: Replace with individual blockers for non-healed players
+      const newActionBlockers = [];
+      (prev.actionBlockers || []).forEach(blocker => {
+        if (blocker.target === 'all_players') {
+          // Create individual blockers for players NOT at same position
+          prev.players.forEach(player => {
+            if (!affectedPlayerIds.includes(player.id)) {
+              newActionBlockers.push({
+                ...blocker,
+                target: player.id
+              });
+            }
+          });
+        } else if (!affectedPlayerIds.includes(blocker.target)) {
+          // Keep blockers for other players
+          newActionBlockers.push(blocker);
+        }
+        // If blocker.target is in affectedPlayerIds, it's removed (not added to newActionBlockers)
+      });
 
       // Reduce AP for current player
       const playersAfterAp = newPlayers.map((player, index) =>
@@ -4416,7 +4502,11 @@ function GameScreen({ gameData, onNewGame }) {
         handleAutoTurnTransition(playersAfterAp, prev.currentPlayerIndex, prev.round, prev);
 
       const affectedNames = prev.players.filter(p => affectedPlayerIds.includes(p.id)).map(p => p.name).join(', ');
+      const unaffectedNames = prev.players.filter(p => !affectedPlayerIds.includes(p.id)).map(p => p.name).join(', ');
       console.log(`💧 Heilende Reinigung: Removed negative effects + action blockers from ${affectedNames}`);
+      if (unaffectedNames) {
+        console.log(`   → Other heroes (${unaffectedNames}) still affected by global blockers (converted to individual)`);
+      }
 
       // Apply darkness spread if needed (can be multiple positions)
       const updatedDarkTiles = darknessSpreads.length > 0
@@ -4850,21 +4940,7 @@ function GameScreen({ gameData, onNewGame }) {
 
         {canLearn && (
           <button
-            onClick={() => {
-              // Check if we have artifacts or blueprints
-              const hasArtifacts = currentPlayer.inventory.some(item =>
-                item.startsWith('artefakt_')
-              );
-              const hasBlueprints = currentPlayer.inventory.some(item =>
-                item.startsWith('bauplan_')
-              );
-
-              if (hasArtifacts) {
-                handleLearnArtifact();
-              } else if (hasBlueprints) {
-                handleLearn();
-              }
-            }}
+            onClick={handleLearnCombined}
             style={{
               backgroundColor: '#8b5cf6',
               color: 'white',
@@ -5722,9 +5798,9 @@ function GameScreen({ gameData, onNewGame }) {
                   <button
                     key={index}
                     onClick={() => {
-                      if (gameState.currentEvent.itemType === 'blueprint') {
+                      if (gameState.currentEvent.itemType === 'blueprint' || item.startsWith('bauplan_')) {
                         learnSelectedItem(item);
-                      } else if (gameState.currentEvent.itemType === 'artifact') {
+                      } else if (gameState.currentEvent.itemType === 'artifact' || item.startsWith('artefakt_')) {
                         learnSelectedArtifact(item);
                       }
                     }}

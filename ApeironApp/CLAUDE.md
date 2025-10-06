@@ -1,10 +1,10 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-03 Nacht (Epic Modal Overhaul - Start/Victory/Defeat)
-**Sprint:** UX/UI Polish - Epische Story-Integration in alle Haupt-Modals! ✨
+**Letzte Session:** 2025-10-06 Vormittag (Critical Bugfixes - Heilende Reinigung + Drop Events)
+**Sprint:** Bug Smashing - React StrictMode Mutation Bugs systematisch eliminiert! 🐛
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 3 Modal-Rewrites + Stats-System in einer Session (~400 Zeilen Code)
+**Velocity:** 3 kritische Bugfixes in einer Session (Heilende Reinigung, Lernen-Auswahl, Drop-Events)
 **Next Focus:** 🎯 Win/Loss Conditions (P0 - letztes fehlendes Feature!)
 
 ## <� Projekt�bersicht
@@ -17,7 +17,7 @@
 - **Frontend:** React ^19.1.1 + TypeScript ~5.8.3
 - **Styling:** Tailwind CSS ^4.1.12
 - **Build Tool:** Vite ^7.1.2
-- **Testing:** ESLint ^9.33.0 (keine Unit Tests implementiert)
+- **Testing:** Chrome DevTools MCP (siehe [docs/TESTING.md](docs/TESTING.md))
 - **Dev Server:** http://localhost:5173 (npm run dev)
 
 ##  Fertiggestellt
@@ -136,6 +136,13 @@
 - [x] 2025-10-03 📊 Game Statistics System: Tracking für Moves, AP, Duration (gameStartTime, totalMoves, totalApSpent)
 - [x] 2025-10-03 🎨 Cooperative Language: "Die Helden von Elyria" + "Erreichte Elemente" (keine "gefallenen Helden")
 - [x] 2025-10-03 ⭐ Modal-Design Consistency: Gold/Green/Red themes matching Foundation/Element Success modals
+- [x] 2025-10-06 🐛 KRITISCHER BUGFIX: Heilende Reinigung wirkte auf ALLE Helden (ActionBlocker Bug)
+- [x] 2025-10-06 all_players ActionBlocker durch individuelle Blocker ersetzen (Option 2 - vollständig)
+- [x] 2025-10-06 🔧 Lernen-Aktion Auswahl-Modal: Bauplan + Artefakt kombinierte Auswahl implementiert
+- [x] 2025-10-06 handleLearnCombined() - Unified Handler für alle lernbaren Items
+- [x] 2025-10-06 🐛 KRITISCHER BUGFIX: "Zerrissener Beutel" - Items erschienen doppelt (React StrictMode)
+- [x] 2025-10-06 5× Drop-Events zu immutable Board-Updates refactored (drop_all_items, drop_resource, drop_all_resources)
+- [x] 2025-10-06 Root Cause: Shallow Copy + .push() Mutation → React StrictMode doppelte Ausführung
 
 ## 🟢 EVENT-SYSTEM 100% KOMPLETT! ✅
 
@@ -176,6 +183,161 @@
 - Karte flippt instant beim ersten Klick (kein Warten auf Re-Render)
 
 **VALIDIERT:** Single-Click UX funktioniert jetzt korrekt ✅
+
+## 📊 **Session 2025-10-06 Vormittag - Critical Bugfixes (Heilende Reinigung + Drop Events) 🐛**
+
+### ✅ **Bugfix 1: Heilende Reinigung wirkte auf ALLE Helden**
+
+**Problem:** "Heilende Reinigung" entfernte negative Effekte von ALLEN Spielern im Spiel, nicht nur von Helden am selben Feld.
+
+**Root Cause:**
+```javascript
+// FALSCH: Entfernte alle 'all_players' ActionBlockers
+const newActionBlockers = [...].filter(blocker =>
+  !affectedPlayerIds.includes(blocker.target) && blocker.target !== 'all_players'
+);
+```
+
+**Was passierte:**
+- `all_players` ActionBlocker betreffen ALLE Spieler
+- Filter entfernte ALLE `all_players` Blocker → Alle Spieler im Spiel wurden geheilt!
+
+**Lösung - Option 2 (vollständig, ~35 Zeilen):**
+```javascript
+const newActionBlockers = [];
+actionBlockers.forEach(blocker => {
+  if (blocker.target === 'all_players') {
+    // Erstelle individuelle Blocker für Spieler NICHT am selben Feld
+    players.forEach(player => {
+      if (!affectedPlayerIds.includes(player.id)) {
+        newActionBlockers.push({ ...blocker, target: player.id });
+      }
+    });
+  } else if (!affectedPlayerIds.includes(blocker.target)) {
+    newActionBlockers.push(blocker);
+  }
+});
+```
+
+**Resultat:**
+- Spieler am selben Feld: ✅ Geheilt (keine Blocker mehr)
+- Spieler woanders: ✅ Weiterhin blockiert (individuelle Blocker)
+
+---
+
+### ✅ **Bugfix 2: Lernen-Aktion - Keine Auswahl bei Bauplan + Artefakt**
+
+**Problem:** Wenn Spieler BEIDES im Inventar hatte (Bauplan + Artefakt), wurde automatisch nur das Artefakt gelernt - keine Auswahl!
+
+**Root Cause:**
+```javascript
+// FALSCH: if/else Priorität
+if (hasArtifacts) {
+  handleLearnArtifact();  // ← Bauplan wird ignoriert!
+} else if (hasBlueprints) {
+  handleLearn();
+}
+```
+
+**Lösung - Unified Handler:**
+```javascript
+const handleLearnCombined = () => {
+  const allLearnableItems = [...blueprints, ...artifacts];
+
+  if (allLearnableItems.length > 1) {
+    // Zeige kombiniertes Auswahl-Modal
+    setGameState(prev => ({
+      ...prev,
+      currentEvent: {
+        type: 'learn_item_selection',
+        title: 'Item zum Lernen wählen',
+        availableItems: allLearnableItems,
+        itemType: 'combined'
+      }
+    }));
+  } else {
+    // Lerne einzelnes Item direkt
+    const item = allLearnableItems[0];
+    if (item.startsWith('bauplan_')) learnSelectedItem(item);
+    else if (item.startsWith('artefakt_')) learnSelectedArtifact(item);
+  }
+};
+```
+
+**Resultat:**
+- 1 Bauplan → Lernt direkt ✅
+- 1 Artefakt → Lernt direkt ✅
+- Bauplan + Artefakt → **Auswahl-Modal** ✅
+- 2+ Items → **Auswahl-Modal** ✅
+
+---
+
+### ✅ **Bugfix 3: "Zerrissener Beutel" - Items erschienen doppelt**
+
+**Problem:** Beim Event "Zerrissener Beutel" (`drop_all_items`) erschienen Items **doppelt** auf dem Feld.
+
+**Root Cause - React StrictMode Mutation Bug:**
+```javascript
+// applyEventEffect (Zeile 2248)
+let newState = { ...currentState };  // ❌ SHALLOW COPY!
+
+// Später (Zeile 2563)
+newState.board[pos].resources.push(...player.inventory);  // ❌ MUTATION!
+```
+
+**Was passierte:**
+- `newState.board` = GLEICHE Referenz wie `currentState.board` (Shallow Copy!)
+- `.push()` mutiert ursprüngliches Array
+- React StrictMode (Dev): Ruft Funktion **zweimal** auf
+  1. Erster Call: `board[pos].resources = []` → `.push(['bauplan'])` → `['bauplan']`
+  2. Zweiter Call: `board[pos].resources = ['bauplan']` → `.push(['bauplan'])` → `['bauplan', 'bauplan']` ❌
+
+**Lösung - Immutable Board Updates (5 Events gefixt):**
+
+**1. drop_all_items (Hauptproblem):**
+```javascript
+// ALT: newState.board[pos].resources.push(...player.inventory); ❌
+// NEU:
+newState.board = {
+  ...newState.board,
+  [pos]: {
+    ...newState.board[pos],
+    resources: [
+      ...(newState.board[pos]?.resources || []),
+      ...player.inventory
+    ]
+  }
+};
+```
+
+**2. drop_all_resources:**
+```javascript
+// ALT: newState.board[pos].resources.push(...resourcesToDrop); ❌
+// NEU: Identisches immutable Pattern ✅
+```
+
+**3. drop_resource (3 Varianten):**
+- hero_with_most_crystals
+- heroes_on_crater
+- heroes_with_fragments
+
+Alle drei zu immutable Updates refactored.
+
+**Resultat:**
+- Alle Drop-Events → Items erscheinen **korrekt einmal** ✅
+- React StrictMode kompatibel ✅
+- Keine Duplikate mehr ✅
+
+**Betroffene Events:**
+1. Zerrissener Beutel (`drop_all_items`) ✅
+2. Kristall-Fluch (`drop_all_resources`) ✅
+3. Verrat der Elemente (`drop_resource` - fragments) ✅
+4. Unbekanntes Event (`drop_resource` - hero_with_most_crystals) ✅
+5. Unbekanntes Event (`drop_resource` - heroes_on_crater) ✅
+
+**Lines Changed:** ~150 Zeilen Code in ApeironGame.jsx
+
+---
 
 ## 📊 **Session 2025-10-03 Vormittag - BREAKTHROUGH: Mutation Bug Root Cause! 🎉**
 
@@ -1415,10 +1577,10 @@ npx cap init
 - **Coverage:** N/A
 - **Build Size:** ~5500 Zeilen ApeironGame.jsx + ~680 andere = 6180 total LOC
 - **Performance:** Nicht gemessen
-- **Letzter Commit:** 🎉 BREAKTHROUGH: React StrictMode Mutation Bug komplett behoben
+- **Letzter Commit:** 🐛 fix: Critical Bugfixes - Heilende Reinigung + Drop Events (React StrictMode)
 - **Branch:** master
-- **Spielregel-Konformität:** ~97% (6 Features fehlen)
-- **Code Quality:** ✅ React StrictMode kompatibel, immutable State Updates
+- **Spielregel-Konformität:** ~99% (nur Win/Loss Conditions fehlen)
+- **Code Quality:** ✅ React StrictMode kompatibel, immutable State Updates, vollständige Event-Coverage
 
 ## <� Sprint Goal
 **Aktuelle Woche:** 🎯 PHASE 1 - Game Completion (Win/Loss + Element-Aktivierung) ⏰ 4-6h
@@ -1434,7 +1596,7 @@ npx cap init
 - **URL:** http://localhost:5173
 
 ---
-*Auto-updated by Claude - 2025-10-03 14:30*
+*Auto-updated by Claude - 2025-10-06 09:30*
 
 ## 📚 **Zusätzliche Referenzen für nächste Session**
 
