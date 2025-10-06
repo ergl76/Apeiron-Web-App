@@ -1,10 +1,10 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-06 Nachmittag (Multiple Obstacles + Finsternis-Reduktion Features)
-**Sprint:** Feature Implementation - Mehrfach-Hindernisse + konfigurierbares Gameplay! 🎮
+**Letzte Session:** 2025-10-06 Abend (Documentation Update - config-system.md darknessReduction)
+**Sprint:** Documentation - Finsternis-Zurückdrängung Feature vollständig dokumentiert! 📚
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 3 Features in einer Session (Mehrere Obstacles, Tor Items Fix, Finsternis-Reduktion)
+**Velocity:** 1 große Doku-Session (~285 Zeilen neue Sektion + Beispiele + Updates)
 **Next Focus:** 🎯 Win/Loss Conditions (P0 - letztes fehlendes Feature!)
 
 ## <� Projekt�bersicht
@@ -193,6 +193,144 @@
 - Karte flippt instant beim ersten Klick (kein Warten auf Re-Render)
 
 **VALIDIERT:** Single-Click UX funktioniert jetzt korrekt ✅
+
+## 📊 **Session 2025-10-06 Abend - Documentation Update (config-system.md) 📚**
+
+### ✅ **Feature: Vollständige darknessReduction Dokumentation**
+
+**Aufgabe:** [docs/config-system.md](docs/config-system.md) um das neue Finsternis-Zurückdrängung Feature erweitern
+
+**Umfang:** ~425 Zeilen hinzugefügt (neue Sektion + erweiterte Beispiele + Updates)
+
+---
+
+### 📝 **1. Neue Sektion 5️⃣: "Element-Aktivierung Bonusse (darknessReduction)"** (~285 Zeilen)
+
+**Inhalt:**
+- **Übersicht:** Erklärung des Features (seit Session 2025-10-06)
+- **Config-Struktur:** JSON-Schema mit allen 4 Elementen (wasser, feuer, luft, erde)
+- **Code-Verwendung:** Handler aus ApeironGame.jsx (~2843-2900) dokumentiert
+- **LIFO-Prinzip Erklärung:**
+  - Warum Last-In-First-Out? (Spiral-Ausbreitung vom Herz)
+  - Implementierung mit `.slice(0, -N)`
+  - Beispiel-Array mit Ring 1 & Ring 2 Feldern
+- **UI-Integration:** Element Success Modal Code (~5950-5970)
+  - ☀️ Symbol mit dynamischer Pluralisierung
+  - Conditional Rendering (nur wenn `fieldsRemoved > 0`)
+- **Wirksam-Tabelle:** Runtime-Abfragen für alle Config-Werte
+- **Balance-Konfiguration:**
+  - Standard-Werte (aktuell: alle 4)
+  - Schwierigkeitsgrade (Leicht/Normal/Schwer)
+- **Kombination mit automatischer Ausbreitung:**
+  - Timing: Reduktion VOR Ausbreitung
+  - Beispiel-Rechnung (Netto-Effekt)
+- **Testing-Beispiel:** Feuer-Element 4 → 6 Felder ändern
+  - 4 Validierungs-Schritte mit Console-Logs
+- **Edge Cases:** 3 Fälle (mehr Reduktion als Finsternis, keine Finsternis, Phase 1)
+- **Best Practices:** 4 Empfehlungen für ausgewogene Balance
+
+---
+
+### 📝 **2. Sektion 2️⃣ "gameRules.json" erweitert** (~30 Zeilen)
+
+**Ergänzungen:**
+```javascript
+// Element-Aktivierung Handler (vollständig)
+const bonusConfig = gameRules.elementActivation.bonuses[element];
+
+// Light Bonus anwenden
+if (bonusConfig.type === 'light') { /* ... */ }
+
+// AP Bonus anwenden
+if (bonusConfig.type === 'permanent_ap') { /* ... */ }
+
+// Finsternis-Zurückdrängung (seit 2025-10-06)
+const darknessReduction = bonusConfig.darknessReduction || 0;
+if (darknessReduction > 0 && darkTiles.length > 0) {
+  // LIFO-Prinzip: .slice(0, -fieldsToRemove)
+}
+```
+
+---
+
+### 📝 **3. Neue Praktische Beispiele** (~100 Zeilen)
+
+**Beispiel 4: Element-Aktivierung Balance-Anpassung**
+- Szenario: Feuer-Element von 4 → 7 Felder erhöhen
+- Vorher/Nachher JSON-Config
+- Impact-Analyse (strategische Entscheidungen)
+- Testing mit Console-Logs
+
+**Beispiel 5: Schwierigkeitsgrad-Anpassung (alle 4 Elemente)**
+- Leichter Modus mit erhöhten Werten
+- Durchschnitts-Berechnung (5.75 statt 4)
+- Netto-Effekt über 4 Aktivierungen (~23 Felder)
+- Gameplay-Impact für Anfänger
+
+---
+
+### 📝 **4. Statistiken-Abschnitt aktualisiert** (~20 Zeilen)
+
+**Neue Stats:**
+- Datum: 2025-10-06 (statt 2025-10-03)
+- 🆕 Element-Aktivierung Bonusse (4 Elemente mit individuellen Werten)
+- 🆕 Finsternis-Zurückdrängung (LIFO-Prinzip)
+- 🆕 Multi-Obstacles System
+- Config-Dateien Stats: gameRules.json (60 Zeilen, 6 Kategorien)
+- Features dokumentiert: ✅ Element-Aktivierung Bonusse 🆕
+
+**Footer:**
+- Aktualisiert: "Zuletzt aktualisiert: 2025-10-06 - Finsternis-Zurückdrängung Feature (darknessReduction)"
+
+---
+
+### 🎯 **Testing & Validierung**
+
+**Dokumentations-Qualität:**
+- ✅ Vollständige Erklärung des LIFO-Prinzips
+- ✅ Code-Beispiele direkt aus ApeironGame.jsx
+- ✅ Balance-Konfigurationen für 3 Schwierigkeitsgrade
+- ✅ Testing-Workflow mit Console-Log Validierung
+- ✅ Edge Cases abgedeckt (3 Szenarien)
+- ✅ Best Practices für Game Balance
+
+**Git Commit:**
+```
+docs: Erweitere config-system.md um darknessReduction Feature
+
+Neue Sektion 5️⃣ "Element-Aktivierung Bonusse" (~285 Zeilen)
+Erweiterte Sektion 2️⃣ mit Element-Aktivierung Handler
+Neue praktische Beispiele (4 & 5)
+Statistiken aktualisiert (2025-10-06)
+
+Impact: Vollständige Dokumentation wie darknessReduction
+konfiguriert, getestet und für Balance verwendet wird.
+```
+
+**GitHub Push:**
+- ✅ Commit 3b7d331 erfolgreich gepusht
+- ✅ Master Branch aktualisiert
+
+---
+
+### 📊 **Session-Statistik**
+
+**Dauer:** ~30 Minuten
+**Lines Changed:** +425, -3
+**Dateien:** 1 (docs/config-system.md)
+**Commits:** 1
+**Neue Sektionen:** 1 (~285 Zeilen)
+**Erweiterte Sektionen:** 1 (~30 Zeilen)
+**Neue Beispiele:** 2 (~100 Zeilen)
+**Updates:** 1 (Statistiken ~20 Zeilen)
+
+**Dokumentations-Fokus:**
+- LIFO-Prinzip vollständig erklärt
+- Balance-Konfigurationen für 3 Modi
+- Testing-Workflow mit Validierung
+- Code-Beispiele aus Production
+
+---
 
 ## 📊 **Session 2025-10-06 Vormittag - Critical Bugfixes (Heilende Reinigung + Drop Events) 🐛**
 
@@ -1647,7 +1785,7 @@ npx cap init
 - **URL:** http://localhost:5173
 
 ---
-*Auto-updated by Claude - 2025-10-06 15:30*
+*Auto-updated by Claude - 2025-10-06 20:45 (Documentation Update - darknessReduction)*
 
 ## 📚 **Zusätzliche Referenzen für nächste Session**
 
