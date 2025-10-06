@@ -177,10 +177,10 @@ Zusammengefasst: Pro Spielerzug breitet sich die Finsternis auf genau EIN Feld a
 
 Für jede Aktivierung eines Element-Fragments in Phase 2 erhält das Team folgende Meilenstein Bonusse: 
 
-* Bei Aktivierung des **Wasser Elements** erhält das Team **\+4 Licht**  
-* Bei Aktivierung des **Feuer Elements** erhält das Team **\+4 Licht**  
-* **Jeder Held** hat nun permanent **\+1 AP** bei Aktivierung des **Luft Elements**  
-* J**eder Held** hat nun permanent **\+1 AP** bei Aktivierung des **Erd Elements**
+* Bei Aktivierung des **Wasser Elements** erhält das Team **\+4 Licht** und die **Finsternis** wird um **4 Felder zurückgedrängt**
+* Bei Aktivierung des **Feuer Elements** erhält das Team **\+4 Licht** und die **Finsternis** wird um **4 Felder zurückgedrängt**
+* **Jeder Held** hat nun permanent **\+1 AP** bei Aktivierung des **Luft Elements** und die **Finsternis** wird um **4 Felder zurückgedrängt**
+* J**eder Held** hat nun permanent **\+1 AP** bei Aktivierung des **Erd Elements** und die **Finsternis** wird um **4 Felder zurückgedrängt**
 
 ## **Aktionen der Helden** {#aktionen-der-helden}
 
