@@ -4,6 +4,7 @@ import tilesConfig from './config/tiles.json';
 import gameRules from './config/gameRules.json';
 import LightMeter from './components/ui/LightMeter';
 import VerticalLightMeter from './components/ui/VerticalLightMeter';
+import HeroAvatar from './components/ui/HeroAvatar';
 import ActivePlayerCard from './components/ui/ActivePlayerCard';
 import TowerDisplay from './components/ui/TowerDisplay';
 import ActionPanel from './components/ui/ActionPanel';
@@ -1137,6 +1138,9 @@ function GameScreen({ gameData, onNewGame }) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Hero Avatar expanded state
+  const [heroAvatarExpanded, setHeroAvatarExpanded] = useState(false);
 
   const [gameState, setGameState] = useState(() => {
     const phase1TileDeck = Object.entries(tilesConfig.phase1).flatMap(([tileId, config]) => {
@@ -7660,6 +7664,21 @@ function GameScreen({ gameData, onNewGame }) {
             light={gameState.light}
             maxLight={gameRules.light.maxValue}
             round={gameState.round}
+          />
+
+          {/* Hero Avatar - Mobile-First Always-On (fixed top-left) */}
+          <HeroAvatar
+            player={gameState.players[gameState.currentPlayerIndex]}
+            hero={heroes[gameState.players[gameState.currentPlayerIndex]?.id]}
+            isExpanded={heroAvatarExpanded}
+            onToggle={() => setHeroAvatarExpanded(!heroAvatarExpanded)}
+            players={gameState.players}
+            heroes={heroes}
+            currentPlayerIndex={gameState.currentPlayerIndex}
+            currentRound={gameState.round}
+            actionBlockers={gameState.actionBlockers}
+            shouldPlayerSkipTurn={shouldPlayerSkipTurn}
+            isMobile={isMobile}
           />
 
           {/* Desktop: Auch horizontal meter */}

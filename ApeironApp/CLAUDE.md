@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-06 Fortsetzung (UI/UX Optimierung - Sidebar Restrukturierung)
-**Sprint:** UI/UX Modernisierung - Phase 1 abgeschlossen! 🎨✨
+**Letzte Session:** 2025-10-07 Mobile-First Player Navigation + Mystische Lichtleiste 🎨💀
+**Sprint:** Mobile-First UX - Player Carousel + Epic Light Meter completed! 🌟
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 3 UI-Komponenten modularisiert + 3 kritische UX-Verbesserungen (~200 Zeilen Code)
-**Next Focus:** 🎯 Mobile-First UX/UI (Phase 2) oder Win/Loss Conditions (P0)
+**Velocity:** Player Carousel (3 Komponenten, ~700 LOC) + Mystische Lichtleiste (6 Farbstufen, Herzschlag-Animation)
+**Next Focus:** 🎯 Tower Display Mobile UI oder Win/Loss Conditions (P0)
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -174,6 +174,23 @@
 - [x] 2025-10-06 TowerDisplay: 5-Stufen Status-System implementiert (Nicht entdeckt → Entdeckt → Gelernt → Fundament → Aktiv)
 - [x] 2025-10-06 Blueprint-Status transparent: "📋 ENTDECKT" (grau) wenn Bauplan im Inventar
 - [x] 2025-10-06 Blueprint-Status transparent: "✅ GELERNT" (bronze) wenn kenntnis_bauplan_* Skill gelernt
+- [x] 2025-10-07 🎮 Mobile-First Player Navigation: Swipeable Player Carousel implementiert
+- [x] 2025-10-07 PlayerCard.jsx (442 LOC): Vollständige Player-Info-Karte mit allen Details
+- [x] 2025-10-07 PlayerCarousel.jsx (282 LOC): Horizontaler Swipe-Container mit react-swipeable
+- [x] 2025-10-07 Peek-Preview System: 95% Kartenbreite + 5% Peek links/rechts mit perfekter Zentrierung
+- [x] 2025-10-07 Transform-Offset: `translateX(calc(-2.5% - ${selectedIndex * 95}%))` für symmetrisches Peek
+- [x] 2025-10-07 Pagination Dots: Hero-farbige Indikatoren mit aktiven/inaktiven Zuständen
+- [x] 2025-10-07 Desktop Arrow Buttons: ◀ ▶ Navigation für Non-Touch-Geräte
+- [x] 2025-10-07 Tab-Navigation entfernt: Ersetzt durch Swipe-basiertes Single-Card-System
+- [x] 2025-10-07 🌟 Mystisch-Epische Lichtleiste: Komplettes Redesign vom Licht zur weinroten Finsternis
+- [x] 2025-10-07 6-Stufen Farbpalette: Weiß (100%) → Goldgelb (80%) → Rosa-Grau (50%) → Blutrot (35%) → Dunkelblutrot (15%) → Leuchtendes Blutrot (0%)
+- [x] 2025-10-07 Glow-Farben synchronisiert: #ffffff → #fff5cc → #d4a5a5 → #a84444 → #8b2020 → #cc0000 (pures Blutrot!)
+- [x] 2025-10-07 Mystischer "Adern"-Gradient: 8 Opacity-Stufen, längliche Ellipse (120% × 100%)
+- [x] 2025-10-07 "Fressende Finsternis" ab 50%: Progressive dunkle Inner-Shadow (20px → 40px)
+- [x] 2025-10-07 Roter "Glüh"-Effekt ab 35%: Zusätzlicher weinroter Inner-Glow für intensiven Look
+- [x] 2025-10-07 Herzschlag-Animation ab 50%: 2s → 1.8s → 1.4s → 1s → 0.7s Panik-Herzschlag
+- [x] 2025-10-07 Gradueller Glow-Anstieg: Linear von 40px (100%) → 120px (0%), stetig ohne Sprünge
+- [x] 2025-10-07 Box-Shadow 4-Layer: 40px/70px/110px/140px für dramatischen Leuchteffekt
 
 ## 🟢 EVENT-SYSTEM 100% KOMPLETT! ✅
 
@@ -388,6 +405,148 @@ phase1Stats: {
 **Begriffe:**
 - **Spielzug (Turn):** Kompletter Heldenzug mit allen APs
 - **AP-Ausgabe:** Einzelne Aktion (Movement, Discovery, etc.)
+
+---
+
+## 📊 **Session 2025-10-07 Vormittag - Mobile-First Player Navigation + Mystische Lichtleiste 🎮🌟💀**
+
+### ✅ **Feature 1: Swipeable Player Carousel (Mobile-First Navigation)**
+
+**Aufgabe:** Tab-Navigation durch horizontales Swipe-System mit Peek-Preview ersetzen
+
+**Problem:** Desktop Tab-System nicht mobile-friendly, kein visuelles Feedback für andere Spieler
+
+**Lösung - Umfang: ~700 Zeilen Code (3 neue Komponenten)**
+
+**1. PlayerCard.jsx (442 LOC):**
+- Vollständige Player-Info-Darstellung (Header, AP, Inventar, Abilities, Knowledge, Effects)
+- Active/Inactive Styling mit Opacity, Scale, Filter
+- Hero-spezifische Border-Farben und Pulsing-Animation für aktiven Spieler
+- Scrollable Content (maxHeight: 450px, overflowY: auto)
+- Glassmorphism Design mit Backdrop-Blur
+
+**2. PlayerCarousel.jsx (282 LOC):**
+- react-swipeable Integration für Touch + Mouse Drag
+- Horizontaler Flex-Container mit Transform-basierter Navigation
+- **Peek-Preview System:**
+  - Wrapper: `flex: '0 0 95%'` (jede Karte 95% der Viewport-Breite)
+  - Transform: `translateX(calc(-2.5% - ${selectedIndex * 95}%))` (perfekte Zentrierung)
+  - Resultat: 2.5% Peek links + 95% aktive Karte + 2.5% Peek rechts
+- Pagination Dots mit hero-farbigen Indikatoren
+- Desktop Arrow Buttons (◀ ▶) hidden on mobile
+- Smooth transitions (0.3s cubic-bezier)
+
+**3. HeroAvatar.jsx Integration:**
+- Tab-Navigation komplett entfernt
+- PlayerCarousel als einziger Content im Expanded Panel
+- Neue Props: players, heroes, currentPlayerIndex, currentRound, actionBlockers
+
+**Key Bugfixes während Implementation:**
+1. **Swipe funktionierte nicht visuell:** Transform von 90% auf 100% korrigiert
+2. **Karten zu groß:** Mehrfache Größen-Iterationen (90% → 70% → 85% → 90%)
+3. **Links mehr Abstand als rechts:** Offset-System von padding zu calc-basiertem Transform
+4. **Peek-Preview nicht sichtbar:** `overflow: hidden` → `overflow: visible`
+5. **Asymmetrisches Peek:** `-2.5%` Offset für perfekte Zentrierung
+
+**Resultat:**
+- ✅ Smooth horizontale Swipe-Navigation
+- ✅ 5% Peek-Preview auf beiden Seiten symmetrisch
+- ✅ Mobile-First UX mit Touch-Gesten
+- ✅ Desktop-Kompatibilität mit Arrow Buttons
+- ✅ Alle Player-Informationen vollständig sichtbar
+
+---
+
+### ✅ **Feature 2: Mystisch-Epische Lichtleiste (Vom Licht zur weinroten Finsternis)**
+
+**Aufgabe:** Lichtleiste sollte nicht mehr in Höhe variieren, sondern durch **Farbe** und **Glow-Intensität** die Geschichte erzählen
+
+**Problem:** Alte Leiste zeigte Höhen-Änderung, Farben waren zu grau/dunkel, fehlte mystische Atmosphäre
+
+**Konzept:** "Die erlöschende Hoffnung" - Licht wird dunkler UND bedrohlicher, endet in weinroten Todestönen
+
+**Lösung - Umfang: ~350 Zeilen Code**
+
+**1. Mystisch-epische 6-Stufen Farbpalette:**
+
+| Light % | Phase | Bar Gradient | Glow Farbe | Feeling |
+|---------|-------|--------------|------------|---------|
+| **100-80%** | Strahlende Hoffnung 🌟 | #ffffff → #f8f8f8 | #ffffff | Reines Licht |
+| **80-65%** | Schwindende Hoffnung 🌤️ | #f8f8f8 → #f0e6d2 | #fff5cc | Warmes Dämmerlicht |
+| **65-50%** | Zwielicht 🌆 | #f0e6d2 → #b8a8a8 | #d4a5a5 | Erste Blutnote! |
+| **50-35%** | Erste Blutschatten 🩸 | #b8a8a8 → #6b2c2c | #a84444 | Kräftiges Blutrot |
+| **35-15%** | Todeshauch 💀 | #6b2c2c → #3d0a0a | #8b2020 | Intensives Blutrot |
+| **15-0%** | Letzter Herzschlag ⚰️ | #3d0a0a → #1a0000 | **#cc0000** | Leuchtendes Blutrot! |
+
+**2. Mystischer "Adern"-Gradient (8 Stufen):**
+```javascript
+radial-gradient(
+  ellipse 120% 100% at center,  // Längliche Form wie Adern
+  ${colors.glow}${intensity1} 0%,    // FF - Zentrum pulsiert
+  ${colors.glow}${intensity2} 15%,   // F0 - Starke Ausstrahlung
+  ${colors.glow}${intensity3} 30%,   // D0 - Erste Verästelungen
+  ${colors.glow}${intensity4} 45%,   // A0 - Adern breiten sich aus
+  ${colors.glow}${intensity5} 60%,   // 60 - Schwächere Verzweigungen
+  ${colors.glow}${intensity6} 75%,   // 30 - Letzte Ausläufer
+  ${colors.glow}${intensity7} 88%,   // 10 - Hauch von Farbe
+  transparent 100%                    // Ausklang in Dunkelheit
+)
+```
+
+**3. "Fressende Finsternis" ab 50%:**
+- Progressive dunkle Inner-Shadow: `inset 0 0 ${20-40}px rgba(0,0,0, ${0-0.8})`
+- Macht Dunkelheit physisch spürbar
+- Wächst linear mit sinkendem Licht
+
+**4. Roter "Glüh"-Effekt ab 35%:**
+- Zusätzlicher weinroter Inner-Glow: `inset 0 0 ${10-45}px ${colors.glow}40`
+- Verstärkt bedrohliche Atmosphäre
+- Macht Weinrot noch intensiver
+
+**5. Herzschlag-Animation ab 50%:**
+```javascript
+// Frequenz-Stufen:
+≥50%: strongPulse 2s     // Normaler Puls
+30-50%: heartbeat 1.8s   // Herzschlag beginnt 💗
+20-30%: heartbeat 1.4s   // Schneller 💗💗
+10-20%: heartbeat 1s     // Sehr schnell 💗💗💗
+<10%: heartbeat 0.7s     // PANIK! 💀
+
+// Heartbeat-Pattern (Doppelschlag):
+0%: Scale 1.0, Opacity 0.5
+15%: Scale 1.6, Opacity 1.0  ← Erster Schlag
+30%: Scale 1.1, Opacity 0.6
+45%: Scale 1.8, Opacity 1.0  ← Zweiter Schlag
+60-100%: Zurück zu 1.0
+```
+
+**6. Gradueller Glow-Anstieg (Linear ohne Sprünge):**
+- **Width:** 40px (bei 100%) → 120px (bei 0%) [+0.8px pro 1% Verlust]
+- **Offset:** -15px (bei 100%) → -55px (bei 0%) [-0.4px pro 1% Verlust]
+- **Intensität:** Mathematische Formeln für Hex-Werte (40 → FF)
+
+**7. Box-Shadow 4-Layer Dramatik:**
+```javascript
+boxShadow: `
+  inset ${side} 0 8px rgba(0,0,0,0.6),           // Standard Tiefe
+  ${redGlow}                                      // Ab 35%: Roter Inner-Glow
+  inset 0 0 ${darknessSize}px rgba(0,0,0,...),  // Finsternis ab 50%
+  0 0 40px ${colors.glow}C0,                     // Layer 1
+  0 0 70px ${colors.glow}90,                     // Layer 2
+  0 0 110px ${colors.glow}50,                    // Layer 3
+  0 0 140px ${colors.glow}20                     // Layer 4 - Maximale Ausbreitung
+`
+```
+
+**Resultat:**
+- ✅ Beginnt mit reinem weißen Licht
+- ✅ Ab 50%: Blutnote beginnt + Herzschlag setzt ein
+- ✅ Graduell dunkler UND roter
+- ✅ Endet in **leuchtendem purem Blutrot** (#cc0000), NICHT dunkel/schwarz
+- ✅ Mystisch-epische Atmosphäre: Hoffnung erlischt → Todeshauch → Letzter Herzschlag
+
+**Code-Locations:**
+- VerticalLightMeter.jsx: Lines 22-73 (Farbpalette), 79-114 (Bar-Style), 119-162 (Glow-Style), 222-247 (Heartbeat Animation)
 
 ---
 
