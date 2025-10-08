@@ -4,11 +4,13 @@ import { GameState, Tile } from '../types';
 interface GameBoardProps {
   gameState: GameState;
   onTileClick: (position: string) => void;
+  onHeroClick?: (heroId: string) => void;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
   gameState,
-  onTileClick
+  onTileClick,
+  onHeroClick
 }) => {
   const boardSize = 9;
   const centerPos = Math.floor(boardSize / 2);
@@ -61,22 +63,31 @@ const GameBoard: React.FC<GameBoardProps> = ({
         {/* Heroes on tile */}
         {heroesOnTile.length > 0 && (
           <div className={`absolute inset-0 flex items-center justify-center ${getHeroContainerClass(heroesOnTile.length)}`}>
-            {heroesOnTile.map((hero, index) => (
-              <div
-                key={hero?.id}
-                className={`hero-token font-bold text-white text-shadow ${
-                  gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === hero?.id)
-                    ? 'ring-2 ring-yellow-400'
-                    : ''
-                }`}
-                style={{ 
-                  color: getHeroColor(hero?.element || ''),
-                  textShadow: '1px 1px 2px black'
-                }}
-              >
-                {getHeroSymbol(hero?.element || '')}
-              </div>
-            ))}
+            {heroesOnTile.map((hero) => {
+              const isActivePlayer = gameState.currentPlayerIndex === gameState.players.findIndex(p => p.id === hero?.id);
+
+              return (
+                <div
+                  key={hero?.id}
+                  className={`hero-token font-bold text-white text-shadow ${
+                    isActivePlayer ? 'ring-2 ring-yellow-400 cursor-pointer hover:ring-yellow-300' : ''
+                  }`}
+                  style={{
+                    color: getHeroColor(hero?.element || ''),
+                    textShadow: '1px 1px 2px black'
+                  }}
+                  onClick={(e) => {
+                    // Nur aktiver Spieler ist klickbar
+                    if (isActivePlayer && onHeroClick) {
+                      e.stopPropagation(); // Verhindere Tile-Click
+                      onHeroClick(hero?.id || '');
+                    }
+                  }}
+                >
+                  {getHeroSymbol(hero?.element || '')}
+                </div>
+              );
+            })}
           </div>
         )}
 

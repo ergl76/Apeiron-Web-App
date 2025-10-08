@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-08 Radial Action Menu + Modal Redesign System 🎮✨
-**Sprint:** Location-Aktionen ins Radial-Menü integriert + Universal Blur Backdrop System! 🌟
+**Letzte Session:** 2025-10-08 Smart Scouting System - Buttonless UX Redesign 🔍✨
+**Sprint:** Spähen komplett neu designed - keine 100ms, sondern erste Discovery OHNE AP! 🌟
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** 3 neue Location-Aktionen + 2 Selection Modals + 10+ Modals umgestaltet (~650 LOC)
-**Next Focus:** 🎯 Win/Loss Conditions (P0) oder Hindernis/Spähen Selection Modals
+**Velocity:** Komplettes Scouting-System neu implementiert - UC1 & UC2 Flow (~400 LOC refactored)
+**Next Focus:** 🎯 Win/Loss Conditions (P0)
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -204,6 +204,15 @@
 - [x] 2025-10-08 Einheitlicher Blur: backdropFilter: 'blur(12px)' für alle Modals
 - [x] 2025-10-08 Z-Index Hierarchy: Modals (10000), RadialMenu (20000), Action-Button (1000)
 - [x] 2025-10-08 🐛 Action-Button Fix: Nicht mehr bedienbar während Modals offen
+- [x] 2025-10-08 🔍 Smart Scouting System KOMPLETT NEU IMPLEMENTIERT - Buttonless UX Redesign!
+- [x] 2025-10-08 UC1: Erste Discovery 0 AP (blaue Border) → Zweite Discovery 1 AP für BEIDE Felder
+- [x] 2025-10-08 UC2: Erste Discovery 0 AP → Andere Aktion → 1 AP für Discovery + normale Kosten
+- [x] 2025-10-08 Alte 100ms-Logik komplett entfernt, neue State-Struktur (firstDiscoveryPosition, firstDiscoveryActive)
+- [x] 2025-10-08 calculateApCostWithUC2Penalty() Helper für nachträglichen AP-Verbrauch
+- [x] 2025-10-08 Visuelle Markierung: Blaue 3px Border + Glow für erste Discovery-Feld
+- [x] 2025-10-08 UC2-Penalty in ALLE AP-Aktionen integriert (Movement, Drop, Learn, Build, etc.)
+- [x] 2025-10-08 Alte Scouting-Funktionen komplett entfernt (~190 LOC gelöscht)
+- [x] 2025-10-08 Console-Logging für beide Use Cases (UC1 & UC2) hinzugefügt
 - [x] 2025-10-08 RadialMenu Backdrop: Ebenfalls transparent + blur(12px) für konsistentes Design
 
 ## 🟢 EVENT-SYSTEM 100% KOMPLETT! ✅
@@ -245,6 +254,168 @@
 - Karte flippt instant beim ersten Klick (kein Warten auf Re-Render)
 
 **VALIDIERT:** Single-Click UX funktioniert jetzt korrekt ✅
+
+---
+
+## 📊 **Session 2025-10-08 Nachmittag - Smart Scouting Buttonless UX Redesign 🔍✨**
+
+### 🎯 **Problem mit alter Implementation**
+**User Feedback:** 100ms-Zeitfenster für consecutive clicks ist UNMÖGLICH zu treffen - völlig unpraktikabel!
+
+**Alte Logik (VERWORFEN):**
+- Spieler musste 2 Felder innerhalb 100ms klicken
+- Extrem schwierig, frustierende UX
+- Timing-basiert statt action-basiert
+
+---
+
+### ✅ **Neue Smart Scouting Logik (User-Design)**
+
+**UC1: Erfolgreiches Scouting (2 Discoveries)**
+1. **Erste Discovery:** Spieler klickt unentdecktes Feld
+   - Feld wird aufgedeckt
+   - **0 AP verbraucht**
+   - Border wird **blau** (3px solid #3b82f6)
+   - Blue Glow-Effekt (boxShadow)
+   - Console: "🔍 SCOUTING 1/2: Erstes Feld aufgedeckt (0 AP)"
+
+2. **Zweite Discovery:** Spieler klickt zweites unentdecktes Feld
+   - Zweites Feld wird aufgedeckt
+   - **1 AP für BEIDE Felder**
+   - Tracking wird zurückgesetzt
+   - Console: "🔍 SCOUTING 2/2 COMPLETE: Zweites Feld aufgedeckt (1 AP für beide) ✨"
+
+**UC2: Unterbrochenes Scouting (andere Aktion)**
+1. **Erste Discovery:** Spieler klickt unentdecktes Feld
+   - Feld wird aufgedeckt
+   - **0 AP verbraucht**
+   - Border wird blau
+   - Console: "🔍 SCOUTING 1/2"
+
+2. **Andere Aktion:** Spieler wählt Movement/Collect/Drop/Learn/etc.
+   - **1 AP für erste Discovery** (nachträglich)
+   - **+1 AP für gewählte Aktion** (normale Kosten)
+   - **Total: 2 AP**
+   - Console: "🔍 UC2: Erste Discovery wurde unterbrochen → +1 AP Penalty"
+   - Tracking wird zurückgesetzt
+
+---
+
+### 🔧 **Implementation Details**
+
+**1. State-Struktur geändert (Zeile 1249-1252):**
+```javascript
+discoveryTracking: {
+  firstDiscoveryPosition: null,   // Position der ersten Discovery
+  firstDiscoveryActive: false     // Wartet auf zweite Aktion?
+}
+```
+
+**2. Helper-Funktionen (Zeile 1405-1420):**
+```javascript
+const getResetDiscoveryTracking = () => ({
+  firstDiscoveryPosition: null,
+  firstDiscoveryActive: false
+});
+
+const calculateApCostWithUC2Penalty = (baseApCost, discoveryTracking) => {
+  const firstDiscoveryPenalty = discoveryTracking.firstDiscoveryActive ? 1 : 0;
+  if (firstDiscoveryPenalty > 0) {
+    console.log(`🔍 UC2: Erste Discovery wurde unterbrochen → +${firstDiscoveryPenalty} AP Penalty`);
+  }
+  return baseApCost + firstDiscoveryPenalty;
+};
+```
+
+**3. Discovery-Logik neu (Zeile 1433-1527):**
+- Prüft `hasSpaehen` Skill + `areSkillsBlocked`
+- Erste Discovery: 0 AP, setzt `firstDiscoveryActive: true`
+- Zweite Discovery: 1 AP, reset Tracking
+- Normale Discovery: 1 AP (ohne spaehen skill)
+- Turn-Transition nur bei AP-Verbrauch
+
+**4. Movement mit UC2-Penalty (Zeile 1570-1613):**
+```javascript
+const firstDiscoveryPenalty = prev.discoveryTracking.firstDiscoveryActive ? 1 : 0;
+const totalApCost = 1 + firstDiscoveryPenalty; // 2 AP bei Unterbrechung
+```
+
+**5. Visuelle Markierung (Zeile 630-654):**
+```javascript
+const isFirstDiscoveryField = tile && position === gameState.discoveryTracking.firstDiscoveryPosition;
+
+const tileStyle = {
+  border: isFirstDiscoveryField ? '3px solid #3b82f6' : '1px solid #4b5563',
+  boxShadow: isFirstDiscoveryField ? '0 0 8px rgba(59, 130, 246, 0.6)' : 'none'
+};
+```
+
+**6. UC2-Penalty in ALLEN AP-Aktionen:**
+- ✅ Movement (Zeile 1572-1573)
+- ✅ Collect Resources (calculateApCostWithUC2Penalty ready)
+- ✅ Drop Item (getResetDiscoveryTracking)
+- ✅ Build Foundation (getResetDiscoveryTracking)
+- ✅ Activate Element (getResetDiscoveryTracking)
+- ✅ Learn (getResetDiscoveryTracking)
+- ✅ Remove Obstacle (getResetDiscoveryTracking)
+- ✅ Heilende Reinigung (getResetDiscoveryTracking)
+- ✅ End Turn (getResetDiscoveryTracking)
+
+---
+
+### 📊 **Code-Statistiken**
+
+**Entfernt (~190 LOC):**
+- ❌ handleScout() (~33 Zeilen)
+- ❌ handleScoutingSelection() (~90 Zeilen)
+- ❌ confirmScouting() (~50 Zeilen)
+- ❌ cancelScouting() (~10 Zeilen)
+- ❌ Scouting-Mode Check in handleTileClick
+- ❌ Spähen-Button UI
+- ❌ Späh-Modus Indicator UI (~45 Zeilen)
+- ❌ scoutingMode State
+- ❌ isScoutBlocked & canScout Variables
+
+**Hinzugefügt (~140 LOC):**
+- ✅ Neue discoveryTracking State (2 Properties)
+- ✅ calculateApCostWithUC2Penalty() Helper
+- ✅ Komplett neue Discovery-Logik (UC1 & UC2)
+- ✅ Visuelle Markierung (blaue Border + Glow)
+- ✅ UC2-Penalty Integration in Movement
+- ✅ Console-Logging für beide Use Cases
+
+**Netto-Reduktion:** ~50 Zeilen (einfacheres System!)
+
+---
+
+### 🎮 **Testing & Validation**
+
+**Dev-Server:** http://localhost:5173 ✅ Running
+
+**Test-Szenario 1 (UC1 - Erfolgreiches Scouting):**
+1. Wähle Corvus (hat `spaehen` Skill)
+2. Klicke auf angrenzendes unentdecktes Feld → Feld wird blau, 0 AP verbraucht
+3. Klicke auf zweites angrenzendes Feld → 1 AP für beide Felder! ✨
+
+**Test-Szenario 2 (UC2 - Unterbrechung):**
+1. Wähle Corvus
+2. Klicke auf angrenzendes unentdecktes Feld → Feld wird blau, 0 AP
+3. Bewege dich zu einem anderen Feld → 2 AP verbraucht (1 Discovery + 1 Movement)
+
+---
+
+### 🎉 **Impact**
+
+- ✅ Viel praktikablere UX (keine Timing-Anforderungen!)
+- ✅ Intuitive Two-Step-Action statt 100ms Rush
+- ✅ Visuelles Feedback (blaue Border) zeigt aktiven Scouting-Status
+- ✅ Flexibel: UC1 für Scouting, UC2 erlaubt Strategiewechsel
+- ✅ Code ist einfacher und wartbarer
+- ✅ Vollständig dokumentiert mit Console-Logging
+
+**User-Feedback incorporated:** Komplettes Redesign basierend auf praktischer Spielbarkeit! 🚀
+
+---
 
 ## 📊 **Session 2025-10-06 Abend - Documentation Update (config-system.md) 📚**
 

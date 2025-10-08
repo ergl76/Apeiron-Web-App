@@ -608,7 +608,7 @@ function GameSetup({ onStartGame }) {
 }
 
 // Game Board Component
-function GameBoard({ gameState, onTileClick }) {
+function GameBoard({ gameState, onTileClick, onHeroClick }) {
   const boardSize = 9;
   
   const renderTile = (x, y) => {
@@ -626,16 +626,13 @@ function GameBoard({ gameState, onTileClick }) {
     
     // Check if movable (revealed tile within movement range)
     const isMovable = tile && canMoveToPosition(currentPlayer.position, position, currentPlayer.id, gameState.players);
-    
-    // Check scouting mode states
-    const isScoutingAvailable = gameState.scoutingMode.active && gameState.scoutingMode.availablePositions.includes(position);
-    const isScoutingSelected = gameState.scoutingMode.active && gameState.scoutingMode.selectedPositions.includes(position);
-    
+
+    // Check if this is the first discovery field (Smart Scouting UC1/UC2 indicator)
+    const isFirstDiscoveryField = tile && position === gameState.discoveryTracking.firstDiscoveryPosition;
+
     const tileStyle = {
       position: 'relative',
-      border: isScoutingAvailable && !isScoutingSelected ? '3px solid #3b82f6' : // Blue border for available scouting
-              isScoutingSelected ? '3px solid #3b82f6' : // Blue border for selected
-              '1px solid #4b5563',
+      border: isFirstDiscoveryField ? '3px solid #3b82f6' : '1px solid #4b5563', // Blaue Border für erste Discovery
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -646,15 +643,14 @@ function GameBoard({ gameState, onTileClick }) {
       padding: '2px',
       aspectRatio: '1/1',
       minHeight: '40px',
-      cursor: (isDiscoverable || isMovable || isScoutingAvailable) ? 'pointer' : 'default',
-      background: isKrater ? '#6b7280' : 
+      cursor: (isDiscoverable || isMovable) ? 'pointer' : 'default',
+      background: isKrater ? '#6b7280' :
                   tile ? getTileColor(tile.id) :
-                  isScoutingSelected ? 'rgba(59, 130, 246, 0.3)' : // Blue background for selected
                   isDiscoverable ? '#374151' : '#1f2937',
       outline: isMovable ? '3px solid #10b981' : 'none',
       outlineOffset: isMovable ? '-3px' : '0',
       transition: 'all 0.2s ease-in-out',
-      boxShadow: isScoutingAvailable ? '0 0 8px rgba(59, 130, 246, 0.4)' : 'none'
+      boxShadow: isFirstDiscoveryField ? '0 0 8px rgba(59, 130, 246, 0.6)' : 'none' // Blaues Glow
     };
 
     return (
@@ -793,7 +789,8 @@ function GameBoard({ gameState, onTileClick }) {
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 18px)', // Max 2 columns
             gap: '6px', // More space for pulse animation
-            zIndex: 20
+            zIndex: 20,
+            pointerEvents: 'none' // Container blockiert keine Events - nur einzelne Heroes
           }}>
             {heroesOnTile.map(hero => {
               const isActivePlayer = gameState.currentPlayerIndex === gameState.players.indexOf(hero);
@@ -819,9 +816,20 @@ function GameBoard({ gameState, onTileClick }) {
                     boxShadow: isActivePlayer
                       ? `0 0 8px ${heroColor}, 0 4px 8px rgba(0, 0, 0, 0.4)`
                       : '0 2px 4px rgba(0, 0, 0, 0.3)',
-                    filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))'
+                    filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))',
+                    cursor: isActivePlayer ? 'pointer' : 'default',
+                    pointerEvents: isActivePlayer ? 'auto' : 'none' // Explizit Click-Events erlauben
                   }}
                   title={hero.name}
+                  onClick={(e) => {
+                    console.log('🎯 Hero clicked!', hero.name, 'isActive:', isActivePlayer);
+                    // Nur aktiver Spieler ist klickbar → Öffne Action-Menü
+                    if (isActivePlayer && onHeroClick) {
+                      e.stopPropagation(); // Verhindere Tile-Click
+                      console.log('✅ Opening radial menu for active player:', hero.name);
+                      onHeroClick(hero.id);
+                    }
+                  }}
                 >
                   {hero.name[0]}
                   {/* Inline keyframe animation for hero-specific color */}
@@ -1241,7 +1249,11 @@ function GameScreen({ gameData, onNewGame }) {
       isTransitioning: false,
       currentEvent: null,
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
-      scoutingMode: { active: false, availablePositions: [], selectedPositions: [], maxSelections: 2 },
+      // Smart Scouting: Erste Discovery ohne AP, zweite Aktion triggert AP-Verbrauch
+      discoveryTracking: {
+        firstDiscoveryPosition: null,   // Position der ersten Discovery (ohne AP-Verbrauch)
+        firstDiscoveryActive: false     // Ist erste Discovery aktiv (wartet auf zweite Aktion)?
+      },
       tileDeck: completeDeck.sort(() => Math.random() - 0.5),
       actionBlockers: [],
       isEventTriggering: false,
@@ -1389,6 +1401,28 @@ function GameScreen({ gameData, onNewGame }) {
   }, [gameState.roundCompleted]); // Only depend on roundCompleted flag
   */
 
+  // ========================================
+  // HELPER: Reset Discovery Tracking
+  // ========================================
+  // Wird aufgerufen wenn eine nicht-Discovery-Aktion durchgeführt wird
+  // → Unterbricht Scouting-Chain
+  const getResetDiscoveryTracking = () => ({
+    firstDiscoveryPosition: null,
+    firstDiscoveryActive: false
+  });
+
+  // ========================================
+  // HELPER: Calculate AP Cost with UC2 penalty
+  // ========================================
+  // Wenn erste Discovery aktiv war, muss 1 AP nachträglich verbraucht werden
+  const calculateApCostWithUC2Penalty = (baseApCost, discoveryTracking) => {
+    const firstDiscoveryPenalty = discoveryTracking.firstDiscoveryActive ? 1 : 0;
+    if (firstDiscoveryPenalty > 0) {
+      console.log(`🔍 UC2: Erste Discovery wurde unterbrochen → +${firstDiscoveryPenalty} AP Penalty`);
+    }
+    return baseApCost + firstDiscoveryPenalty;
+  };
+
   const handleTileClick = (position) => {
     // Prevent actions if current player should skip turn
     if (shouldPlayerSkipTurn(gameState.players[gameState.currentPlayerIndex], gameState.round)) {
@@ -1396,13 +1430,7 @@ function GameScreen({ gameData, onNewGame }) {
       return;
     }
 
-    // Handle scouting mode selection
-    if (gameState.scoutingMode.active) {
-      if (gameState.scoutingMode.availablePositions.includes(position)) {
-        handleScoutingSelection(position);
-      }
-      return;
-    }
+    // Scouting mode check REMOVED - smart scouting via consecutive discovery clicks
 
     const tile = gameState.board[position];
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
@@ -1418,7 +1446,19 @@ function GameScreen({ gameData, onNewGame }) {
       blocker.expiresInRound > gameState.round
     );
 
-    if (!tile && gameState.tileDeck.length > 0 && currentPlayer.ap > 0 && isAdjacentToPlayer && !isDiscoverBlocked) {
+    if (!tile && gameState.tileDeck.length > 0 && isAdjacentToPlayer && !isDiscoverBlocked) {
+      // ========================================
+      // SMART SCOUTING: Erste Discovery OHNE AP, zweite Aktion MIT AP
+      // ========================================
+      // UC1: Spieler mit "spaehen" skill klickt erstes Feld → KEIN AP, blaue Border
+      //      Klickt zweites Feld → 1 AP für BEIDE Felder, Reset
+      // UC2: Spieler mit "spaehen" skill klickt erstes Feld → KEIN AP, blaue Border
+      //      Wählt andere Aktion → 1 AP für erstes Feld + normale Aktion, Reset
+
+      const hasSpaehen = currentPlayer.learnedSkills.includes('spaehen');
+      const areSkillsBlocked = currentPlayer.effects?.some(e => e.type === 'block_skills' && e.expiresInRound > gameState.round);
+      const isFirstDiscovery = gameState.discoveryTracking.firstDiscoveryActive;
+
       // Discover new tile
       setGameState(prev => {
         // Draw tile from deck
@@ -1426,29 +1466,56 @@ function GameScreen({ gameData, onNewGame }) {
         const newTileId = newTileDeck.pop();
         const [x, y] = position.split(',').map(Number);
 
-        const newPlayers = prev.players.map((player, index) =>
-          index === prev.currentPlayerIndex
-            ? { ...player, ap: player.ap - 1 }
-            : player
-        );
+        // *** SMART SCOUTING LOGIC ***
+        let apCost = 0;
+        let newDiscoveryTracking;
+        let newPlayers;
 
-        // Handle automatic turn transition
-        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads, completedTurn } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
+        if (hasSpaehen && !areSkillsBlocked && !isFirstDiscovery && currentPlayer.ap > 0) {
+          // **UC1/UC2 START:** Erste Discovery - KEIN AP-Verbrauch, aktiviere Tracking
+          apCost = 0;
+          newPlayers = prev.players; // Keine AP-Änderung
+          newDiscoveryTracking = {
+            firstDiscoveryPosition: position,
+            firstDiscoveryActive: true
+          };
+          console.log(`🔍 SCOUTING 1/2: Erstes Feld aufgedeckt (0 AP). Klicke zweites Feld oder wähle andere Aktion (${newTileId} at ${position}). Deck: ${newTileDeck.length}`);
+        } else if (hasSpaehen && !areSkillsBlocked && isFirstDiscovery && currentPlayer.ap > 0) {
+          // **UC1 COMPLETE:** Zweite Discovery - 1 AP für BEIDE Felder
+          apCost = 1;
+          newPlayers = prev.players.map((player, index) =>
+            index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
+          );
+          newDiscoveryTracking = getResetDiscoveryTracking();
+          console.log(`🔍 SCOUTING 2/2 COMPLETE: Zweites Feld aufgedeckt (1 AP für beide) ✨ (${newTileId} at ${position}). Deck: ${newTileDeck.length}`);
+        } else {
+          // Normale Discovery (kein spaehen skill ODER skills blockiert)
+          apCost = currentPlayer.ap > 0 ? 1 : 0;
+          newPlayers = prev.players.map((player, index) =>
+            index === prev.currentPlayerIndex ? { ...player, ap: Math.max(0, player.ap - apCost) } : player
+          );
+          newDiscoveryTracking = getResetDiscoveryTracking();
+          console.log(`📝 handleTileClick DISCOVERED: ${newTileId} at ${position}. Deck: ${newTileDeck.length}. AP cost: ${apCost}`);
+        }
+
+        // Handle automatic turn transition (nur wenn AP verbraucht wurde)
+        const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads, completedTurn } =
+          apCost > 0 ? handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev)
+                      : { nextPlayerIndex: prev.currentPlayerIndex, newRound: prev.round, actionBlockers: prev.actionBlockers,
+                          lightDecrement: 0, roundCompleted: false, updatedPlayers: newPlayers, darknessSpreads: [], completedTurn: false };
 
         // Apply darkness spread if needed (can be multiple positions)
         const updatedDarkTiles = darknessSpreads.length > 0
           ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
           : prev.herzDerFinsternis.darkTiles || [];
 
-        console.log(`📝 handleTileClick DISCOVERED: ${newTileId} at ${position}. Deck size: ${newTileDeck.length}. Round: ${newRound}`);
-
         // Update turn statistics (Phase-separated)
-        const newStats = calculateStatsUpdate(prev, completedTurn, 1);
+        const newStats = apCost > 0 ? calculateStatsUpdate(prev, completedTurn, apCost) : {};
 
         return {
           ...prev,
-          totalMoves: prev.totalMoves + 1, // Track move (DEPRECATED - use totalTurns)
-          totalApSpent: prev.totalApSpent + 1, // Track AP (discover costs 1 AP)
+          totalMoves: prev.totalMoves + 1,
+          totalApSpent: prev.totalApSpent + apCost,
           ...newStats,
           board: {
             ...prev.board,
@@ -1470,7 +1537,8 @@ function GameScreen({ gameData, onNewGame }) {
           round: newRound,
           actionBlockers: actionBlockers,
           light: Math.max(0, prev.light - lightDecrement),
-          roundCompleted: roundCompleted || false
+          roundCompleted: roundCompleted || false,
+          discoveryTracking: newDiscoveryTracking
         };
       });
     } else if (tile && currentPlayer.ap > 0 && canMoveToPosition(currentPlayer.position, position, currentPlayer.id, gameState.players)) {
@@ -1516,9 +1584,17 @@ function GameScreen({ gameData, onNewGame }) {
 
       // Move to tile (only if within allowed movement range)
       setGameState(prev => {
-        const newPlayers = prev.players.map((player, index) => 
-          index === prev.currentPlayerIndex 
-            ? { ...player, position, ap: player.ap - 1 }
+        // **UC2:** Wenn erste Discovery aktiv war, verbrauche 1 AP nachträglich
+        const firstDiscoveryPenalty = prev.discoveryTracking.firstDiscoveryActive ? 1 : 0;
+        const totalApCost = 1 + firstDiscoveryPenalty;
+
+        if (firstDiscoveryPenalty > 0) {
+          console.log(`🔍 UC2: Erste Discovery wurde unterbrochen → ${firstDiscoveryPenalty} AP nachträglich verbraucht`);
+        }
+
+        const newPlayers = prev.players.map((player, index) =>
+          index === prev.currentPlayerIndex
+            ? { ...player, position, ap: player.ap - totalApCost }
             : player
         );
 
@@ -1531,12 +1607,12 @@ function GameScreen({ gameData, onNewGame }) {
           : prev.herzDerFinsternis.darkTiles || [];
 
         // Update turn statistics (Phase-separated)
-        const newStats = calculateStatsUpdate(prev, completedTurn, 1);
+        const newStats = calculateStatsUpdate(prev, completedTurn, totalApCost);
 
         return {
           ...prev,
-          totalMoves: prev.totalMoves + 1, // Track move (DEPRECATED - use totalTurns)
-          totalApSpent: prev.totalApSpent + 1, // Track AP (movement costs 1 AP)
+          totalMoves: prev.totalMoves + 1,
+          totalApSpent: prev.totalApSpent + totalApCost,
           ...newStats,
           players: updatedPlayers || newPlayers,
           currentPlayerIndex: nextPlayerIndex,
@@ -1547,7 +1623,8 @@ function GameScreen({ gameData, onNewGame }) {
           herzDerFinsternis: {
             ...prev.herzDerFinsternis,
             darkTiles: updatedDarkTiles
-          }
+          },
+          discoveryTracking: getResetDiscoveryTracking() // Movement unterbricht Scouting (UC2)
         };
       });
     }
@@ -1627,7 +1704,8 @@ function GameScreen({ gameData, onNewGame }) {
         herzDerFinsternis: {
           ...prev.herzDerFinsternis,
           darkTiles: updatedDarkTiles
-        }
+        },
+        discoveryTracking: getResetDiscoveryTracking() // Drop unterbricht Scouting
       };
     });
   };
@@ -1769,7 +1847,8 @@ function GameScreen({ gameData, onNewGame }) {
         herzDerFinsternis: {
           ...prev.herzDerFinsternis,
           darkTiles: updatedDarkTiles
-        }
+        },
+        discoveryTracking: getResetDiscoveryTracking() // Collect unterbricht Scouting
       };
     });
   };
@@ -3220,7 +3299,8 @@ function GameScreen({ gameData, onNewGame }) {
           foundationType: foundationType,
           count: foundationCount,
           lightBonus: lightBonus
-        }
+        },
+        discoveryTracking: getResetDiscoveryTracking() // Foundation building unterbricht Scouting
       };
     });
   };
@@ -3521,7 +3601,8 @@ function GameScreen({ gameData, onNewGame }) {
             darknessReduction: darknessReduction,
             fieldsRemoved: darknessReduction > 0 ? Math.min(darknessReduction, (prev.herzDerFinsternis.darkTiles || []).length) : 0
           }
-        }
+        },
+        discoveryTracking: getResetDiscoveryTracking() // Element activation unterbricht Scouting
       };
     });
   };
@@ -3813,195 +3894,11 @@ function GameScreen({ gameData, onNewGame }) {
     });
   };
 
-  const handleScout = () => {
-    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-
-    const isScoutBlocked = (gameState.actionBlockers || []).some(blocker =>
-      (blocker.action === 'spaehen' || blocker.action === 'discover_and_scout') &&
-      (blocker.target === 'all_players' || blocker.target === currentPlayer.id) &&
-      blocker.expiresInRound > gameState.round
-    );
-
-    if (!currentPlayer.learnedSkills.includes('spaehen') || currentPlayer.ap < 1 || isScoutBlocked) return;
-
-    if (gameState.tileDeck.length === 0) return;
-
-    const [x, y] = currentPlayer.position.split(',').map(Number);
-    const adjacentPositions = [
-      [x-1, y], [x+1, y], [x, y-1], [x, y+1]
-    ].filter(([nx, ny]) => nx >= 0 && nx < 9 && ny >= 0 && ny < 9)
-     .map(([nx, ny]) => `${nx},${ny}`)
-     .filter(pos => !gameState.board[pos]);
-
-    if (adjacentPositions.length === 0) return;
-
-    // Enter scouting mode
-    setGameState(prev => ({
-      ...prev,
-      scoutingMode: {
-        active: true,
-        availablePositions: adjacentPositions,
-        selectedPositions: [],
-        maxSelections: Math.min(2, adjacentPositions.length, prev.tileDeck.length)
-      }
-    }));
-  };
-
-  const handleScoutingSelection = (position) => {
-    if (!gameState.scoutingMode.active) return;
-    
-    setGameState(prev => {
-      const { scoutingMode } = prev;
-      const isSelected = scoutingMode.selectedPositions.includes(position);
-      
-      let newSelectedPositions;
-      if (isSelected) {
-        // Deselect
-        newSelectedPositions = scoutingMode.selectedPositions.filter(pos => pos !== position);
-        return {
-          ...prev,
-          scoutingMode: {
-            ...scoutingMode,
-            selectedPositions: newSelectedPositions
-          }
-        };
-      } else if (scoutingMode.selectedPositions.length < scoutingMode.maxSelections) {
-        // Select
-        newSelectedPositions = [...scoutingMode.selectedPositions, position];
-        
-        // Auto-reveal if 2 positions selected
-        if (newSelectedPositions.length === 2 || newSelectedPositions.length === scoutingMode.maxSelections) {
-          // Immediately reveal tiles
-          const newTileDeck = [...prev.tileDeck];
-          const newBoard = { ...prev.board };
-          
-          newSelectedPositions.forEach(pos => {
-            const newTileId = newTileDeck.pop();
-            const [px, py] = pos.split(',').map(Number);
-            newBoard[pos] = {
-              id: newTileId,
-              x: px,
-              y: py,
-              resources: getTileResources(newTileId),
-              revealed: true
-            };
-          });
-
-          const newPlayers = prev.players.map((player, index) => 
-            index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
-          );
-
-          // Handle automatic turn transition with the correct signature
-          const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
-
-          // Apply darkness spread if needed (can be multiple positions)
-          const updatedDarkTiles = darknessSpreads.length > 0
-            ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
-            : prev.herzDerFinsternis.darkTiles || [];
-
-          console.log(`🔍 SCOUTING COMPLETE: Revealed ${newSelectedPositions.length} tiles. Deck size: ${newTileDeck.length}`);
-
-          return {
-            ...prev,
-            board: newBoard,
-            players: updatedPlayers || newPlayers,
-            tileDeck: newTileDeck,
-            currentPlayerIndex: nextPlayerIndex,
-            round: newRound,
-            actionBlockers: actionBlockers,
-            light: Math.max(0, prev.light - lightDecrement),
-            scoutingMode: { // Reset scouting mode
-              active: false,
-              availablePositions: [],
-              selectedPositions: [],
-              maxSelections: 2
-            },
-            roundCompleted: roundCompleted || false,
-            herzDerFinsternis: {
-              ...prev.herzDerFinsternis,
-              darkTiles: updatedDarkTiles
-            }
-          };
-        }
-        
-        return {
-          ...prev,
-          scoutingMode: {
-            ...scoutingMode,
-            selectedPositions: newSelectedPositions
-          }
-        };
-      } else {
-        // Max selections reached
-        return prev;
-      }
-    });
-  };
-
-  const confirmScouting = () => {
-    if (!gameState.scoutingMode.active || gameState.scoutingMode.selectedPositions.length === 0) return;
-
-    setGameState(prev => {
-      const newBoard = { ...prev.board };
-      const tilesToReveal = prev.scoutingMode.selectedPositions;
-      
-      tilesToReveal.forEach(position => {
-        const newTileId = prev.tileDeck.pop();
-        const [px, py] = position.split(',').map(Number);
-        newBoard[position] = {
-          id: newTileId,
-          x: px,
-          y: py,
-          resources: getTileResources(newTileId)
-        };
-      });
-
-      const newPlayers = prev.players.map((player, index) => 
-        index === prev.currentPlayerIndex ? { ...player, ap: player.ap - 1 } : player
-      );
-
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
-
-      // Apply darkness spread if needed (can be multiple positions)
-      const updatedDarkTiles = darknessSpreads.length > 0
-        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
-        : prev.herzDerFinsternis.darkTiles || [];
-
-      return {
-        ...prev,
-        board: newBoard,
-        players: updatedPlayers || newPlayers,
-        tileDeck: prev.tileDeck, // tileDeck is already modified by .pop()
-        currentPlayerIndex: nextPlayerIndex,
-        round: newRound,
-        actionBlockers: actionBlockers,
-        light: Math.max(0, prev.light - lightDecrement),
-        scoutingMode: { // Reset scouting mode
-          active: false,
-          availablePositions: [],
-          selectedPositions: [],
-          maxSelections: 2
-        },
-        roundCompleted: roundCompleted || false,
-        herzDerFinsternis: {
-          ...prev.herzDerFinsternis,
-          darkTiles: updatedDarkTiles
-        }
-      };
-    });
-  };
-
-  const cancelScouting = () => {
-    setGameState(prev => ({
-      ...prev,
-      scoutingMode: {
-        active: false,
-        availablePositions: [],
-        selectedPositions: [],
-        maxSelections: 2
-      }
-    }));
-  };
+  // ========================================
+  // OLD SCOUTING FUNCTIONS REMOVED
+  // ========================================
+  // handleScout, handleScoutingSelection, confirmScouting, cancelScouting
+  // wurden entfernt - Smart Scouting via consecutive discovery clicks implementiert
 
   // Removed handleFastMove function - integrated into normal movement
   const handleFastMove_OLD = (direction) => {
@@ -4217,7 +4114,8 @@ function GameScreen({ gameData, onNewGame }) {
         herzDerFinsternis: {
           ...prev.herzDerFinsternis,
           darkTiles: updatedDarkTiles
-        }
+        },
+        discoveryTracking: getResetDiscoveryTracking() // Learn unterbricht Scouting
       };
     });
   };
@@ -4476,7 +4374,8 @@ function GameScreen({ gameData, onNewGame }) {
           herzDerFinsternis: {
             ...prev.herzDerFinsternis,
             darkTiles: updatedDarkTiles
-          }
+          },
+          discoveryTracking: getResetDiscoveryTracking() // Remove obstacle unterbricht Scouting
         };
       });
     }
@@ -4594,7 +4493,8 @@ function GameScreen({ gameData, onNewGame }) {
           herzDerFinsternis: {
             ...prev.herzDerFinsternis,
             darkTiles: updatedDarkTiles
-          }
+          },
+          discoveryTracking: getResetDiscoveryTracking() // Heilende Reinigung unterbricht Scouting
         };
       });
     } else {
@@ -4708,7 +4608,8 @@ function GameScreen({ gameData, onNewGame }) {
         herzDerFinsternis: {
           ...prev.herzDerFinsternis,
           darkTiles: updatedDarkTiles
-        }
+        },
+        discoveryTracking: getResetDiscoveryTracking() // Heilende Reinigung (Effekte) unterbricht Scouting
       };
     });
   };
@@ -4884,15 +4785,7 @@ function GameScreen({ gameData, onNewGame }) {
                               availableFoundationBlueprints.length > 0 &&
                               currentPlayer.ap > 0 &&
                               !areSkillsBlocked;    
-    const isScoutBlocked = (gameState.actionBlockers || []).some(blocker =>
-      (blocker.action === 'spaehen' || blocker.action === 'discover_and_scout') &&
-      (blocker.target === 'all_players' || blocker.target === currentPlayer.id) &&
-      blocker.expiresInRound > gameState.round);
-    const canScout = currentPlayer.learnedSkills.includes('spaehen') &&
-                    currentPlayer.ap > 0 &&
-                    gameState.tileDeck.length > 0 &&
-                    !isScoutBlocked &&
-                    !areSkillsBlocked;
+    // isScoutBlocked & canScout REMOVED - Smart Scouting via consecutive discovery clicks
     const canLearn = (currentPlayer.inventory.some(item => item.startsWith('bauplan_')) ||
                      currentPlayer.inventory.some(item => item.startsWith('artefakt_'))) &&
                     currentPlayer.ap > 0 &&
@@ -4974,52 +4867,7 @@ function GameScreen({ gameData, onNewGame }) {
       });
     }
 
-    // Show simplified scouting mode UI when active
-    if (gameState.scoutingMode.active) {
-      const selectedCount = gameState.scoutingMode.selectedPositions.length;
-      
-      return (
-        <div style={{ display: 'grid', gap: '0.5rem' }}>
-          <div style={{ 
-            textAlign: 'center', 
-            color: '#3b82f6', 
-            fontWeight: 'bold',
-            fontSize: '0.75rem',
-            padding: '8px',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            borderRadius: '4px',
-            border: '1px solid #3b82f6'
-          }}>
-            👁️ Späh-Modus aktiv
-          </div>
-          <div style={{ 
-            textAlign: 'center', 
-            color: '#9ca3af',
-            fontSize: '0.7rem'
-          }}>
-            Klicke auf {gameState.scoutingMode.maxSelections - selectedCount} {gameState.scoutingMode.maxSelections - selectedCount === 1 ? 'Feld' : 'Felder'} zum Aufdecken
-            {selectedCount > 0 && <div style={{ color: '#3b82f6', fontWeight: 'bold' }}>
-              {selectedCount}/{gameState.scoutingMode.maxSelections} ausgewählt
-            </div>}
-          </div>
-          <button 
-            onClick={cancelScouting}
-            style={{ 
-              backgroundColor: '#ef4444', 
-              color: 'white', 
-              padding: '8px', 
-              borderRadius: '4px', 
-              border: 'none', 
-              fontWeight: 'bold', 
-              cursor: 'pointer',
-              fontSize: '0.75rem'
-            }}
-          >
-            ❌ Abbrechen
-          </button>
-        </div>
-      );
-    }
+    // Späh-Modus UI REMOVED - Smart Scouting via consecutive discovery clicks
 
     return (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -5201,28 +5049,7 @@ function GameScreen({ gameData, onNewGame }) {
           </div>
         )}
 
-        {currentPlayer.learnedSkills.includes('spaehen') && (
-          <button 
-            onClick={handleScout}
-            disabled={!canScout}
-            style={{ 
-              backgroundColor: canScout ? '#3b82f6' : '#4b5563',
-              color: canScout ? 'white' : '#9ca3af',
-              padding: '10px 12px', 
-              borderRadius: '8px', 
-              border: canScout ? '2px solid #60a5fa' : '2px solid transparent',
-              fontWeight: 'bold', 
-              cursor: canScout ? 'pointer' : 'not-allowed',
-              fontSize: '0.8rem',
-              transition: 'all 0.2s ease-in-out',
-              boxShadow: canScout ? '0 2px 4px rgba(59, 130, 246, 0.3)' : 'none',
-              transform: canScout ? 'translateY(0)' : 'translateY(1px)'
-            }}
-            title={canScout ? 'Spähe angrenzende Felder aus' : 'Benötigt 1 AP und verfügbare Karten'}
-          >
-            👁️ Spähen (1 AP)
-          </button>
-        )}
+        {/* Spähen button REMOVED - Smart Scouting via consecutive discovery clicks */}
 
         {/* Schnell bewegen info - Show if player has the skill */}
         {currentPlayer.learnedSkills.includes('schnell_bewegen') && (
@@ -5505,7 +5332,8 @@ function GameScreen({ gameData, onNewGame }) {
         round: newRound,
         actionBlockers: actionBlockers,
         light: Math.max(0, prev.light - lightDecrement),
-        roundCompleted: roundCompleted || false // Make sure to pass the flag
+        roundCompleted: roundCompleted || false, // Make sure to pass the flag
+        discoveryTracking: getResetDiscoveryTracking() // End turn unterbricht Scouting
       };
     });
   };
@@ -8152,12 +7980,20 @@ function GameScreen({ gameData, onNewGame }) {
             <GameBoard
               gameState={gameState}
               onTileClick={handleTileClick}
+              onHeroClick={(heroId) => {
+                console.log('🎮 onHeroClick called with heroId:', heroId);
+                setShowRadialMenu(true);
+              }}
             />
 
-            {/* Action Button - zentriert unter Spielfeld */}
+            {/* Action Button - FIXED position unten-mitte */}
             <button
               onClick={() => setShowRadialMenu(true)}
               style={{
+                position: 'fixed',
+                bottom: isMobile ? '16px' : '24px',
+                left: '50%',
+                transform: 'translateX(-50%)',
                 width: isMobile ? '56px' : '64px',
                 height: isMobile ? '56px' : '64px',
                 borderRadius: '50%',
@@ -8176,11 +8012,11 @@ function GameScreen({ gameData, onNewGame }) {
                 animation: 'pulseActionButton 2s ease-in-out infinite'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.transform = 'translateX(-50%) scale(1.1)';
                 e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.8), 0 0 30px rgba(139, 92, 246, 0.6)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.4)';
               }}
               title="Aktionen öffnen"

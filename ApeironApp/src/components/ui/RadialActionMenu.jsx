@@ -218,8 +218,62 @@ const RadialActionMenu = ({ currentPlayer, gameState, handlers, onClose, adjacen
   };
 
   const handleActionClick = (action) => {
+    // Speichere AP-Stand VOR der Aktion
+    const apBefore = currentPlayer.ap;
+
+    // Führe Aktion aus
     action.handler();
-    // Menu bleibt geöffnet - User kann mehrere Aktionen ausführen
+
+    // ========================================
+    // PRÜFE OB MENÜ GESCHLOSSEN WERDEN SOLL
+    // ========================================
+    // a) Wenn Aktion ein Modal/Submenü öffnet (buildFoundation, activateElement, drop mit mehreren Items, learn mit mehreren Items)
+    // b) Wenn Aktion ein modales Ereignis triggert (z.B. Tor der Weisheit, Success-Modal)
+    // c) Wenn letzter AP verbraucht wurde
+
+    // 1. Aktionen die IMMER Modals öffnen → Menü direkt schließen
+    if (['buildFoundation', 'activateElement', 'passGate'].includes(action.id)) {
+      onClose();
+      return;
+    }
+
+    // 2. "Zug beenden" → Menü immer schließen (triggert oft Events am Rundenende)
+    if (action.id === 'endTurn') {
+      onClose();
+      return;
+    }
+
+    // 3. Drop/Learn: Prüfe ob Auswahl-Modal geöffnet wird
+    if (action.id === 'drop' && currentPlayer.inventory.length > 1) {
+      onClose(); // Mehrere Items → Auswahl-Modal wird geöffnet
+      return;
+    }
+
+    if (action.id === 'learn') {
+      const blueprints = currentPlayer.inventory.filter(item => item.startsWith('bauplan_'));
+      const artifacts = currentPlayer.inventory.filter(item => item.startsWith('artefakt_'));
+      if ((blueprints.length + artifacts.length) > 1) {
+        onClose(); // Mehrere lernbare Items → Auswahl-Modal wird geöffnet
+        return;
+      }
+    }
+
+    // 4. AP-verbrauchende Aktionen: Prüfe ob letzter AP verbraucht wurde
+    // → Wenn ja, schließe Menü (Player hat keine Aktionen mehr möglich)
+    if (['pickup', 'drop', 'learn', 'teach', 'cleanse', 'removeObstacle'].includes(action.id)) {
+      // Diese Aktionen kosten 1 AP
+      if (apBefore === 1) {
+        // Letzter AP wurde verbraucht → Menü schließen
+        // (Delay damit State-Update durchläuft & ggf. Events getriggert werden)
+        setTimeout(() => {
+          onClose();
+        }, 50);
+        return;
+      }
+    }
+
+    // 5. Für alle anderen Fälle: Menü bleibt offen
+    // → Spieler kann weitere Aktionen ausführen (z.B. mehrmals aufnehmen)
   };
 
   return (
