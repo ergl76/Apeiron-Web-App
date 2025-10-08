@@ -2,20 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import eventsConfig from './config/events.json';
 import tilesConfig from './config/tiles.json';
 import gameRules from './config/gameRules.json';
-import LightMeter from './components/ui/LightMeter';
 import VerticalLightMeter from './components/ui/VerticalLightMeter';
 import HeroAvatar from './components/ui/HeroAvatar';
-import ActivePlayerCard from './components/ui/ActivePlayerCard';
 import TowerDisplay from './components/ui/TowerDisplay';
 import ActionPanel from './components/ui/ActionPanel';
 import UnifiedModal from './components/ui/UnifiedModal';
 import RadialActionMenu from './components/ui/RadialActionMenu';
+import TowerStatusModal from './components/ui/TowerStatusModal';
 
 // MODULE-LEVEL LOCKS: Prevent React StrictMode from executing handlers twice
 // These MUST be outside the component to work across simultaneous calls
 let currentlyApplyingEventId = null;
 let currentlyConfirmingCardDraw = false;
 let phaseTransitionInProgress = false;
+let isGameActive = false; // Track if game is running (for browser navigation protection)
+let obstacleRemovalHandler = null; // Handler for obstacle removal (set in component)
 
 // Konter-Informationen aus ereigniskarten.md
 const eventCounters = {
@@ -863,40 +864,129 @@ function GameBoard({ gameState, onTileClick, onHeroClick }) {
             filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
             zIndex: 8 // Below items but above darkness
           }}>
-            {tile.obstacles.map((obstacle, idx) => (
-              <div key={idx}>
-                {obstacle === 'geroell' ? '🪨' : obstacle === 'dornenwald' ? '🌿' : obstacle === 'ueberflutung' ? '🌊' : '🚧'}
-              </div>
-            ))}
+            {tile.obstacles.map((obstacle, idx) => {
+              // Check if current player is ADJACENT (not on same tile)
+              const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+              const [tileX, tileY] = position.split(',').map(Number);
+              const [playerX, playerY] = currentPlayer.position.split(',').map(Number);
+              const manhattanDist = Math.abs(tileX - playerX) + Math.abs(tileY - playerY);
+              const isAdjacent = manhattanDist === 1;
+
+              // Check if player has required skill and AP
+              const skillMap = {
+                'geroell': 'geroell_beseitigen',
+                'dornenwald': 'dornen_entfernen',
+                'ueberflutung': 'fluss_freimachen'
+              };
+              const requiredSkill = skillMap[obstacle];
+              const hasSkill = currentPlayer.learnedSkills.includes(requiredSkill);
+              const hasAp = currentPlayer.ap >= 1;
+              const canRemove = isAdjacent && hasSkill && hasAp;
+
+              return (
+                <div
+                  key={idx}
+                  onClick={(e) => {
+                    if (canRemove) {
+                      e.stopPropagation();
+                      // Call module-level handler (set after component definition)
+                      if (obstacleRemovalHandler) {
+                        obstacleRemovalHandler(position, obstacle);
+                      }
+                    }
+                  }}
+                  style={{
+                    cursor: canRemove ? 'pointer' : 'default',
+                    opacity: canRemove ? 1 : 0.7,
+                    transition: 'transform 0.2s ease, opacity 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (canRemove) {
+                      e.currentTarget.style.transform = 'scale(1.2)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  {obstacle === 'geroell' ? '🪨' : obstacle === 'dornenwald' ? '🌿' : obstacle === 'ueberflutung' ? '🌊' : '🚧'}
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* Darkness Overlay (Phase 2) */}
-        {gameState.herzDerFinsternis.darkTiles?.includes(position) && (
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'radial-gradient(circle, rgba(0, 0, 0, 0.7) 0%, rgba(20, 0, 0, 0.85) 50%, rgba(0, 0, 0, 0.95) 100%)',
-            border: '2px solid #7f1d1d',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 5, // Below items (z-index: 10) but above background
-            animation: 'pulseDarkness 3s ease-in-out infinite',
-            pointerEvents: 'none' // Allow clicks to pass through to underlying tile
-          }}>
-            <div style={{
-              fontSize: '32px',
-              filter: 'drop-shadow(0 0 8px rgba(220, 38, 38, 0.8))',
-              opacity: 0.9
-            }}>
-              ☠️
+        {/* Darkness Overlay (Phase 2) - Clickable for Heilende Reinigung */}
+        {gameState.herzDerFinsternis.darkTiles?.includes(position) && (() => {
+          // Check if current player is ADJACENT and has "reinigen" skill
+          const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+          const [tileX, tileY] = position.split(',').map(Number);
+          const [playerX, playerY] = currentPlayer.position.split(',').map(Number);
+          const manhattanDist = Math.abs(tileX - playerX) + Math.abs(tileY - playerY);
+          const isAdjacent = manhattanDist === 1;
+          const hasSkill = currentPlayer.learnedSkills.includes('reinigen');
+          const hasAp = currentPlayer.ap >= 1;
+          const canCleanse = isAdjacent && hasSkill && hasAp;
+
+          return (
+            <div
+              onClick={(e) => {
+                if (canCleanse) {
+                  e.stopPropagation();
+                  // Call handleHeilendeReinigung directly
+                  handleHeilendeReinigung(position);
+                }
+              }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'radial-gradient(circle, rgba(0, 0, 0, 0.7) 0%, rgba(20, 0, 0, 0.85) 50%, rgba(0, 0, 0, 0.95) 100%)',
+                border: '2px solid #7f1d1d',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 5, // Below items (z-index: 10) but above background
+                animation: 'pulseDarkness 3s ease-in-out infinite',
+                cursor: canCleanse ? 'pointer' : 'default',
+                opacity: canCleanse ? 1 : 0.9,
+                transition: 'opacity 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (canCleanse) {
+                  e.currentTarget.style.opacity = '1';
+                  e.currentTarget.style.borderColor = '#06b6d4'; // Cyan für Heilende Reinigung
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = canCleanse ? '1' : '0.9';
+                e.currentTarget.style.borderColor = '#7f1d1d';
+              }}
+            >
+              <div style={{
+                fontSize: '32px',
+                filter: 'drop-shadow(0 0 8px rgba(220, 38, 38, 0.8))',
+                opacity: 0.9,
+                pointerEvents: 'none'
+              }}>
+                ☠️
+              </div>
+              {canCleanse && (
+                <div style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  fontSize: '16px',
+                  pointerEvents: 'none'
+                }}>
+                  💧
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Tor der Weisheit Marker */}
         {gameState.torDerWeisheit.position === position && (
@@ -1149,11 +1239,129 @@ function GameScreen({ gameData, onNewGame }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Browser Navigation Protection: Prevent accidental refresh/back during active game
+  useEffect(() => {
+    // Mark game as active when component mounts
+    isGameActive = true;
+
+    // Desktop: Prevent refresh (F5, Ctrl+R, Cmd+R)
+    const handleBeforeUnload = (e) => {
+      if (isGameActive) {
+        e.preventDefault();
+        // Chrome requires returnValue to be set
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    // Desktop/Mobile: Prevent browser back button
+    const handlePopState = () => {
+      if (isGameActive) {
+        // Push current state again to prevent navigation
+        window.history.pushState(null, '', window.location.href);
+        console.log('🔒 Browser-Zurück blockiert - Spiel läuft');
+      }
+    };
+
+    // Mobile: Prevent Pull-to-Refresh (iOS Safari, Chrome Mobile, Firefox Mobile)
+    // Detects touch at top of screen and prevents downward swipe
+    let touchStartY = 0;
+    let touchStartX = 0;
+
+    const handleTouchStart = (e) => {
+      if (!isGameActive) return;
+
+      touchStartY = e.touches[0].pageY;
+      touchStartX = e.touches[0].pageX;
+
+      // Prevent pull-to-refresh if touch starts at top of screen
+      if (window.scrollY <= 0 && touchStartY < 100) {
+        console.log('📱 Touch am oberen Bildschirmrand erkannt - Pull-to-Refresh blockiert');
+      }
+
+      // Prevent swipe-back gesture if touch starts at left edge (iOS Safari)
+      if (touchStartX < 30) {
+        console.log('📱 Touch am linken Rand erkannt - Swipe-Back blockiert');
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isGameActive) return;
+
+      const touchY = e.touches[0].pageY;
+      const touchX = e.touches[0].pageX;
+      const deltaY = touchY - touchStartY;
+      const deltaX = touchX - touchStartX;
+
+      // Prevent pull-to-refresh: Block ONLY if:
+      // 1. Touch started at TOP of screen (< 100px from top)
+      // 2. Page is at scroll position 0
+      // 3. Swipe is downward (deltaY > 0)
+      // 4. Swipe is significant (> 10px to avoid blocking small movements)
+      const isAtTopOfPage = window.scrollY <= 0;
+      const touchStartedAtTop = touchStartY < 100;
+      const isDownwardSwipe = deltaY > 10;
+
+      if (isAtTopOfPage && touchStartedAtTop && isDownwardSwipe) {
+        e.preventDefault();
+        console.log('🔒 Pull-to-Refresh blockiert (Touch-Start: ' + touchStartY + 'px, deltaY: ' + deltaY + ')');
+        return false;
+      }
+
+      // Prevent swipe-back gesture: Block rightward swipe from left edge
+      if (touchStartX < 30 && deltaX > 30) {
+        e.preventDefault();
+        console.log('🔒 Swipe-Back-Geste blockiert (deltaX: ' + deltaX + ')');
+        return false;
+      }
+    };
+
+    // Mobile: Prevent scroll-bounce and overscroll on document
+    const handleTouchEnd = (e) => {
+      if (!isGameActive) return;
+
+      // Reset if we're at top of page to prevent bounce-back refresh
+      if (window.scrollY < 0) {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    // Add initial history entry to intercept back button
+    window.history.pushState(null, '', window.location.href);
+
+    // Register event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    // Touch events must use passive: false to allow preventDefault()
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    console.log('🛡️ Browser-Schutz aktiviert (Desktop + Mobile)');
+    console.log('  ✅ Refresh blockiert (F5, Ctrl+R, Cmd+R)');
+    console.log('  ✅ Zurück-Button blockiert (Browser Back)');
+    console.log('  ✅ Pull-to-Refresh blockiert (iOS, Chrome, Firefox Mobile)');
+    console.log('  ✅ Swipe-Back-Geste blockiert (iOS Safari)');
+
+    // Cleanup when component unmounts
+    return () => {
+      isGameActive = false;
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      console.log('🛡️ Browser-Schutz deaktiviert');
+    };
+  }, []);
+
   // Hero Avatar expanded state
   const [heroAvatarExpanded, setHeroAvatarExpanded] = useState(false);
 
   // Radial Action Menu state
   const [showRadialMenu, setShowRadialMenu] = useState(false);
+  const [showTowerModal, setShowTowerModal] = useState(false);
 
   const [gameState, setGameState] = useState(() => {
     const phase1TileDeck = Object.entries(tilesConfig.phase1).flatMap(([tileId, config]) => {
@@ -1246,6 +1454,9 @@ function GameScreen({ gameData, onNewGame }) {
       elementSelectionModal: {
         show: false
       },
+      teachSkillSelectionModal: {
+        show: false
+      },
       isTransitioning: false,
       currentEvent: null,
       eventDeck: [...eventsConfig.phase1.positive, ...eventsConfig.phase1.negative],
@@ -1276,8 +1487,7 @@ function GameScreen({ gameData, onNewGame }) {
       phase2TotalTurns: 0, // Turns completed in Phase 2
       phase1TotalApSpent: 0, // AP spent in Phase 1
       phase2TotalApSpent: 0, // AP spent in Phase 2
-      phase1Stats: null, // Snapshot of Phase 1 stats when transitioning to Phase 2
-      selectedPlayerTab: null // Index des ausgewählten Spieler-Tabs (null = aktiver Spieler)
+      phase1Stats: null // Snapshot of Phase 1 stats when transitioning to Phase 2
     };
   });
 
@@ -4381,6 +4591,9 @@ function GameScreen({ gameData, onNewGame }) {
     }
   };
 
+  // Set module-level handler for obstacle removal (accessible in GameBoard rendering)
+  obstacleRemovalHandler = handleRemoveObstacle;
+
   // ========== CARD DRAW SYSTEM ==========
 
   const analyzeEventForCardDraws = (event, currentState) => {
@@ -5287,13 +5500,6 @@ function GameScreen({ gameData, onNewGame }) {
     );
   };
 
-  // Handler für Player Tab Navigation
-  const handlePlayerTabClick = (tabIndex) => {
-    setGameState(prev => ({
-      ...prev,
-      selectedPlayerTab: tabIndex === prev.currentPlayerIndex ? null : tabIndex
-    }));
-  };
 
   const handleEndTurn = () => {
     setGameState(prev => {
@@ -6357,6 +6563,152 @@ function GameScreen({ gameData, onNewGame }) {
 
               <button
                 onClick={() => setGameState(prev => ({ ...prev, elementSelectionModal: { show: false } }))}
+                style={{
+                  marginTop: '1.5rem',
+                  width: '100%',
+                  padding: '0.75rem',
+                  backgroundColor: '#374151',
+                  border: '2px solid #4b5563',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#4b5563';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#374151';
+                }}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Teach Skill Selection Modal */}
+      {gameState.teachSkillSelectionModal.show && (() => {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+        // Get innate skills for current player's element
+        const innateSkills = {
+          earth: [
+            { skill: 'grundstein_legen', name: 'Grundstein legen', emoji: '🧱' },
+            { skill: 'geroell_beseitigen', name: 'Geröll beseitigen', emoji: '⛏️' }
+          ],
+          fire: [
+            { skill: 'element_aktivieren', name: 'Element aktivieren', emoji: '🔥' },
+            { skill: 'dornen_entfernen', name: 'Dornenwald entfernen', emoji: '🌿' }
+          ],
+          water: [
+            { skill: 'reinigen', name: 'Heilende Reinigung', emoji: '💧' },
+            { skill: 'fluss_freimachen', name: 'Überflutung trockenlegen', emoji: '🌊' }
+          ],
+          air: [
+            { skill: 'spaehen', name: 'Spähen', emoji: '👁️' },
+            { skill: 'schnell_bewegen', name: 'Schnell bewegen', emoji: '💨' }
+          ]
+        };
+
+        const availableSkills = innateSkills[currentPlayer.element] || [];
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'transparent',
+              backdropFilter: 'blur(12px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000
+            }}
+            onClick={() => setGameState(prev => ({ ...prev, teachSkillSelectionModal: { show: false } }))}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'linear-gradient(135deg, #1e293b, #334155)',
+                border: '3px solid #10b981',
+                borderRadius: '16px',
+                maxWidth: '500px',
+                width: '90%',
+                padding: '2rem',
+                boxShadow: '0 20px 60px rgba(16, 185, 129, 0.4)'
+              }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                  🎓
+                </div>
+                <div style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 'bold',
+                  color: 'white'
+                }}>
+                  FÄHIGKEIT LEHREN
+                </div>
+                <div style={{
+                  fontSize: '0.85rem',
+                  color: '#9ca3af',
+                  marginTop: '0.5rem'
+                }}>
+                  Wähle eine Fähigkeit zum Lehren (1 AP)
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}>
+                {availableSkills.map(({ skill, name, emoji }) => (
+                  <button
+                    key={skill}
+                    onClick={() => {
+                      handleMasterLehren(skill);
+                      setGameState(prev => ({ ...prev, teachSkillSelectionModal: { show: false } }));
+                    }}
+                    style={{
+                      backgroundColor: '#10b981',
+                      border: '2px solid #10b981',
+                      color: 'white',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <span style={{ fontSize: '1.5rem' }}>{emoji}</span>
+                    <span>{name}</span>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setGameState(prev => ({ ...prev, teachSkillSelectionModal: { show: false } }))}
                 style={{
                   marginTop: '1.5rem',
                   width: '100%',
@@ -7961,14 +8313,6 @@ function GameScreen({ gameData, onNewGame }) {
             isMobile={isMobile}
           />
 
-          {/* Desktop: Auch horizontal meter */}
-          {!isMobile && (
-            <LightMeter
-              light={gameState.light}
-              maxLight={gameRules.light.maxValue}
-              round={gameState.round}
-            />
-          )}
 
           <div style={{
             display: 'flex',
@@ -7986,42 +8330,92 @@ function GameScreen({ gameData, onNewGame }) {
               }}
             />
 
-            {/* Action Button - FIXED position unten-mitte */}
+            {/* Tower Status Button - FIXED position unten-mitte */}
             <button
-              onClick={() => setShowRadialMenu(true)}
+              onClick={() => setShowTowerModal(true)}
               style={{
                 position: 'fixed',
                 bottom: isMobile ? '16px' : '24px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                width: isMobile ? '56px' : '64px',
-                height: isMobile ? '56px' : '64px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+                width: isMobile ? '72px' : '80px',
+                height: isMobile ? '72px' : '80px',
+                borderRadius: '12px',
+                background: (() => {
+                  const foundations = gameState.tower?.foundations?.length || 0;
+                  const elements = gameState.tower?.activatedElements?.length || 0;
+
+                  // VICTORY: Alle 4 Elemente aktiviert - Regenbogen!
+                  if (elements === 4) {
+                    return 'linear-gradient(135deg, #22c55e 0%, #3b82f6 25%, #ef4444 50%, #a78bfa 75%, #22c55e 100%)';
+                  }
+                  // Phase 2: Multi-Color-Hints
+                  if (foundations === 4 && elements > 0) {
+                    const activated = gameState.tower.activatedElements;
+                    const colors = [];
+                    if (activated.includes('erde')) colors.push('#22c55e');
+                    if (activated.includes('wasser')) colors.push('#3b82f6');
+                    if (activated.includes('feuer')) colors.push('#ef4444');
+                    if (activated.includes('luft')) colors.push('#a78bfa');
+                    return `linear-gradient(135deg, #ca8a04, ${colors.join(', ')})`;
+                  }
+                  // Phase 2 Start: Gold → Rot
+                  if (foundations === 4) {
+                    return 'linear-gradient(135deg, #ca8a04, #ef4444)';
+                  }
+                  // Phase 1: Gold (1-3 Fundamente)
+                  if (foundations > 0) {
+                    return 'linear-gradient(135deg, #ca8a04, #fbbf24)';
+                  }
+                  // Leer: Grau
+                  return 'linear-gradient(135deg, #78716c, #a8a29e)';
+                })(),
                 border: '3px solid rgba(255, 255, 255, 0.3)',
                 color: 'white',
-                fontSize: isMobile ? '24px' : '28px',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.4)',
+                gap: '2px',
+                boxShadow: (() => {
+                  const elements = gameState.tower?.activatedElements?.length || 0;
+                  if (elements === 4) {
+                    return '0 4px 20px rgba(34, 197, 94, 0.8), 0 0 30px rgba(59, 130, 246, 0.6)';
+                  }
+                  return '0 4px 12px rgba(202, 138, 4, 0.6), 0 0 20px rgba(251, 191, 36, 0.4)';
+                })(),
                 transition: 'all 0.3s ease',
                 zIndex: 1000,
-                animation: 'pulseActionButton 2s ease-in-out infinite'
+                animation: (() => {
+                  const foundations = gameState.tower?.foundations?.length || 0;
+                  const elements = gameState.tower?.activatedElements?.length || 0;
+                  if (elements === 4) return 'pulseTowerButton 1s ease-in-out infinite';
+                  if (foundations === 4) return 'pulseTowerButton 1.5s ease-in-out infinite';
+                  if (foundations > 0) return 'pulseTowerButton 2s ease-in-out infinite';
+                  return 'pulseTowerButton 2.5s ease-in-out infinite';
+                })()
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateX(-50%) scale(1.1)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.8), 0 0 30px rgba(139, 92, 246, 0.6)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.4)';
               }}
-              title="Aktionen öffnen"
+              title="Turm-Status anzeigen"
             >
-              ⚡
+              <div style={{ fontSize: isMobile ? '20px' : '24px' }}>🏛️</div>
+              <div style={{
+                fontSize: isMobile ? '9px' : '10px',
+                lineHeight: '1',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1px'
+              }}>
+                <div>🏗️ {gameState.tower?.foundations?.length || 0}/4</div>
+                <div>⚡ {gameState.tower?.activatedElements?.length || 0}/4</div>
+              </div>
             </button>
           </div>
         </div>
@@ -8035,17 +8429,6 @@ function GameScreen({ gameData, onNewGame }) {
           gap: '1rem',
           order: isMobile ? 2 : 1                       // ✅ Mobile: unten, Desktop: links
         }}>
-          {/* 2. ActivePlayerCard - Aktiver Spieler mit Tab-Navigation */}
-          <ActivePlayerCard
-            players={gameState.players}
-            heroes={heroes}
-            currentPlayerIndex={gameState.currentPlayerIndex}
-            currentRound={gameState.round}
-            selectedTab={gameState.selectedPlayerTab}
-            onTabClick={handlePlayerTabClick}
-            shouldPlayerSkipTurn={shouldPlayerSkipTurn}
-            actionBlockers={gameState.actionBlockers || []}
-          />
 
           {/* 4. ActionPanel - Aktionsbereich (jetzt über dem Turm) */}
           <ActionPanel
@@ -8103,24 +8486,27 @@ function GameScreen({ gameData, onNewGame }) {
           gameState={gameState}
           handlers={{
             onEndTurn: handleEndTurn,
-            onPickup: handleCollectResources,
+            onPickup: () => {
+              // Prüfe ob mehrere Items verfügbar sind
+              const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+              const currentTile = gameState.board[currentPlayer.position];
+
+              // Schließe Action-Menü wenn Item-Auswahl-Modal erscheinen wird
+              if (currentTile?.resources?.length > 1) {
+                setShowRadialMenu(false);
+              }
+
+              handleCollectResources();
+            },
             onDrop: handleDropItem,
             onLearn: handleLearnCombined,
             onTeach: () => {
-              // Öffnet Skill-Auswahl Modal über handleMasterLehren
-              // Implementation: Zeige Modal mit verfügbaren Skills
-              // Für jetzt: Direkt ersten Skill lehren (TODO: Modal hinzufügen)
-              const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-              const innateSkills = {
-                'earth': ['grundstein_legen', 'geroell_beseitigen'],
-                'fire': ['element_aktivieren', 'dornen_entfernen'],
-                'water': ['reinigen', 'fluss_freimachen'],
-                'air': ['spaehen', 'schnell_bewegen']
-              };
-              const skills = innateSkills[currentPlayer.element] || [];
-              if (skills.length > 0) {
-                handleMasterLehren(skills[0]); // Ersten Skill lehren
-              }
+              // Öffne Skill-Auswahl Modal für Lehren + schließe Action-Menü
+              setShowRadialMenu(false);
+              setGameState(prev => ({
+                ...prev,
+                teachSkillSelectionModal: { show: true }
+              }));
             },
             onCleanse: () => {
               // Heilende Reinigung - Prüfe ob Finsternis oder Effekte
@@ -8135,13 +8521,7 @@ function GameScreen({ gameData, onNewGame }) {
                 handleHeilendeReinigungEffekte();
               }
             },
-            onRemoveObstacle: () => {
-              // Erstes angrenzendes Hindernis entfernen
-              const obstacles = getAdjacentObstacles();
-              if (obstacles.length > 0) {
-                handleRemoveObstacle(obstacles[0].position, obstacles[0].type);
-              }
-            },
+            // NOTE: onRemoveObstacle entfernt - Neue UX: direkter Click auf Hindernis am Spielfeld
             // Location-basierte Aktionen (öffnen Selection-Modals)
             onBuildFoundation: () => {
               setGameState(prev => ({
@@ -8158,20 +8538,29 @@ function GameScreen({ gameData, onNewGame }) {
             onPassGate: handleTorDurchschreiten
           }}
           adjacentDarkness={getAdjacentDarkness()}
-          adjacentObstacles={getAdjacentObstacles()}
           heroesWithNegativeEffects={getHeroesWithNegativeEffects()}
           onClose={() => setShowRadialMenu(false)}
         />
       )}
 
+      {/* Tower Status Modal */}
+      {showTowerModal && (
+        <TowerStatusModal
+          tower={gameState.tower}
+          players={gameState.players}
+          phase={gameState.phase}
+          onClose={() => setShowTowerModal(false)}
+        />
+      )}
+
       {/* CSS Animations for Modals */}
       <style>{`
-        @keyframes pulseActionButton {
+        @keyframes pulseTowerButton {
           0%, 100% {
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 4px 12px rgba(202, 138, 4, 0.6), 0 0 20px rgba(251, 191, 36, 0.4);
           }
           50% {
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.8), 0 0 30px rgba(139, 92, 246, 0.6);
+            box-shadow: 0 6px 16px rgba(202, 138, 4, 0.8), 0 0 30px rgba(251, 191, 36, 0.6);
           }
         }
       `}</style>

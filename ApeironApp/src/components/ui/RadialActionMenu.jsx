@@ -6,8 +6,9 @@ import React from 'react';
  * - Automatische Winkel-Berechnung basierend auf Anzahl
  * - Location-basierte Aktionen (Fundament bauen, Element aktivieren, Tor durchschreiten)
  *   erscheinen im Menü wenn Held am richtigen Ort steht (Smart Location Detection)
+ * - Hindernisse werden NICHT mehr hier entfernt (neue UX: direkter Click auf Hindernis)
  */
-const RadialActionMenu = ({ currentPlayer, gameState, handlers, onClose, adjacentDarkness = [], adjacentObstacles = [], heroesWithNegativeEffects = [] }) => {
+const RadialActionMenu = ({ currentPlayer, gameState, handlers, onClose, adjacentDarkness = [], heroesWithNegativeEffects = [] }) => {
 
   // Helper: Kann Spieler Items aufnehmen?
   const canPickup = () => {
@@ -46,11 +47,6 @@ const RadialActionMenu = ({ currentPlayer, gameState, handlers, onClose, adjacen
     const hasDarkness = adjacentDarkness.length > 0;
     const hasEffects = heroesWithNegativeEffects.length > 0;
     return hasSkill && (hasDarkness || hasEffects) && currentPlayer.ap >= 1;
-  };
-
-  // Helper: Kann Spieler Hindernis entfernen?
-  const canRemoveObstacle = () => {
-    return adjacentObstacles.length > 0 && currentPlayer.ap >= 1;
   };
 
   // Helper: Kann Spieler Fundament bauen? (LOCATION: Krater Phase 1)
@@ -152,16 +148,9 @@ const RadialActionMenu = ({ currentPlayer, gameState, handlers, onClose, adjacen
       });
     }
 
-    if (canRemoveObstacle()) {
-      actions.push({
-        id: 'removeObstacle',
-        icon: '⛏️',
-        label: 'Hindernis entfernen',
-        color: '#78716c',
-        glowColor: 'rgba(120, 113, 108, 0.6)',
-        handler: handlers.onRemoveObstacle
-      });
-    }
+    // NOTE: "Hindernis entfernen" wurde aus dem Menü entfernt
+    // Neue UX: Spieler klickt direkt auf Hindernis am Spielfeld
+    // → Radial-Style-Modal erscheint mit Entfernen-Option
 
     // Location-basierte Aktionen (erscheinen nur am richtigen Ort)
     if (canBuildFoundation()) {

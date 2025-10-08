@@ -99,7 +99,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
         </p>
       </header>
 
-      <main style={{ maxWidth: '1024px', margin: '0 auto', padding: '0 1rem' }}>
+      <main style={{ maxWidth: '1024px', margin: '0 auto', padding: '0 1rem 120px 1rem' }}>
         {/* Difficulty Selection */}
         <section style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '1rem' }}>

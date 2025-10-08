@@ -8,18 +8,41 @@
   font-family: 'Inter', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+/* Prevent Pull-to-Refresh on Mobile (Primary Defense) */
+html, body {
   margin: 0;
-  min-height: 100vh;
+  padding: 0;
+  /* Prevent overscroll bounce and pull-to-refresh */
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  /* Prevent scroll on body (scroll happens in #root instead) */
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  /* iOS-specific: prevent rubber-band scrolling */
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
   background-color: #1a202c;
   color: #e2e8f0;
+}
+
+/* App container gets the scroll instead of body */
+#root {
+  overflow: auto;
+  height: 100vh;
+  width: 100%;
+  /* Prevent pull-to-refresh on the root container */
+  overscroll-behavior: none;
 }
 
 .font-cinzel {
