@@ -56,27 +56,25 @@ const heroInfo = {
 };
 
 const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
-  const [playerCount, setPlayerCount] = useState(4);
   const [difficulty, setDifficulty] = useState('normal');
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
 
   const handleCharacterSelect = (heroId: string) => {
     if (selectedCharacters.includes(heroId)) {
       setSelectedCharacters(prev => prev.filter(id => id !== heroId));
-    } else if (selectedCharacters.length < playerCount) {
+    } else {
       setSelectedCharacters(prev => [...prev, heroId]);
     }
   };
 
-  const canStartGame = selectedCharacters.length === playerCount;
+  const canStartGame = selectedCharacters.length >= 2;
 
   const handleStartGame = () => {
     if (canStartGame) {
-      onStartGame(playerCount, difficulty, selectedCharacters);
+      onStartGame(selectedCharacters.length, difficulty, selectedCharacters);
     }
   };
 
-  const playerCountOptions = [2, 3, 4];
   const difficultyOptions = [
     { key: 'easy', label: 'Leicht' },
     { key: 'normal', label: 'Normal' },
@@ -102,50 +100,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
       </header>
 
       <main style={{ maxWidth: '1024px', margin: '0 auto', padding: '0 1rem' }}>
-        {/* Player Count Selection */}
-        <section style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '1rem' }}>
-            1. Wählt die Anzahl der Helden
-          </h2>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-            {playerCountOptions.map(count => (
-              <button
-                key={count}
-                onClick={() => {
-                  setPlayerCount(count);
-                  setSelectedCharacters([]);
-                }}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  transition: 'all 0.2s',
-                  backgroundColor: playerCount === count ? '#3b82f6' : '#374151',
-                  color: 'white',
-                  border: `2px solid ${playerCount === count ? '#60a5fa' : '#4b5563'}`,
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => {
-                  if (playerCount !== count) {
-                    e.currentTarget.style.backgroundColor = '#4b5563';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (playerCount !== count) {
-                    e.currentTarget.style.backgroundColor = '#374151';
-                  }
-                }}
-              >
-                {count} Spieler
-              </button>
-            ))}
-          </div>
-        </section>
-
         {/* Difficulty Selection */}
         <section style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '1rem' }}>
-            2. Wählt die Schwierigkeit
+            1. Wählt die Schwierigkeit
           </h2>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
             {difficultyOptions.map(diff => (
@@ -182,18 +140,18 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
         {/* Character Selection - Vertical Layout */}
         <section style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '1.5rem' }}>
-            3. Wählt eure Helden
+            2. Wählt eure Helden
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto' }}>
             {Object.values(heroes).map(hero => {
               const isSelected = selectedCharacters.includes(hero.id);
-              const isDisabled = !isSelected && selectedCharacters.length >= playerCount;
+              const isDisabled = false; // No longer need to disable based on player count
               const info = heroInfo[hero.id as keyof typeof heroInfo];
 
               return (
                 <div
                   key={hero.id}
-                  onClick={() => !isDisabled && handleCharacterSelect(hero.id)}
+                  onClick={() => handleCharacterSelect(hero.id)}
                   style={{
                     display: 'flex',
                     gap: '1rem',
@@ -202,15 +160,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
                     backgroundColor: '#1f2937',
                     border: isSelected ? `3px solid ${hero.color}` : '2px solid #374151',
                     borderRadius: '12px',
-                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    cursor: 'pointer',
                     transition: 'all 0.2s',
-                    opacity: isDisabled ? 0.5 : 1,
-                    filter: isDisabled ? 'grayscale(100%)' : 'none',
+                    opacity: 1,
+                    filter: 'none',
                     transform: isSelected ? 'scale(1.02)' : 'scale(1)',
                     boxShadow: isSelected ? `0 4px 12px ${hero.color}40` : '0 2px 4px rgba(0,0,0,0.3)'
                   }}
                   onMouseEnter={(e) => {
-                    if (!isDisabled && !isSelected) {
+                    if (!isSelected) {
                       e.currentTarget.style.borderColor = hero.color;
                       e.currentTarget.style.boxShadow = `0 4px 8px ${hero.color}20`;
                     }
@@ -305,7 +263,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
             color: '#9ca3af',
             fontSize: '0.875rem'
           }}>
-            {selectedCharacters.length} von {playerCount} Helden ausgewählt
+            {selectedCharacters.length} Helden ausgewählt
           </div>
         </section>
 

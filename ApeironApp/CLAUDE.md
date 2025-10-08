@@ -1,11 +1,11 @@
 # <� Apeiron Web App - Claude Context
 
 ## =� Aktueller Status
-**Letzte Session:** 2025-10-07 Mobile-First Player Navigation + Mystische Lichtleiste 🎨💀
-**Sprint:** Mobile-First UX - Player Carousel + Epic Light Meter completed! 🌟
+**Letzte Session:** 2025-10-08 Radial Action Menu + Modal Redesign System 🎮✨
+**Sprint:** Location-Aktionen ins Radial-Menü integriert + Universal Blur Backdrop System! 🌟
 **Fortschritt:** ~99% abgeschlossen (nur Win/Loss Conditions offen)
-**Velocity:** Player Carousel (3 Komponenten, ~700 LOC) + Mystische Lichtleiste (6 Farbstufen, Herzschlag-Animation)
-**Next Focus:** 🎯 Tower Display Mobile UI oder Win/Loss Conditions (P0)
+**Velocity:** 3 neue Location-Aktionen + 2 Selection Modals + 10+ Modals umgestaltet (~650 LOC)
+**Next Focus:** 🎯 Win/Loss Conditions (P0) oder Hindernis/Spähen Selection Modals
 
 ## <� Projekt�bersicht
 **Apeiron Web App** - Kooperatives Turmbau-Spiel als React Web-Anwendung
@@ -191,6 +191,20 @@
 - [x] 2025-10-07 Herzschlag-Animation ab 50%: 2s → 1.8s → 1.4s → 1s → 0.7s Panik-Herzschlag
 - [x] 2025-10-07 Gradueller Glow-Anstieg: Linear von 40px (100%) → 120px (0%), stetig ohne Sprünge
 - [x] 2025-10-07 Box-Shadow 4-Layer: 40px/70px/110px/140px für dramatischen Leuchteffekt
+- [x] 2025-10-08 🎮 Radial Action Menu System: Location-Aktionen vollständig integriert
+- [x] 2025-10-08 Location Overlays entfernt (~180 Zeilen): renderLocationOverlays() komplett aus GameBoard.tsx gelöscht
+- [x] 2025-10-08 Smart Location Detection: 3 neue Helper-Funktionen (canBuildFoundation, canActivateElement, canPassGate)
+- [x] 2025-10-08 🏗️ Fundament bauen: Erscheint nur auf Krater + Phase 1 + alle Requirements erfüllt
+- [x] 2025-10-08 🔥 Element aktivieren: Erscheint nur auf Krater + Phase 2 + Fragment vorhanden
+- [x] 2025-10-08 🚪 Tor durchschreiten: Erscheint nur auf Tor-Feld + nicht Master + Tor aktiv
+- [x] 2025-10-08 Foundation Selection Modal: Gold-Theme Modal mit 1-4 Element-Buttons (verfügbare Blueprints)
+- [x] 2025-10-08 Element Selection Modal: Rot-Theme Modal mit 2×2 Grid (4 Elemente + Bonus-Anzeige)
+- [x] 2025-10-08 ✨ Universal Blur Backdrop System: Alle 10+ Modals umgestellt
+- [x] 2025-10-08 Transparent Backdrop: backgroundColor: 'transparent' statt rgba(0,0,0,0.8)
+- [x] 2025-10-08 Einheitlicher Blur: backdropFilter: 'blur(12px)' für alle Modals
+- [x] 2025-10-08 Z-Index Hierarchy: Modals (10000), RadialMenu (20000), Action-Button (1000)
+- [x] 2025-10-08 🐛 Action-Button Fix: Nicht mehr bedienbar während Modals offen
+- [x] 2025-10-08 RadialMenu Backdrop: Ebenfalls transparent + blur(12px) für konsistentes Design
 
 ## 🟢 EVENT-SYSTEM 100% KOMPLETT! ✅
 
@@ -1721,6 +1735,59 @@ npx cap init
 - `docs/ereigniskarten.md` - 40 Event-Karten Definitionen
 
 ## =� Session-Log
+
+### Session 2025-10-08 (Radial Action Menu + Universal Modal Redesign 🎮✨)
+- ✅ **ANFORDERUNG 1: Location-Aktionen ins Radial-Menü integrieren**
+  - **Problem:** Location Overlays funktionierten nicht (nicht sichtbar trotz overflow: visible)
+  - **User-Wunsch:** Fundament bauen, Element aktivieren, Tor durchschreiten im Action-Menü statt separate Overlays
+  - **Lösung:** Komplette Umstellung auf Smart Location Detection im Radial-Menü
+- ✅ **Location Overlays ENTFERNT (~180 Zeilen gelöscht)**
+  - renderLocationOverlays() Funktion komplett aus GameBoard.tsx entfernt
+  - CSS Animation (slideDown) entfernt
+  - Props Interface bereinigt (onBuildFoundation, onActivateElement, onPassGate nicht mehr nötig)
+  - GameBoard-Aufruf in ApeironGame.jsx vereinfacht
+- ✅ **RadialActionMenu ERWEITERT (3 neue Location-Aktionen)**
+  - **Helper-Funktionen:** canBuildFoundation(), canActivateElement(), canPassGate()
+  - **Smart Detection:** Erscheinen nur wenn Held am richtigen Ort steht
+  - 🏗️ Fundament bauen: Krater + Phase 1 + Skill + 2 Kristalle + Blueprint
+  - 🔥 Element aktivieren: Krater + Phase 2 + Skill + 1 Kristall + Fragment
+  - 🚪 Tor durchschreiten: Tor-Feld + nicht Master + Tor aktiv
+- ✅ **Foundation Selection Modal (~145 Zeilen)**
+  - Gold-Theme Modal (border: #ca8a04)
+  - Transparent backdrop + blur(12px)
+  - 1-4 Element-Buttons (nur verfügbare Blueprints)
+  - Disabled State für bereits gebaute Fundamente
+  - Click-away schließt Modal
+- ✅ **Element Selection Modal (~185 Zeilen)**
+  - Rot-Theme Modal (border: #ef4444)
+  - Transparent backdrop + blur(12px)
+  - 2×2 Grid mit allen 4 Elementen
+  - Bonus-Text pro Element (AP oder Light)
+  - Disabled State für aktivierte Elemente
+- ✅ **ANFORDERUNG 2: Universal Blur Backdrop System**
+  - **Problem:** Action-Button blieb während Modals im Vordergrund und bedienbar
+  - **User-Wunsch:** Alle Modals mit transparentem Backdrop + Blur statt schwarzer Overlay
+  - **Lösung:** Systematische Umstellung ALLER 10+ Modals
+- ✅ **Alle Modals umgestellt:**
+  - backgroundColor: 'rgba(0,0,0,0.8)' → 'transparent'
+  - backdropFilter: 'blur(8px)' → 'blur(12px)' (einheitlich)
+  - zIndex: variabel → 10000 (einheitlich für alle Modals)
+- ✅ **Z-Index Hierarchy FIX:**
+  - Modals: 10000 (alle einheitlich)
+  - RadialMenu Backdrop: 20000 (über Modals)
+  - RadialMenu Content: 20001
+  - Action-Button: 1000 (unter Modals)
+  - **Resultat:** Action-Button nicht mehr bedienbar während Modals offen! ✅
+- ✅ **RadialMenu Backdrop auch transparent:**
+  - backgroundColor: 'rgba(0,0,0,0.7)' → 'transparent'
+  - backdropFilter: 'blur(8px)' → 'blur(12px)'
+  - Konsistentes Design mit allen anderen Modals
+- **Dateien geändert:**
+  - src/components/GameBoard.tsx (~200 Zeilen gelöscht)
+  - src/components/ui/RadialActionMenu.jsx (~60 Zeilen hinzugefügt, Backdrop umgestellt)
+  - src/ApeironGame.jsx (~400 Zeilen hinzugefügt: 2 neue Modals + Handler + 10+ Modal Backdrops umgestellt)
+- **Testing:** ✅ App kompiliert ohne Fehler, alle Modals haben jetzt Blur-Effekt
+- **Impact:** Konsistente, moderne Modal-UX mit glassmorphism Design! 🌟
 
 ### Session 2025-10-06 Nachmittag (Multiple Obstacles + Finsternis-Reduktion Features 🎮✨)
 - ✅ **FEATURE 1: Mehrfach-Hindernisse System implementiert!**

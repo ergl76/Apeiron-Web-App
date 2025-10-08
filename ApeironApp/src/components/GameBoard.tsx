@@ -6,7 +6,10 @@ interface GameBoardProps {
   onTileClick: (position: string) => void;
 }
 
-const GameBoard: React.FC<GameBoardProps> = ({ gameState, onTileClick }) => {
+const GameBoard: React.FC<GameBoardProps> = ({
+  gameState,
+  onTileClick
+}) => {
   const boardSize = 9;
   const centerPos = Math.floor(boardSize / 2);
 
@@ -35,7 +38,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onTileClick }) => {
           ${isDiscoverable ? 'bg-gray-700 cursor-pointer hover:bg-gray-600' : ''}
           ${isKrater ? 'bg-gray-500' : ''}
         `}
-        style={{ fontSize: '10px' }}
+        style={{ fontSize: '10px', overflow: 'visible' }}
       >
         {/* Tile Content */}
         {tile?.revealed && (

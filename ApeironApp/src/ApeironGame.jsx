@@ -8,6 +8,8 @@ import HeroAvatar from './components/ui/HeroAvatar';
 import ActivePlayerCard from './components/ui/ActivePlayerCard';
 import TowerDisplay from './components/ui/TowerDisplay';
 import ActionPanel from './components/ui/ActionPanel';
+import UnifiedModal from './components/ui/UnifiedModal';
+import RadialActionMenu from './components/ui/RadialActionMenu';
 
 // MODULE-LEVEL LOCKS: Prevent React StrictMode from executing handlers twice
 // These MUST be outside the component to work across simultaneous calls
@@ -358,12 +360,12 @@ function GameSetup({ onStartGame }) {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backgroundColor: 'transparent',
+            backdropFilter: 'blur(12px)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 2000,
-            backdropFilter: 'blur(8px)'
+            zIndex: 10000
           }}
         >
           <div
@@ -1142,6 +1144,9 @@ function GameScreen({ gameData, onNewGame }) {
   // Hero Avatar expanded state
   const [heroAvatarExpanded, setHeroAvatarExpanded] = useState(false);
 
+  // Radial Action Menu state
+  const [showRadialMenu, setShowRadialMenu] = useState(false);
+
   const [gameState, setGameState] = useState(() => {
     const phase1TileDeck = Object.entries(tilesConfig.phase1).flatMap(([tileId, config]) => {
       if (tileId === 'herz_finster') return [];
@@ -1226,6 +1231,12 @@ function GameScreen({ gameData, onNewGame }) {
         elementType: null,
         count: 0,
         bonus: null
+      },
+      foundationSelectionModal: {
+        show: false
+      },
+      elementSelectionModal: {
+        show: false
       },
       isTransitioning: false,
       currentEvent: null,
@@ -4702,6 +4713,117 @@ function GameScreen({ gameData, onNewGame }) {
     });
   };
 
+  // Helper: Get adjacent obstacles
+  const getAdjacentObstacles = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    const adjacentObstacles = [];
+
+    if (currentPlayer.ap > 0) {
+      const [x, y] = currentPlayer.position.split(',').map(Number);
+      const adjacentPositions = {
+        'Norden': `${x},${y-1}`,
+        'Osten': `${x+1},${y}`,
+        'Süden': `${x},${y+1}`,
+        'Westen': `${x-1},${y}`
+      };
+
+      const areSkillsBlocked = currentPlayer.effects?.some(e =>
+        e.type === 'block_skills' && e.expiresInRound > gameState.round
+      );
+
+      for (const [direction, pos] of Object.entries(adjacentPositions)) {
+        const adjacentTile = gameState.board[pos];
+
+        if (adjacentTile?.obstacles && adjacentTile.obstacles.length > 0) {
+          const skillMap = {
+            'geroell': 'geroell_beseitigen',
+            'dornenwald': 'dornen_entfernen',
+            'ueberflutung': 'fluss_freimachen'
+          };
+
+          const uniqueObstacleTypes = [...new Set(adjacentTile.obstacles)];
+
+          uniqueObstacleTypes.forEach(obstacleType => {
+            if (currentPlayer.learnedSkills.includes(skillMap[obstacleType]) && !areSkillsBlocked) {
+              adjacentObstacles.push({
+                position: pos,
+                type: obstacleType,
+                direction: direction
+              });
+            }
+          });
+        }
+      }
+    }
+
+    return adjacentObstacles;
+  };
+
+  // Helper: Get adjacent darkness
+  const getAdjacentDarkness = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    const adjacentDarkness = [];
+
+    if (currentPlayer.ap > 0) {
+      const [x, y] = currentPlayer.position.split(',').map(Number);
+      const adjacentPositions = {
+        'Norden': `${x},${y-1}`,
+        'Osten': `${x+1},${y}`,
+        'Süden': `${x},${y+1}`,
+        'Westen': `${x-1},${y}`
+      };
+
+      const areSkillsBlocked = currentPlayer.effects?.some(e =>
+        e.type === 'block_skills' && e.expiresInRound > gameState.round
+      );
+
+      for (const [direction, pos] of Object.entries(adjacentPositions)) {
+        if (gameState.herzDerFinsternis.darkTiles?.includes(pos) &&
+            currentPlayer.learnedSkills.includes('reinigen') &&
+            !areSkillsBlocked) {
+          adjacentDarkness.push({
+            position: pos,
+            direction: direction
+          });
+        }
+      }
+    }
+
+    return adjacentDarkness;
+  };
+
+  // Helper: Get heroes with negative effects on same tile
+  const getHeroesWithNegativeEffects = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    const heroesWithNegativeEffects = [];
+
+    const areSkillsBlocked = currentPlayer.effects?.some(e =>
+      e.type === 'block_skills' && e.expiresInRound > gameState.round
+    );
+
+    if (currentPlayer.learnedSkills.includes('reinigen') && !areSkillsBlocked && currentPlayer.ap > 0) {
+      gameState.players.forEach(player => {
+        if (player.position === currentPlayer.position) {
+          const hasNegativeEffects = player.effects?.some(e =>
+            ['skip_turn', 'reduce_ap', 'set_ap', 'prevent_movement', 'block_skills'].includes(e.type) &&
+            e.expiresInRound > gameState.round
+          );
+
+          const hasActionBlocker = gameState.actionBlockers?.some(blocker =>
+            (blocker.target === player.id || blocker.target === 'all_players') &&
+            blocker.expiresInRound > gameState.round
+          );
+
+          if (hasNegativeEffects || hasActionBlocker) {
+            heroesWithNegativeEffects.push(player);
+          }
+        }
+      });
+    }
+
+    return heroesWithNegativeEffects;
+  };
+
   const renderActionButtons = () => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
@@ -5407,7 +5529,8 @@ function GameScreen({ gameData, onNewGame }) {
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backgroundColor: 'transparent',
+          backdropFilter: 'blur(12px)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -5630,7 +5753,22 @@ function GameScreen({ gameData, onNewGame }) {
                               fontSize: '4rem',
                               boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
                             }}>
-                              {i === 3 && '🎴'}
+                              {i === 3 && (
+                                isDirection ? '🎴' : (
+                                  // Hero Card: 4 Element-Symbole im 2×2 Grid (EXAKT wie HeroAvatar.jsx)
+                                  <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: '12px',
+                                    fontSize: '2.5rem'
+                                  }}>
+                                    <div>🌿</div> {/* Terra/Erde */}
+                                    <div>🔥</div> {/* Ignis/Feuer */}
+                                    <div>💧</div> {/* Lyra/Wasser */}
+                                    <div>🦅</div> {/* Corvus/Luft */}
+                                  </div>
+                                )
+                              )}
                             </div>
                           ))}
                         </div>
@@ -5762,21 +5900,26 @@ function GameScreen({ gameData, onNewGame }) {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backgroundColor: 'transparent',
+          backdropFilter: 'blur(12px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000
+          zIndex: 10000
         }}>
           <div style={{
-            backgroundColor: '#374151',
+            background: gameState.currentEvent.type === 'negative'
+              ? 'linear-gradient(135deg, #450a0a, #7f1d1d)' // Dezentes Dunkelrot
+              : 'linear-gradient(135deg, #064e3b, #065f46)', // Dezentes Waldgrün
             borderRadius: '12px',
             padding: '2rem',
-            maxWidth: '500px',
+            maxWidth: '600px',
+            maxHeight: '90vh', // Mobile Fix!
+            overflowY: 'auto', // Mobile Fix!
             width: '90%',
-            boxShadow: `0 0 30px 5px ${gameState.currentEvent.type === 'negative' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
+            boxShadow: `0 0 20px ${gameState.currentEvent.type === 'negative' ? 'rgba(220, 38, 38, 0.25)' : 'rgba(5, 150, 105, 0.25)'}`, // Subtiler Glow
             border: gameState.currentEvent.type === 'negative'
-              ? '3px solid #ef4444' : '3px solid #10b981'
+              ? '2px solid #dc2626' : '2px solid #059669'
           }}>
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
               <div style={{
@@ -5794,7 +5937,7 @@ function GameScreen({ gameData, onNewGame }) {
                 {gameState.currentEvent.name}
               </h2>
               <p style={{
-                color: '#d1d5db',
+                color: gameState.currentEvent.type === 'negative' ? '#fecaca' : '#d1fae5',
                 fontSize: '1rem',
                 lineHeight: '1.5',
                 marginBottom: '1rem'
@@ -6078,6 +6221,341 @@ function GameScreen({ gameData, onNewGame }) {
         </div>
       )}
 
+      {/* Foundation Selection Modal */}
+      {gameState.foundationSelectionModal.show && (() => {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+        // Get available blueprints
+        const blueprintMapping = {
+          'kenntnis_bauplan_erde': { element: 'erde', name: 'Erde', emoji: '🟫', color: '#22c55e' },
+          'kenntnis_bauplan_wasser': { element: 'wasser', name: 'Wasser', emoji: '🟦', color: '#3b82f6' },
+          'kenntnis_bauplan_feuer': { element: 'feuer', name: 'Feuer', emoji: '🟥', color: '#ef4444' },
+          'kenntnis_bauplan_luft': { element: 'luft', name: 'Luft', emoji: '🟪', color: '#a78bfa' }
+        };
+
+        const availableBlueprints = currentPlayer.learnedSkills
+          .filter(skill => skill.startsWith('kenntnis_bauplan_'))
+          .map(skill => ({
+            skill,
+            ...blueprintMapping[skill],
+            built: gameState.tower.foundations.includes(blueprintMapping[skill].element)
+          }));
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'transparent',
+              backdropFilter: 'blur(12px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000
+            }}
+            onClick={() => setGameState(prev => ({ ...prev, foundationSelectionModal: { show: false } }))}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'linear-gradient(135deg, #1e293b, #334155)',
+                border: '3px solid #ca8a04',
+                borderRadius: '16px',
+                maxWidth: '500px',
+                width: '90%',
+                padding: '2rem',
+                boxShadow: '0 20px 60px rgba(202, 138, 4, 0.4)'
+              }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                  🏗️
+                </div>
+                <div style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 'bold',
+                  color: 'white'
+                }}>
+                  FUNDAMENT BAUEN
+                </div>
+                <div style={{
+                  fontSize: '0.85rem',
+                  color: '#9ca3af',
+                  marginTop: '0.5rem'
+                }}>
+                  Wähle ein Element-Fundament (2 Kristalle + 1 AP)
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}>
+                {availableBlueprints.map(foundation => (
+                  <button
+                    key={foundation.element}
+                    onClick={() => {
+                      if (!foundation.built) {
+                        handleBuildFoundation(foundation.element);
+                        setGameState(prev => ({ ...prev, foundationSelectionModal: { show: false } }));
+                      }
+                    }}
+                    disabled={foundation.built}
+                    style={{
+                      backgroundColor: foundation.built ? '#4b5563' : foundation.color,
+                      border: `2px solid ${foundation.built ? '#6b7280' : foundation.color}`,
+                      color: 'white',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      cursor: foundation.built ? 'not-allowed' : 'pointer',
+                      opacity: foundation.built ? 0.5 : 1,
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!foundation.built) {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.boxShadow = `0 0 20px ${foundation.color}80`;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <span style={{ fontSize: '1.5rem' }}>{foundation.emoji}</span>
+                    <span>{foundation.name}-Fundament</span>
+                    {foundation.built && <span>✅</span>}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setGameState(prev => ({ ...prev, foundationSelectionModal: { show: false } }))}
+                style={{
+                  marginTop: '1.5rem',
+                  width: '100%',
+                  padding: '0.75rem',
+                  backgroundColor: '#374151',
+                  border: '2px solid #4b5563',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#4b5563';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#374151';
+                }}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Element Selection Modal */}
+      {gameState.elementSelectionModal.show && (() => {
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+        const elements = [
+          {
+            type: 'element_fragment_erde',
+            element: 'erde',
+            name: 'Erde',
+            emoji: '🟫',
+            color: '#22c55e',
+            hasFragment: currentPlayer.inventory.includes('element_fragment_erde'),
+            activated: gameState.tower?.activatedElements?.includes('erde'),
+            bonusText: gameRules?.elementActivation?.bonuses?.erde?.type === 'permanent_ap'
+              ? `+${gameRules.elementActivation.bonuses.erde.value} AP`
+              : `+${gameRules.elementActivation.bonuses.erde.value} 💡`
+          },
+          {
+            type: 'element_fragment_wasser',
+            element: 'wasser',
+            name: 'Wasser',
+            emoji: '🟦',
+            color: '#3b82f6',
+            hasFragment: currentPlayer.inventory.includes('element_fragment_wasser'),
+            activated: gameState.tower?.activatedElements?.includes('wasser'),
+            bonusText: gameRules?.elementActivation?.bonuses?.wasser?.type === 'permanent_ap'
+              ? `+${gameRules.elementActivation.bonuses.wasser.value} AP`
+              : `+${gameRules.elementActivation.bonuses.wasser.value} 💡`
+          },
+          {
+            type: 'element_fragment_feuer',
+            element: 'feuer',
+            name: 'Feuer',
+            emoji: '🟥',
+            color: '#ef4444',
+            hasFragment: currentPlayer.inventory.includes('element_fragment_feuer'),
+            activated: gameState.tower?.activatedElements?.includes('feuer'),
+            bonusText: gameRules?.elementActivation?.bonuses?.feuer?.type === 'permanent_ap'
+              ? `+${gameRules.elementActivation.bonuses.feuer.value} AP`
+              : `+${gameRules.elementActivation.bonuses.feuer.value} 💡`
+          },
+          {
+            type: 'element_fragment_luft',
+            element: 'luft',
+            name: 'Luft',
+            emoji: '🟪',
+            color: '#a78bfa',
+            hasFragment: currentPlayer.inventory.includes('element_fragment_luft'),
+            activated: gameState.tower?.activatedElements?.includes('luft'),
+            bonusText: gameRules?.elementActivation?.bonuses?.luft?.type === 'permanent_ap'
+              ? `+${gameRules.elementActivation.bonuses.luft.value} AP`
+              : `+${gameRules.elementActivation.bonuses.luft.value} 💡`
+          }
+        ];
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'transparent',
+              backdropFilter: 'blur(12px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000
+            }}
+            onClick={() => setGameState(prev => ({ ...prev, elementSelectionModal: { show: false } }))}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'linear-gradient(135deg, #1e293b, #334155)',
+                border: '3px solid #ef4444',
+                borderRadius: '16px',
+                maxWidth: '500px',
+                width: '90%',
+                padding: '2rem',
+                boxShadow: '0 20px 60px rgba(239, 68, 68, 0.4)'
+              }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                  🔥
+                </div>
+                <div style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 'bold',
+                  color: 'white'
+                }}>
+                  ELEMENT AKTIVIEREN
+                </div>
+                <div style={{
+                  fontSize: '0.85rem',
+                  color: '#9ca3af',
+                  marginTop: '0.5rem'
+                }}>
+                  Wähle ein Element-Fragment (1 Kristall + 1 Fragment + 1 AP)
+                </div>
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '0.75rem'
+              }}>
+                {elements.map(element => {
+                  const canActivate = element.hasFragment && !element.activated;
+
+                  return (
+                    <button
+                      key={element.element}
+                      onClick={() => {
+                        if (canActivate) {
+                          handleActivateElement(element.type);
+                          setGameState(prev => ({ ...prev, elementSelectionModal: { show: false } }));
+                        }
+                      }}
+                      disabled={!canActivate}
+                      style={{
+                        backgroundColor: element.activated ? '#4b5563' : !element.hasFragment ? '#6b7280' : element.color,
+                        border: `2px solid ${element.color}`,
+                        color: 'white',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        cursor: canActivate ? 'pointer' : 'not-allowed',
+                        opacity: canActivate ? 1 : 0.5,
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (canActivate) {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                          e.currentTarget.style.boxShadow = `0 0 20px ${element.color}80`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      <div style={{ fontSize: '2rem' }}>{element.emoji}</div>
+                      <div>{element.name}</div>
+                      <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                        {element.activated ? '✅ Aktiviert' : element.bonusText}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setGameState(prev => ({ ...prev, elementSelectionModal: { show: false } }))}
+                style={{
+                  marginTop: '1.5rem',
+                  width: '100%',
+                  padding: '0.75rem',
+                  backgroundColor: '#374151',
+                  border: '2px solid #4b5563',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#4b5563';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#374151';
+                }}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Phase 2 Transition Modal */}
       {gameState.phaseTransitionModal.show && (
         <div
@@ -6087,8 +6565,8 @@ function GameScreen({ gameData, onNewGame }) {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(8px)',
+            backgroundColor: 'transparent',
+            backdropFilter: 'blur(12px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -6302,20 +6780,23 @@ function GameScreen({ gameData, onNewGame }) {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backgroundColor: 'transparent',
+            backdropFilter: 'blur(12px)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 2000,
-            backdropFilter: 'blur(8px)'
+            zIndex: 10000
           }}
         >
           <div
             style={{
               background: 'linear-gradient(135deg, #0f0f0f, #1a1200, #1a0f00)',
               borderRadius: '16px',
-              padding: '48px',
+              padding: window.innerWidth < 640 ? '32px 24px' : '48px',
               maxWidth: '600px',
+              maxHeight: '90vh', // Mobile Fix!
+              overflowY: 'auto', // Mobile Fix!
+              width: 'calc(100% - 32px)', // Mobile safe area
               border: '3px solid #eab308',
               boxShadow: '0 0 80px rgba(234, 179, 8, 0.6)',
               animation: 'fadeInScale 0.4s ease-out',
@@ -6458,8 +6939,11 @@ function GameScreen({ gameData, onNewGame }) {
               style={{
                 background: `linear-gradient(135deg, #0f0f0f, rgba(${element?.color === '#22c55e' ? '34, 197, 94' : element?.color === '#3b82f6' ? '59, 130, 246' : element?.color === '#ef4444' ? '239, 68, 68' : '167, 139, 250'}, 0.1), #0f0f0f)`,
                 borderRadius: '16px',
-                padding: '48px',
+                padding: window.innerWidth < 640 ? '32px 24px' : '48px',
                 maxWidth: '650px',
+                maxHeight: '90vh', // Mobile Fix!
+                overflowY: 'auto', // Mobile Fix!
+                width: 'calc(100% - 32px)', // Mobile safe area
                 border: `3px solid ${element?.color || '#eab308'}`,
                 boxShadow: `0 0 80px ${element?.color || '#eab308'}66`,
                 animation: 'fadeInScale 0.4s ease-out',
@@ -6594,242 +7078,204 @@ function GameScreen({ gameData, onNewGame }) {
 
       {/* Tor der Weisheit Modal */}
       {gameState.torDerWeisheitModal.show && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10001
-          }}
+        <UnifiedModal
+          type="torDerWeisheit"
+          show={true}
+          title="DAS TOR DER WEISHEIT ERSCHEINT"
+          icon="⛩️"
         >
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #ffffff 100%)',
-              border: '3px solid #3b82f6',
-              borderRadius: '16px',
-              maxWidth: '700px',
-              width: '90%',
-              padding: '2rem',
-              boxShadow: '0 0 60px rgba(59, 130, 246, 0.4), inset 0 0 30px rgba(59, 130, 246, 0.1)',
-              color: '#1e3a8a'
-            }}
-          >
-            {/* Header with gate symbol */}
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{
-                fontSize: '4rem',
-                marginBottom: '0.5rem'
-              }}>
-                ⛩️
-              </div>
-              <div style={{
-                fontSize: '1.8rem',
-                fontWeight: 'bold',
-                color: '#1e40af',
-                letterSpacing: '0.1em'
-              }}>
-                DAS TOR DER WEISHEIT ERSCHEINT
-              </div>
-            </div>
-
-            {/* Position/Direction Info - Different states based on awaitingCardDraw */}
-            {gameState.torDerWeisheitModal.awaitingCardDraw ? (
-              // STATE 1: Awaiting card draw - explain what will happen
-              <div style={{
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '2px solid #3b82f6',
-                borderRadius: '8px',
-                padding: '1.25rem',
-                margin: '1.5rem 0',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  fontSize: '1rem',
-                  color: '#1e3a8a',
-                  lineHeight: '1.7',
-                  marginBottom: '0.75rem'
-                }}>
-                  Das Tor materialisiert sich an einem freien Feld neben dem Krater.
-                </div>
-                <div style={{
-                  fontSize: '1rem',
-                  color: '#2563eb',
-                  fontWeight: 'bold',
-                  lineHeight: '1.7'
-                }}>
-                  🎴 Ziehe eine Himmelsrichtungskarte, um zu bestimmen, in welcher Richtung das Tor erscheinen soll.
-                </div>
-              </div>
-            ) : gameState.torDerWeisheitModal.chosenDirection ? (
-              // STATE 2: Card drawn - show direction-based placement
-              <div style={{
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '2px solid #3b82f6',
-                borderRadius: '8px',
-                padding: '1rem',
-                margin: '1.5rem 0',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '1.1rem', color: '#2563eb', marginBottom: '0.75rem' }}>
-                  ⛩️ Das Tor der Weisheit erscheint
-                </div>
-                <div style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 'bold',
-                  color: '#1e40af',
-                  lineHeight: '1.6'
-                }}>
-                  am ersten freien Platz vom Krater aus in Richtung <strong style={{
-                    fontSize: '1.4rem',
-                    color: '#1e40af',
-                    letterSpacing: '0.05em'
-                  }}>{directionNames[gameState.torDerWeisheitModal.chosenDirection]}</strong>
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#60a5fa', marginTop: '0.75rem' }}>
-                  (Ein Ort des Lichts und der Transformation)
-                </div>
-              </div>
-            ) : null}
-
-            {/* Description */}
+          {/* Position/Direction Info - Different states based on awaitingCardDraw */}
+          {gameState.torDerWeisheitModal.awaitingCardDraw ? (
+            // STATE 1: Awaiting card draw - explain what will happen
             <div style={{
-              background: 'rgba(255, 255, 255, 0.8)',
+              background: 'rgba(209, 213, 219, 0.2)',
+              border: '2px solid #9ca3af',
               borderRadius: '8px',
               padding: '1.25rem',
-              marginBottom: '1.5rem'
+              margin: '1.5rem 0',
+              textAlign: 'center'
             }}>
               <div style={{
                 fontSize: '1rem',
-                color: '#1e3a8a',
-                lineHeight: '1.6',
-                marginBottom: '1rem'
+                color: '#1f2937',
+                lineHeight: '1.7',
+                marginBottom: '0.75rem'
               }}>
-                Als das Licht zu schwinden drohte, öffnete sich ein Portal zwischen den Welten.
-                Das <strong>Tor der Weisheit</strong> - ein uraltes Artefakt der Götter - gewährt denjenigen,
-                die es durchschreiten, die Erleuchtung der Meisterschaft.
+                Das Tor materialisiert sich an einem freien Feld neben dem Krater.
               </div>
-
-              {/* Benefits */}
               <div style={{
-                background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
-                borderRadius: '8px',
-                padding: '1rem',
-                marginTop: '1rem'
+                fontSize: '1rem',
+                color: '#374151',
+                fontWeight: 'bold',
+                lineHeight: '1.7'
               }}>
-                <div style={{
-                  fontWeight: 'bold',
-                  color: '#1e40af',
-                  marginBottom: '0.75rem',
-                  fontSize: '1.1rem'
-                }}>
-                  ✨ Was euch erwartet:
-                </div>
+                🎴 Ziehe eine Himmelsrichtungskarte, um zu bestimmen, in welcher Richtung das Tor erscheinen soll.
+              </div>
+            </div>
+          ) : gameState.torDerWeisheitModal.chosenDirection ? (
+            // STATE 2: Card drawn - show direction-based placement
+            <div style={{
+              background: 'rgba(209, 213, 219, 0.2)',
+              border: '2px solid #9ca3af',
+              borderRadius: '8px',
+              padding: '1rem',
+              margin: '1.5rem 0',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '1.1rem', color: '#374151', marginBottom: '0.75rem' }}>
+                ⛩️ Das Tor der Weisheit erscheint
+              </div>
+              <div style={{
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                lineHeight: '1.6'
+              }}>
+                am ersten freien Platz vom Krater aus in Richtung <strong style={{
+                  fontSize: '1.4rem',
+                  color: '#111827',
+                  letterSpacing: '0.05em'
+                }}>{directionNames[gameState.torDerWeisheitModal.chosenDirection]}</strong>
+              </div>
+              <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '0.75rem' }}>
+                (Ein Ort des Lichts und der Transformation)
+              </div>
+            </div>
+          ) : null}
 
-                <div style={{ fontSize: '0.95rem', color: '#1e3a8a', lineHeight: '1.8' }}>
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    🎯 <strong>Durchschreiten (1 AP):</strong> Werde zum <strong style={{ color: '#7c3aed' }}>Meister</strong>
-                  </div>
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    📚 <strong>Lehren (1 AP):</strong> Teile deine <strong>angeborenen Fähigkeiten</strong> mit Gefährten am selben Feld
-                  </div>
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    🌟 <strong>Immunität:</strong> Das Tor ist immun gegen Finsternis
-                  </div>
-                  <div>
-                    💎 <strong>Artefakte:</strong> Unentdeckte Artefakte erscheinen hier bei Phase 2
-                  </div>
+          {/* Description */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.5)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            marginBottom: '1.5rem'
+          }}>
+            <div style={{
+              fontSize: '1rem',
+              color: '#1f2937',
+              lineHeight: '1.6',
+              marginBottom: '1rem'
+            }}>
+              Als das Licht zu schwinden drohte, öffnete sich ein Portal zwischen den Welten.
+              Das <strong>Tor der Weisheit</strong> - ein uraltes Artefakt der Götter - gewährt denjenigen,
+              die es durchschreiten, die Erleuchtung der Meisterschaft.
+            </div>
+
+            {/* Benefits */}
+            <div style={{
+              background: 'rgba(209, 213, 219, 0.3)',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginTop: '1rem'
+            }}>
+              <div style={{
+                fontWeight: 'bold',
+                color: '#111827',
+                marginBottom: '0.75rem',
+                fontSize: '1.1rem'
+              }}>
+                ✨ Was euch erwartet:
+              </div>
+
+              <div style={{ fontSize: '0.95rem', color: '#1f2937', lineHeight: '1.8' }}>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  🎯 <strong>Durchschreiten (1 AP):</strong> Werde zum <strong style={{ color: '#7c3aed' }}>Meister</strong>
+                </div>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  📚 <strong>Lehren (1 AP):</strong> Teile deine <strong>angeborenen Fähigkeiten</strong> mit Gefährten am selben Feld
+                </div>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  🌟 <strong>Immunität:</strong> Das Tor ist immun gegen Finsternis
+                </div>
+                <div>
+                  💎 <strong>Artefakte:</strong> Unentdeckte Artefakte erscheinen hier bei Phase 2
                 </div>
               </div>
             </div>
-
-            {/* Quote */}
-            <div style={{
-              fontStyle: 'italic',
-              textAlign: 'center',
-              color: '#64748b',
-              fontSize: '0.95rem',
-              marginBottom: '1.5rem',
-              padding: '1rem',
-              background: 'rgba(100, 116, 139, 0.05)',
-              borderRadius: '8px'
-            }}>
-              "Durch Weisheit wird das Licht bewahrt, durch Meisterschaft wird es weitergegeben."
-            </div>
-
-            {/* Action Button - Different states */}
-            {gameState.torDerWeisheitModal.awaitingCardDraw ? (
-              // STATE 1: Button to initiate card draw
-              <button
-                onClick={handleTorCardDrawInitiate}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
-                }}
-              >
-                🎴 HIMMELSRICHTUNG ZIEHEN UND TOR PLATZIEREN
-              </button>
-            ) : (
-              // STATE 2: Button to close modal after placement
-              <button
-                onClick={() => setGameState(prev => ({
-                  ...prev,
-                  torDerWeisheitModal: { show: false, position: null, chosenDirection: null, awaitingCardDraw: false }
-                }))}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
-                }}
-              >
-                ⛩️ VERSTANDEN - WEITER SPIELEN
-              </button>
-            )}
           </div>
-        </div>
+
+          {/* Quote */}
+          <div style={{
+            fontStyle: 'italic',
+            textAlign: 'center',
+            color: '#6b7280',
+            fontSize: '0.95rem',
+            marginBottom: '1.5rem',
+            padding: '1rem',
+            background: 'rgba(107, 114, 128, 0.1)',
+            borderRadius: '8px'
+          }}>
+            "Durch Weisheit wird das Licht bewahrt, durch Meisterschaft wird es weitergegeben."
+          </div>
+
+          {/* Action Button - Different states */}
+          {gameState.torDerWeisheitModal.awaitingCardDraw ? (
+            // STATE 1: Button to initiate card draw
+            <button
+              onClick={handleTorCardDrawInitiate}
+              style={{
+                width: '100%',
+                minHeight: '44px',
+                padding: '1rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                background: 'linear-gradient(135deg, #f3f4f6, #e5e7eb)',
+                border: '2px solid #9ca3af',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(156, 163, 175, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #e5e7eb, #d1d5db)';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(156, 163, 175, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #f3f4f6, #e5e7eb)';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(156, 163, 175, 0.3)';
+              }}
+            >
+              🎴 HIMMELSRICHTUNG ZIEHEN UND TOR PLATZIEREN
+            </button>
+          ) : (
+            // STATE 2: Button to close modal after placement
+            <button
+              onClick={() => setGameState(prev => ({
+                ...prev,
+                torDerWeisheitModal: { show: false, position: null, chosenDirection: null, awaitingCardDraw: false }
+              }))}
+              style={{
+                width: '100%',
+                minHeight: '44px',
+                padding: '1rem',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                background: 'linear-gradient(135deg, #f3f4f6, #e5e7eb)',
+                border: '2px solid #9ca3af',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(156, 163, 175, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #e5e7eb, #d1d5db)';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(156, 163, 175, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, #f3f4f6, #e5e7eb)';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(156, 163, 175, 0.3)';
+              }}
+            >
+              ⛩️ VERSTANDEN - WEITER SPIELEN
+            </button>
+          )}
+        </UnifiedModal>
       )}
 
       {/* Victory Modal */}
@@ -6853,8 +7299,11 @@ function GameScreen({ gameData, onNewGame }) {
             style={{
               background: 'linear-gradient(135deg, #064e3b, #065f46, #047857)',
               borderRadius: '16px',
-              padding: '48px',
+              padding: window.innerWidth < 640 ? '32px 24px' : '48px',
               maxWidth: '600px',
+              maxHeight: '90vh', // Mobile Fix!
+              overflowY: 'auto', // Mobile Fix!
+              width: 'calc(100% - 32px)', // Mobile safe area
               border: '3px solid #10b981',
               boxShadow: '0 0 80px rgba(16, 185, 129, 0.6)',
               animation: 'fadeInScale 0.4s ease-out',
@@ -6932,10 +7381,10 @@ function GameScreen({ gameData, onNewGame }) {
               padding: '24px',
               marginBottom: '24px'
             }}>
-              {/* Phase-separated Stats Grid */}
+              {/* Phase-separated Stats Grid - Responsive! */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: window.innerWidth < 640 ? '1fr' : '1fr 1fr', // Mobile: 1 column
                 gap: '24px',
                 marginBottom: '20px'
               }}>
@@ -6994,10 +7443,10 @@ function GameScreen({ gameData, onNewGame }) {
                 </div>
               </div>
 
-              {/* Overall Stats */}
+              {/* Overall Stats - Responsive! */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
+                gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(4, 1fr)', // Mobile: 1 column
                 gap: '12px',
                 paddingTop: '16px',
                 borderTop: '2px solid rgba(16, 185, 129, 0.3)',
@@ -7111,8 +7560,11 @@ function GameScreen({ gameData, onNewGame }) {
             style={{
               background: 'linear-gradient(135deg, #0f0f0f, #1a0000, #000000)',
               borderRadius: '16px',
-              padding: '48px',
+              padding: window.innerWidth < 640 ? '32px 24px' : '48px',
               maxWidth: '600px',
+              maxHeight: '90vh', // Mobile Fix!
+              overflowY: 'auto', // Mobile Fix!
+              width: 'calc(100% - 32px)', // Mobile safe area
               border: '3px solid #dc2626',
               boxShadow: '0 0 80px rgba(220, 38, 38, 0.6)',
               animation: 'fadeInScale 0.4s ease-out',
@@ -7190,10 +7642,10 @@ function GameScreen({ gameData, onNewGame }) {
               padding: '24px',
               marginBottom: '24px'
             }}>
-              {/* Phase-separated Stats Grid */}
+              {/* Phase-separated Stats Grid - Responsive! */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: window.innerWidth < 640 ? '1fr' : '1fr 1fr', // Mobile: 1 column
                 gap: '24px',
                 marginBottom: '20px'
               }}>
@@ -7252,10 +7704,10 @@ function GameScreen({ gameData, onNewGame }) {
                 </div>
               </div>
 
-              {/* Overall Stats */}
+              {/* Overall Stats - Responsive! */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
+                gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(4, 1fr)', // Mobile: 1 column
                 gap: '12px',
                 paddingTop: '16px',
                 borderTop: '2px solid rgba(220, 38, 38, 0.3)',
@@ -7692,11 +8144,49 @@ function GameScreen({ gameData, onNewGame }) {
 
           <div style={{
             display: 'flex',
-            justifyContent: 'center',
+            flexDirection: 'column',
             alignItems: 'center',
-            flex: 1
+            flex: 1,
+            gap: '1rem'
           }}>
-            <GameBoard gameState={gameState} onTileClick={handleTileClick} />
+            <GameBoard
+              gameState={gameState}
+              onTileClick={handleTileClick}
+            />
+
+            {/* Action Button - zentriert unter Spielfeld */}
+            <button
+              onClick={() => setShowRadialMenu(true)}
+              style={{
+                width: isMobile ? '56px' : '64px',
+                height: isMobile ? '56px' : '64px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+                border: '3px solid rgba(255, 255, 255, 0.3)',
+                color: 'white',
+                fontSize: isMobile ? '24px' : '28px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.4)',
+                transition: 'all 0.3s ease',
+                zIndex: 1000,
+                animation: 'pulseActionButton 2s ease-in-out infinite'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.8), 0 0 30px rgba(139, 92, 246, 0.6)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.4)';
+              }}
+              title="Aktionen öffnen"
+            >
+              ⚡
+            </button>
           </div>
         </div>
 
@@ -7770,7 +8260,85 @@ function GameScreen({ gameData, onNewGame }) {
         </button>
       </div>
 
+      {/* Radial Action Menu */}
+      {showRadialMenu && (
+        <RadialActionMenu
+          currentPlayer={gameState.players[gameState.currentPlayerIndex]}
+          gameState={gameState}
+          handlers={{
+            onEndTurn: handleEndTurn,
+            onPickup: handleCollectResources,
+            onDrop: handleDropItem,
+            onLearn: handleLearnCombined,
+            onTeach: () => {
+              // Öffnet Skill-Auswahl Modal über handleMasterLehren
+              // Implementation: Zeige Modal mit verfügbaren Skills
+              // Für jetzt: Direkt ersten Skill lehren (TODO: Modal hinzufügen)
+              const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+              const innateSkills = {
+                'earth': ['grundstein_legen', 'geroell_beseitigen'],
+                'fire': ['element_aktivieren', 'dornen_entfernen'],
+                'water': ['reinigen', 'fluss_freimachen'],
+                'air': ['spaehen', 'schnell_bewegen']
+              };
+              const skills = innateSkills[currentPlayer.element] || [];
+              if (skills.length > 0) {
+                handleMasterLehren(skills[0]); // Ersten Skill lehren
+              }
+            },
+            onCleanse: () => {
+              // Heilende Reinigung - Prüfe ob Finsternis oder Effekte
+              const adjacentDarkness = getAdjacentDarkness();
+              const heroesWithEffects = getHeroesWithNegativeEffects();
+
+              if (adjacentDarkness.length > 0) {
+                // Erste Finsternis entfernen
+                handleHeilendeReinigung(adjacentDarkness[0].position);
+              } else if (heroesWithEffects.length > 0) {
+                // Effekte von Helden entfernen
+                handleHeilendeReinigungEffekte();
+              }
+            },
+            onRemoveObstacle: () => {
+              // Erstes angrenzendes Hindernis entfernen
+              const obstacles = getAdjacentObstacles();
+              if (obstacles.length > 0) {
+                handleRemoveObstacle(obstacles[0].position, obstacles[0].type);
+              }
+            },
+            // Location-basierte Aktionen (öffnen Selection-Modals)
+            onBuildFoundation: () => {
+              setGameState(prev => ({
+                ...prev,
+                foundationSelectionModal: { show: true }
+              }));
+            },
+            onActivateElement: () => {
+              setGameState(prev => ({
+                ...prev,
+                elementSelectionModal: { show: true }
+              }));
+            },
+            onPassGate: handleTorDurchschreiten
+          }}
+          adjacentDarkness={getAdjacentDarkness()}
+          adjacentObstacles={getAdjacentObstacles()}
+          heroesWithNegativeEffects={getHeroesWithNegativeEffects()}
+          onClose={() => setShowRadialMenu(false)}
+        />
+      )}
+
       {/* CSS Animations for Modals */}
+      <style>{`
+        @keyframes pulseActionButton {
+          0%, 100% {
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.4);
+          }
+          50% {
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.8), 0 0 30px rgba(139, 92, 246, 0.6);
+          }
+        }
+      `}</style>
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
