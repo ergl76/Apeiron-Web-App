@@ -15,6 +15,7 @@ let currentlyConfirmingCardDraw = false;
 let phaseTransitionInProgress = false;
 let isGameActive = false; // Track if game is running (for browser navigation protection)
 let obstacleRemovalHandler = null; // Handler for obstacle removal (set in component)
+let darknessRemovalHandler = null; // Handler for darkness cleansing (set in component)
 
 // Konter-Informationen aus ereigniskarten.md
 const eventCounters = {
@@ -607,7 +608,7 @@ function GameSetup({ onStartGame }) {
 }
 
 // Game Board Component
-function GameBoard({ gameState, onTileClick, onHeroClick }) {
+function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
   const boardSize = 9;
   
   const renderTile = (x, y) => {
@@ -631,7 +632,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick }) {
 
     const tileStyle = {
       position: 'relative',
-      border: isFirstDiscoveryField ? '3px solid #3b82f6' : '1px solid #4b5563', // Blaue Border für erste Discovery
+      border: isFirstDiscoveryField ? '3px solid #3b82f6' : 'none',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -639,17 +640,17 @@ function GameBoard({ gameState, onTileClick, onHeroClick }) {
       textAlign: 'center',
       fontSize: '10px',
       lineHeight: '1.2',
-      padding: '2px',
-      aspectRatio: '1/1',
-      minHeight: '40px',
+      width: '70px',
+      height: '70px',
+      borderRadius: '4px',
       cursor: (isDiscoverable || isMovable) ? 'pointer' : 'default',
-      background: isKrater ? '#6b7280' :
+      background: isKrater ? '#78716c' :
                   tile ? getTileColor(tile.id) :
-                  isDiscoverable ? '#374151' : '#1f2937',
+                  isDiscoverable ? '#374151' : '',
       outline: isMovable ? '3px solid #10b981' : 'none',
       outlineOffset: isMovable ? '-3px' : '0',
       transition: 'all 0.2s ease-in-out',
-      boxShadow: isFirstDiscoveryField ? '0 0 8px rgba(59, 130, 246, 0.6)' : 'none' // Blaues Glow
+      boxShadow: isFirstDiscoveryField ? '0 0 8px rgba(59, 130, 246, 0.6)' : 'none'
     };
 
     return (
@@ -931,8 +932,8 @@ function GameBoard({ gameState, onTileClick, onHeroClick }) {
               onClick={(e) => {
                 if (canCleanse) {
                   e.stopPropagation();
-                  // Call handleHeilendeReinigung directly
-                  handleHeilendeReinigung(position);
+                  // Call darknessRemovalHandler (module-level handler)
+                  darknessRemovalHandler?.(position);
                 }
               }}
               style={{
@@ -1044,26 +1045,53 @@ function GameBoard({ gameState, onTileClick, onHeroClick }) {
   };
 
 
+  const tileSize = 70; // Fixed 70px per tile
+  const gap = 2;
+
+  // Detect mobile
+  const isMobile = window.innerWidth < 768;
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
-      <div 
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+      height: '100%',
+      paddingTop: isMobile ? '0.1rem' : '1rem',
+      paddingBottom: isMobile ? '5.5rem' : '1rem',
+    }}>
+      <div
+        ref={boardContainerRef}
         style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${boardSize}, 1fr)`,
-          gridTemplateRows: `repeat(${boardSize}, 1fr)`,
-          width: 'min(90vw, 90vh, 600px)',
-          height: 'min(90vw, 90vh, 600px)',
-          backgroundColor: '#111827',
-          border: '2px solid #4b5563',
-          borderRadius: '8px',
-          overflow: 'hidden'
+          width: isMobile ? '100%' : 'min(95vw, 95vh, 900px)',
+          height: isMobile ? '100%' : 'min(95vw, 95vh, 900px)',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          backgroundColor: '#1a202c',
+          borderRadius: isMobile ? '0' : '8px',
+          overflow: 'auto',
+          WebkitOverflowScrolling: 'touch'
         }}
       >
-        {Array.from({ length: boardSize }, (_, y) =>
-          Array.from({ length: boardSize }, (_, x) =>
-            renderTile(x, y)
-          )
-        )}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${boardSize}, ${tileSize}px)`,
+            gridTemplateRows: `repeat(${boardSize}, ${tileSize}px)`,
+            gap: `${gap}px`,
+            padding: '8px',
+            margin: 'auto',
+            width: 'fit-content',
+            height: 'fit-content'
+          }}
+        >
+          {Array.from({ length: boardSize }, (_, y) =>
+            Array.from({ length: boardSize }, (_, x) =>
+              renderTile(x, y)
+            )
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1225,6 +1253,8 @@ function GameScreen({ gameData, onNewGame }) {
   const eventTriggerAssigned = useRef(false);
   // Track which round already had an event triggered
   const eventTriggeredForRound = useRef(0);
+  // Board container ref for auto-centering
+  const boardContainerRef = useRef(null);
   // Global flag to prevent multiple simultaneous triggerRandomEvent calls
   const isTriggeringEvent = useRef(false);
 
@@ -1630,6 +1660,38 @@ function GameScreen({ gameData, onNewGame }) {
     }
     return baseApCost + firstDiscoveryPenalty;
   };
+
+  // Auto-center board on active player
+  const centerOnActivePlayer = () => {
+    if (!boardContainerRef.current) return;
+
+    const activePlayer = gameState.players[gameState.currentPlayerIndex];
+    if (!activePlayer) return;
+
+    const [x, y] = activePlayer.position.split(',').map(Number);
+    const container = boardContainerRef.current;
+    const tileSize = 70;
+    const gap = 2;
+
+    // Calculate position of tile in grid
+    const targetX = x * (tileSize + gap) + tileSize / 2;
+    const targetY = y * (tileSize + gap) + tileSize / 2;
+
+    // Center in viewport
+    const scrollX = targetX - container.offsetWidth / 2;
+    const scrollY = targetY - container.offsetHeight / 2;
+
+    container.scrollTo({
+      left: Math.max(0, scrollX),
+      top: Math.max(0, scrollY),
+      behavior: 'instant'
+    });
+  };
+
+  // useEffect for auto-centering on player change
+  useEffect(() => {
+    setTimeout(() => centerOnActivePlayer(), 100);
+  }, [gameState?.currentPlayerIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTileClick = (position) => {
     // Prevent actions if current player should skip turn
@@ -4715,6 +4777,9 @@ function GameScreen({ gameData, onNewGame }) {
     }
   };
 
+  // Set module-level handler for darkness removal (accessible in GameBoard rendering)
+  darknessRemovalHandler = handleHeilendeReinigung;
+
   const handleHeilendeReinigungEffekte = () => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
@@ -7766,6 +7831,7 @@ function GameScreen({ gameData, onNewGame }) {
                 console.log('🎮 onHeroClick called with heroId:', heroId);
                 setShowRadialMenu(true);
               }}
+              boardContainerRef={boardContainerRef}
             />
 
             {/* Tower Status Button - FIXED position unten-mitte */}
