@@ -721,30 +721,89 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
           <div style={{ color: '#9ca3af', fontSize: '20px' }}>?</div>
         )}
 
-        {/* Large Item Icons in Center */}
-        {tile?.resources && tile.resources.length > 0 && (
+        {/* Items & Obstacles Container - Side by Side */}
+        {(tile?.resources?.length > 0 || tile?.obstacles?.length > 0) && (
           <div style={{
             position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: '6px',
             alignItems: 'center',
-            gap: '2px',
+            justifyContent: 'center',
             maxWidth: '90%',
             zIndex: 10 // Above darkness overlay (z-index: 5)
           }}>
-            {tile.resources.map((resource, index) => {
-              // Dynamic sizing based on item count
+            {/* Obstacles (left side) */}
+            {tile?.obstacles?.map((obstacle, idx) => {
+              // Check if current player is ADJACENT (not on same tile)
+              const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+              const [tileX, tileY] = position.split(',').map(Number);
+              const [playerX, playerY] = currentPlayer.position.split(',').map(Number);
+              const manhattanDist = Math.abs(tileX - playerX) + Math.abs(tileY - playerY);
+              const isAdjacent = manhattanDist === 1;
+
+              // Check if player has required skill and AP
+              const skillMap = {
+                'geroell': 'geroell_beseitigen',
+                'dornenwald': 'dornen_entfernen',
+                'ueberflutung': 'fluss_freimachen'
+              };
+              const requiredSkill = skillMap[obstacle];
+              const hasSkill = currentPlayer.learnedSkills.includes(requiredSkill);
+              const hasAp = currentPlayer.ap >= 1;
+              const canRemove = isAdjacent && hasSkill && hasAp;
+
+              return (
+                <div
+                  key={`obstacle-${idx}`}
+                  onClick={(e) => {
+                    if (canRemove) {
+                      e.stopPropagation();
+                      if (obstacleRemovalHandler) {
+                        obstacleRemovalHandler(position, obstacle);
+                      }
+                    }
+                  }}
+                  style={{
+                    fontSize: '22px',
+                    lineHeight: '1',
+                    filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
+                    cursor: canRemove ? 'pointer' : 'default',
+                    opacity: canRemove ? 1 : 0.7,
+                    transition: 'transform 0.2s ease, opacity 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (canRemove) {
+                      e.currentTarget.style.transform = 'scale(1.2)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  title={
+                    obstacle === 'geroell' ? 'Geröll' :
+                    obstacle === 'dornenwald' ? 'Dornenwald' :
+                    obstacle === 'ueberflutung' ? 'Überflutung' : obstacle
+                  }
+                >
+                  {obstacle === 'geroell' ? '🪨' : obstacle === 'dornenwald' ? '🌿' : obstacle === 'ueberflutung' ? '🌊' : '🚧'}
+                </div>
+              );
+            })}
+
+            {/* Items (right side) */}
+            {tile?.resources?.map((resource, index) => {
+              // Dynamic sizing based on total item count
               const itemCount = tile.resources.length;
               const fontSize = itemCount === 1 ? '20px' :
                               itemCount === 2 ? '16px' :
                               itemCount <= 4 ? '14px' : '12px';
 
               return (
-                <div key={index} style={{
+                <div key={`resource-${index}`} style={{
                   fontSize,
                   lineHeight: '1',
                   filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
@@ -787,8 +846,8 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
             left: '50%',
             transform: 'translate(-50%, -50%)',
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, 18px)', // Max 2 columns
-            gap: '6px', // More space for pulse animation
+            gridTemplateColumns: 'repeat(2, 22px)', // Max 2 columns (22px hero size)
+            gap: '8px', // More space for pulse animation & no overlap
             zIndex: 20,
             pointerEvents: 'none' // Container blockiert keine Events - nur einzelne Heroes
           }}>
@@ -800,12 +859,12 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
                 <div
                   key={hero.id}
                   style={{
-                    width: '18px', // 1.5× larger (was 12px)
-                    height: '18px',
+                    width: '22px', // 1.83× larger (was 12px)
+                    height: '22px',
                     borderRadius: '50%',
                     backgroundColor: heroColor,
                     border: '2px solid white',
-                    fontSize: '10px', // 1.25× larger (was 8px)
+                    fontSize: '11px', // Larger for better readability
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -853,67 +912,6 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
           </div>
         )}
 
-        {/* Obstacles on tile (multiple possible) */}
-        {tile?.obstacles && tile.obstacles.length > 0 && (
-          <div style={{
-            position: 'absolute',
-            display: 'flex',
-            gap: '4px',
-            fontSize: '24px',
-            filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
-            zIndex: 8 // Below items but above darkness
-          }}>
-            {tile.obstacles.map((obstacle, idx) => {
-              // Check if current player is ADJACENT (not on same tile)
-              const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-              const [tileX, tileY] = position.split(',').map(Number);
-              const [playerX, playerY] = currentPlayer.position.split(',').map(Number);
-              const manhattanDist = Math.abs(tileX - playerX) + Math.abs(tileY - playerY);
-              const isAdjacent = manhattanDist === 1;
-
-              // Check if player has required skill and AP
-              const skillMap = {
-                'geroell': 'geroell_beseitigen',
-                'dornenwald': 'dornen_entfernen',
-                'ueberflutung': 'fluss_freimachen'
-              };
-              const requiredSkill = skillMap[obstacle];
-              const hasSkill = currentPlayer.learnedSkills.includes(requiredSkill);
-              const hasAp = currentPlayer.ap >= 1;
-              const canRemove = isAdjacent && hasSkill && hasAp;
-
-              return (
-                <div
-                  key={idx}
-                  onClick={(e) => {
-                    if (canRemove) {
-                      e.stopPropagation();
-                      // Call module-level handler (set after component definition)
-                      if (obstacleRemovalHandler) {
-                        obstacleRemovalHandler(position, obstacle);
-                      }
-                    }
-                  }}
-                  style={{
-                    cursor: canRemove ? 'pointer' : 'default',
-                    opacity: canRemove ? 1 : 0.7,
-                    transition: 'transform 0.2s ease, opacity 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (canRemove) {
-                      e.currentTarget.style.transform = 'scale(1.2)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
-                  {obstacle === 'geroell' ? '🪨' : obstacle === 'dornenwald' ? '🌿' : obstacle === 'ueberflutung' ? '🌊' : '🚧'}
-                </div>
-              );
-            })}
-          </div>
-        )}
 
         {/* Darkness Overlay (Phase 2) - Clickable for Heilende Reinigung */}
         {gameState.herzDerFinsternis.darkTiles?.includes(position) && (() => {
