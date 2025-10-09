@@ -21,6 +21,7 @@ import PlayerCarousel from './PlayerCarousel';
  * @param {Array} actionBlockers - Action blockers array
  * @param {Function} shouldPlayerSkipTurn - Helper function
  * @param {boolean} isMobile - Is viewport mobile-sized?
+ * @param {Function} onNewGame - Callback for new game action
  */
 const HeroAvatar = ({
   player,
@@ -33,7 +34,8 @@ const HeroAvatar = ({
   currentRound,
   actionBlockers,
   shouldPlayerSkipTurn,
-  isMobile
+  isMobile,
+  onNewGame
 }) => {
   if (!player || !hero) return null;
 
@@ -95,56 +97,63 @@ const HeroAvatar = ({
 
   return (
     <>
-      {/* Compact Hero Avatar Bar - Always visible */}
-      <div
-        onClick={onToggle}
-        style={{
-          position: 'fixed',
-          top: '10px',
-          left: '10px',
-          zIndex: 1000,
-          display: 'flex',
-          gap: '10px',
-          alignItems: 'center',
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(15px)',
-          borderRadius: '30px',
-          padding: '8px 16px 8px 8px',
-          border: `2px solid ${heroColor}`,
-          boxShadow: `
-            0 4px 20px rgba(0, 0, 0, 0.5),
-            0 0 30px ${heroColor}40,
-            inset 0 1px 1px rgba(255, 255, 255, 0.1)
-          `,
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-          animation: 'heroPulse 2s ease-in-out infinite',
-          userSelect: 'none',
-          WebkitTapHighlightColor: 'transparent'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.boxShadow = `
-            0 6px 25px rgba(0, 0, 0, 0.6),
-            0 0 40px ${heroColor}60,
-            inset 0 1px 1px rgba(255, 255, 255, 0.1)
-          `;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = `
-            0 4px 20px rgba(0, 0, 0, 0.5),
-            0 0 30px ${heroColor}40,
-            inset 0 1px 1px rgba(255, 255, 255, 0.1)
-          `;
-        }}
-        onTouchStart={(e) => {
-          e.currentTarget.style.transform = 'scale(0.95)';
-        }}
-        onTouchEnd={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
-      >
+      {/* Wrapper: Avatar + Spielabbruch-Punkt - horizontal zentriert */}
+      <div style={{
+        position: 'fixed',
+        top: '10px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '40px',
+        zIndex: 1000
+      }}>
+        {/* Compact Hero Avatar Bar - Always visible */}
+        <div
+          onClick={onToggle}
+          style={{
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(15px)',
+            borderRadius: '30px',
+            padding: '8px 16px 8px 8px',
+            border: `2px solid ${heroColor}`,
+            boxShadow: `
+              0 4px 20px rgba(0, 0, 0, 0.5),
+              0 0 30px ${heroColor}40,
+              inset 0 1px 1px rgba(255, 255, 255, 0.1)
+            `,
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            animation: 'heroPulse 2s ease-in-out infinite',
+            userSelect: 'none',
+            WebkitTapHighlightColor: 'transparent'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.boxShadow = `
+              0 6px 25px rgba(0, 0, 0, 0.6),
+              0 0 40px ${heroColor}60,
+              inset 0 1px 1px rgba(255, 255, 255, 0.1)
+            `;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = `
+              0 4px 20px rgba(0, 0, 0, 0.5),
+              0 0 30px ${heroColor}40,
+              inset 0 1px 1px rgba(255, 255, 255, 0.1)
+            `;
+          }}
+          onTouchStart={(e) => {
+            e.currentTarget.style.transform = 'scale(0.95)';
+          }}
+          onTouchEnd={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
         {/* Hero Avatar Circle */}
         <div
           style={{
@@ -215,6 +224,38 @@ const HeroAvatar = ({
         }}>
           ▼
         </div>
+        </div>
+
+        {/* Spielabbruch-Punkt - immer rechts neben Avatar */}
+        <button
+          onClick={() => {
+            if (window.confirm('Neues Abenteuer beginnen?\n\n⚠️ Das aktuelle Spiel geht verloren!')) {
+              onNewGame();
+            }
+          }}
+          style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 0 12px rgba(220, 38, 38, 0.6)',
+            transition: 'all 0.3s ease',
+            animation: 'pulseNewGameDot 2.5s ease-in-out infinite',
+            padding: 0,
+            flexShrink: 0
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.2)';
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(220, 38, 38, 0.9)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(220, 38, 38, 0.6)';
+          }}
+          title="Neues Spiel starten"
+        />
       </div>
 
       {/* Expanded Details Panel */}
@@ -223,9 +264,10 @@ const HeroAvatar = ({
           style={{
             position: 'fixed',
             top: '70px',
-            left: '10px',
-            right: '10px',
-            maxWidth: '500px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'calc(100% - 55px)',
+            maxWidth: '480px',
             maxHeight: '70vh',
             overflowY: 'auto',
             backgroundColor: 'rgba(0, 0, 0, 0.95)',
@@ -239,7 +281,7 @@ const HeroAvatar = ({
               0 0 60px ${heroColor}30,
               inset 0 1px 1px rgba(255, 255, 255, 0.1)
             `,
-            animation: 'slideDown 0.3s ease-out'
+            animation: 'fadeIn 0.2s ease-out'
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -341,6 +383,15 @@ const HeroAvatar = ({
           }
           to {
             opacity: 1;
+          }
+        }
+
+        @keyframes pulseNewGameDot {
+          0%, 100% {
+            box-shadow: 0 0 12px rgba(220, 38, 38, 0.6);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.9);
           }
         }
       `}</style>
