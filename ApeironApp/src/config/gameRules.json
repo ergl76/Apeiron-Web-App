@@ -43,6 +43,13 @@
     "darknessSpreadPerTurn": 2
   },
 
+  "ui": {
+    "board": {
+      "minTileSize": 70,
+      "tileGap": 2
+    }
+  },
+
   "difficulty": {
     "easy": {
       "positiveEvents": 0.7,

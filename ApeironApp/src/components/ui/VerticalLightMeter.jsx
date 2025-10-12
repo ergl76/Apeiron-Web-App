@@ -89,7 +89,7 @@ const VerticalLightMeter = ({ light, maxLight, round }) => {
       position: 'fixed',
       top: 0,
       [side]: 0,                              // Dynamic: left or right
-      width: '6px',                           // ✅ Schmäler: 6px
+      width: '9px',                           // ✅ Schmäler: 9px
       height: '100vh',                        // Always full height
       zIndex: 999,
       cursor: 'pointer',
