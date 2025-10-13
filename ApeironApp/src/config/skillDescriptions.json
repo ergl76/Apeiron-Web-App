@@ -1,0 +1,205 @@
+{
+  "geroell_beseitigen": {
+    "id": "geroell_beseitigen",
+    "name": "Geröll beseitigen",
+    "icon": "⛏️",
+    "cost": "1 AP",
+    "category": "ability",
+    "prerequisites": [
+      "Held auf angrenzendem Feld zum Hindernis",
+      "Fähigkeit 'Geröll beseitigen' gelernt"
+    ],
+    "description": "Entfernt Felsbrocken und Steinschläge, die den Weg blockieren. Terra's Spezialität als ehemalige Steinmetzin ermöglicht es, schwere Hindernisse aus dem Weg zu räumen.",
+    "why": "Geröll blockiert die Bewegung deiner Helden und verhindert den Zugang zu wichtigen Ressourcen wie Kristallen oder Bauplänen auf blockierten Feldern.",
+    "usage": "Wenn dein Held neben einem Geröll-Hindernis 🪨 steht, klicke **DIREKT auf das Geröll-Icon am Spielfeld**. Das Hindernis wird sofort entfernt und das Feld ist wieder passierbar."
+  },
+
+  "reinigen": {
+    "id": "reinigen",
+    "name": "Heilende Reinigung",
+    "icon": "💧",
+    "cost": "1 AP",
+    "category": "ability",
+    "prerequisites": [
+      "Fähigkeit 'Heilende Reinigung' gelernt",
+      "Für Finsternis: Held auf angrenzendem Feld",
+      "Für Effekte: Helden am gleichen Feld mit negativen Effekten"
+    ],
+    "description": "Lyra's mächtige Fähigkeit der Sirenen. Kann sowohl finstere Magie von Helden entfernen als auch von Finsternis erfasste Felder säubern.",
+    "why": "Finsternis in Phase 2 macht Felder unpassierbar und verhindert das Sammeln von Ressourcen. Negative Effekte blockieren wichtige Aktionen und reduzieren AP.",
+    "usage": "**Finsternis entfernen:** Klicke **DIREKT auf das dunkle Overlay** ☠️ am Spielfeld. Das Feld wird gesäubert und wieder passierbar.\n\n**Negative Effekte entfernen:** Die Fähigkeit erscheint automatisch im Aktions-Menü wenn Helden am gleichen Feld negative Effekte haben."
+  },
+
+  "spaehen": {
+    "id": "spaehen",
+    "name": "Spähen",
+    "icon": "👁️",
+    "cost": "0-1 AP (Smart Scouting)",
+    "category": "ability",
+    "prerequisites": [
+      "Fähigkeit 'Spähen' gelernt",
+      "Angrenzende unentdeckte Felder vorhanden"
+    ],
+    "description": "Corvus' scharfer Blick erlaubt es, die Umgebung effizienter zu erkunden. Das Smart Scouting System macht die erste Entdeckung kostenlos!",
+    "why": "Spart AP bei der Erkundung. Schnelleres Finden von Kristallen, Bauplänen und Element-Fragmenten.",
+    "usage": "**UC1 - Erfolgreiches Scouting:**\n1. Klicke auf unentdecktes Feld → **0 AP**, Feld bekommt blaue Border\n2. Klicke sofort auf zweites unentdecktes Feld → **1 AP für BEIDE** Felder = 0.5 AP pro Feld!\n\n**UC2 - Unterbrochenes Scouting:**\nWenn du nach der ersten Entdeckung eine andere Aktion wählst (Bewegen, Sammeln, etc.), zahlst du **+1 AP Penalty** zusätzlich.\nBeispiel: Erste Entdeckung + Bewegung = 2 AP statt 1 AP"
+  },
+
+  "schnell_bewegen": {
+    "id": "schnell_bewegen",
+    "name": "Schnell bewegen",
+    "icon": "🦅",
+    "cost": "1 AP",
+    "category": "ability",
+    "prerequisites": [
+      "Fähigkeit 'Schnell bewegen' gelernt",
+      "Zielfeld 2 Felder entfernt (horizontal oder vertikal)",
+      "Beide Felder müssen aufgedeckt sein",
+      "Keine Hindernisse im Weg"
+    ],
+    "description": "Corvus' legendäre Geschwindigkeit der Aviari. Ermöglicht die Bewegung von bis zu 2 Feldern (horizontal oder vertikal) für nur 1 AP statt 2 AP.",
+    "why": "Spart wertvolle Aktionspunkte für Erkundung oder Ressourcensammlung. Besonders nützlich in Phase 2 wenn die Zeit knapp wird.",
+    "usage": "Klicke auf ein Feld, das **2 Felder entfernt** ist (horizontal oder vertikal in eine Richtung). Dein Held bewegt sich direkt dorthin für nur 1 AP.\n\n⚠️ **Wichtig:** Diagonale Bewegungen sind NICHT möglich. Nur gerade Linien (Nord, Ost, Süd, West)."
+  },
+
+  "grundstein_legen": {
+    "id": "grundstein_legen",
+    "name": "Grundstein legen",
+    "icon": "🧱",
+    "cost": "1 AP + 2 Kristalle",
+    "category": "ability",
+    "prerequisites": [
+      "Held auf dem Krater-Feld (Mitte des Spielfelds)",
+      "Fähigkeit 'Grundstein legen' gelernt",
+      "Bauplan für das Element gelernt",
+      "2 Kristalle 💎 im Inventar"
+    ],
+    "description": "Terra's einzigartige Fähigkeit als Steinmetzin. Nur sie kann die schweren Fundamente des Turms der Elemente errichten.",
+    "why": "Fundamente sind essentiell für Phase 1! Mit dem 4. Fundament beginnt Phase 2. Jedes gebaute Fundament gibt dem Team **+4 Lichtpunkte**.",
+    "usage": "1. Stelle dich auf das **Krater-Feld** (Mitte des Spielfelds)\n2. Öffne das **Aktions-Menü**\n3. Wähle **'🏗️ Fundament bauen'**\n4. Wähle das Element für das du den Bauplan gelernt hast\n5. 2 Kristalle werden automatisch aus deinem Inventar verbraucht"
+  },
+
+  "element_aktivieren": {
+    "id": "element_aktivieren",
+    "name": "Element aktivieren",
+    "icon": "🔥",
+    "cost": "1 AP + 1 Kristall + 1 Fragment",
+    "category": "ability",
+    "prerequisites": [
+      "Phase 2 erreicht (alle 4 Fundamente gebaut)",
+      "Held auf dem Krater-Feld",
+      "Fähigkeit 'Element aktivieren' gelernt",
+      "1 Kristall 💎 im Inventar",
+      "Passendes Element-Fragment (🟩🟦🟥🟨) im Inventar"
+    ],
+    "description": "Ignis' brennende Leidenschaft entfacht die Macht der Elemente. Nur er kann die Element-Fragmente aktivieren und ihre volle Kraft freisetzen.",
+    "why": "**Das Spielziel!** Bei Aktivierung des 4. Elements **GEWINNT ihr das Spiel!** Jede Aktivierung gibt mächtige Boni: +4 Licht, Finsternis zurückgedrängt, oder +1 AP permanent für ALLE Helden.",
+    "usage": "1. Stelle dich auf das **Krater-Feld** (Phase 2)\n2. Öffne das **Aktions-Menü**\n3. Wähle **'🔥 Element aktivieren'**\n4. Wähle das Element für das du ein Fragment hast\n5. 1 Kristall + Fragment werden verbraucht\n6. **Bonus-Effekte aktiviert!** (Licht, Finsternis-Reduktion, oder +1 AP)"
+  },
+
+  "lehren": {
+    "id": "lehren",
+    "name": "Lehren",
+    "icon": "🎓",
+    "cost": "1 AP",
+    "category": "ability",
+    "prerequisites": [
+      "Held ist Master (Tor der Weisheit ⛩️ durchschritten)",
+      "Andere Helden am gleichen Feld",
+      "Angeborene Fähigkeit noch nicht bei anderen Helden gelernt"
+    ],
+    "description": "Nach dem Durchschreiten des Tors der Weisheit wird dein Held zum Master seines Elements. Masters können ihr Wissen an andere Helden weitergeben.",
+    "why": "Ermöglicht **Fähigkeiten-Sharing!** Terra kann anderen 'Grundstein legen' beibringen, Ignis 'Element aktivieren', Lyra 'Heilende Reinigung', Corvus 'Spähen'. Macht das Team viel flexibler!",
+    "usage": "1. Stelle dich auf das **gleiche Feld** wie andere Helden\n2. Öffne das **Aktions-Menü**\n3. Wähle **'🎓 Lehren'**\n4. Wähle eine deiner **ANGEBORENEN** Fähigkeiten (Start-Skills deines Helden)\n5. **ALLE Helden am Feld lernen** diese Fähigkeit dauerhaft!"
+  },
+
+  "dornen_entfernen": {
+    "id": "dornen_entfernen",
+    "name": "Dornenwald entfernen",
+    "icon": "🌵",
+    "cost": "1 AP",
+    "category": "ability",
+    "prerequisites": [
+      "Held auf angrenzendem Feld zum Dornenwald",
+      "Fähigkeit 'Dornenwald entfernen' gelernt"
+    ],
+    "description": "Ignis brennt dichte, unpassierbare Dornenwälder nieder mit der Kraft der Drachen. Das Feuer reinigt den Weg.",
+    "why": "Dornenwälder blockieren kritische Pfade zu Ressourcen. Events können mehrere Dornen gleichzeitig platzieren und euch einschließen.",
+    "usage": "Wenn dein Held neben einem Dornenwald 🌵 steht, klicke **DIREKT auf das Dornen-Icon am Spielfeld**. Die Dornen verbrennen und das Feld wird frei."
+  },
+
+  "fluss_freimachen": {
+    "id": "fluss_freimachen",
+    "name": "Überflutung trockenlegen",
+    "icon": "🌊",
+    "cost": "1 AP",
+    "category": "ability",
+    "prerequisites": [
+      "Held auf angrenzendem Feld zur Überflutung",
+      "Fähigkeit 'Überflutung trockenlegen' gelernt"
+    ],
+    "description": "Lyra's Verbindung zu den Gezeiten. Kann die Strömung überfluteter Gewässer beruhigen und das Gebiet wieder passierbar machen.",
+    "why": "Überflutungen blockieren wichtige Wege und den Zugang zu Ressourcen. In Phase 2 können Events mehrere Felder gleichzeitig überfluten.",
+    "usage": "Wenn dein Held neben einer Überflutung 🌊 steht, klicke **DIREKT auf das Überflutungs-Icon am Spielfeld**. Das Hindernis wird entfernt und das Feld ist wieder passierbar."
+  },
+
+  "kenntnis_bauplan_erde": {
+    "id": "kenntnis_bauplan_erde",
+    "name": "Bauplan: Erde",
+    "icon": "🗿",
+    "cost": "1 AP zum Lernen",
+    "category": "knowledge",
+    "prerequisites": [
+      "Bauplan Erde 📋🟩 im Inventar",
+      "1 freier AP für Lernen-Aktion"
+    ],
+    "description": "Das uralte Wissen der Minotauren zum Bau des Erd-Fundaments. Nur mit diesem gelernten Bauplan kann das entsprechende Fundament gebaut werden.",
+    "why": "Ohne gelernte Baupläne können keine Fundamente gebaut werden! Ihr braucht alle 4 Baupläne um Phase 2 zu erreichen.",
+    "usage": "**Bauplan finden:**\nErkunde Felder bis du einen Bauplan 📋 findest. Sammle ihn auf (1 AP).\n\n**Bauplan lernen:**\n1. Stelle dich auf ein Feld mit anderen Helden (empfohlen, da alle am Feld lernen!)\n2. Öffne das **Aktions-Menü**\n3. Wähle **'📚 Lernen'**\n4. Wähle den Bauplan\n\n⚠️ **Wichtig:** Der Bauplan wird VERBRAUCHT, aber **ALLE Helden am Feld** lernen ihn dauerhaft!"
+  },
+
+  "kenntnis_bauplan_wasser": {
+    "id": "kenntnis_bauplan_wasser",
+    "name": "Bauplan: Wasser",
+    "icon": "💧",
+    "cost": "1 AP zum Lernen",
+    "category": "knowledge",
+    "prerequisites": [
+      "Bauplan Wasser 📋🟦 im Inventar",
+      "1 freier AP für Lernen-Aktion"
+    ],
+    "description": "Das uralte Wissen der Sirenen zum Bau des Wasser-Fundaments. Nur mit diesem gelernten Bauplan kann das entsprechende Fundament gebaut werden.",
+    "why": "Ohne gelernte Baupläne können keine Fundamente gebaut werden! Ihr braucht alle 4 Baupläne um Phase 2 zu erreichen.",
+    "usage": "**Bauplan finden:**\nErkunde Felder bis du einen Bauplan 📋 findest. Sammle ihn auf (1 AP).\n\n**Bauplan lernen:**\n1. Stelle dich auf ein Feld mit anderen Helden (empfohlen, da alle am Feld lernen!)\n2. Öffne das **Aktions-Menü**\n3. Wähle **'📚 Lernen'**\n4. Wähle den Bauplan\n\n⚠️ **Wichtig:** Der Bauplan wird VERBRAUCHT, aber **ALLE Helden am Feld** lernen ihn dauerhaft!"
+  },
+
+  "kenntnis_bauplan_feuer": {
+    "id": "kenntnis_bauplan_feuer",
+    "name": "Bauplan: Feuer",
+    "icon": "🔥",
+    "cost": "1 AP zum Lernen",
+    "category": "knowledge",
+    "prerequisites": [
+      "Bauplan Feuer 📋🟥 im Inventar",
+      "1 freier AP für Lernen-Aktion"
+    ],
+    "description": "Das uralte Wissen der Drachen zum Bau des Feuer-Fundaments. Nur mit diesem gelernten Bauplan kann das entsprechende Fundament gebaut werden.",
+    "why": "Ohne gelernte Baupläne können keine Fundamente gebaut werden! Ihr braucht alle 4 Baupläne um Phase 2 zu erreichen.",
+    "usage": "**Bauplan finden:**\nErkunde Felder bis du einen Bauplan 📋 findest. Sammle ihn auf (1 AP).\n\n**Bauplan lernen:**\n1. Stelle dich auf ein Feld mit anderen Helden (empfohlen, da alle am Feld lernen!)\n2. Öffne das **Aktions-Menü**\n3. Wähle **'📚 Lernen'**\n4. Wähle den Bauplan\n\n⚠️ **Wichtig:** Der Bauplan wird VERBRAUCHT, aber **ALLE Helden am Feld** lernen ihn dauerhaft!"
+  },
+
+  "kenntnis_bauplan_luft": {
+    "id": "kenntnis_bauplan_luft",
+    "name": "Bauplan: Luft",
+    "icon": "💨",
+    "cost": "1 AP zum Lernen",
+    "category": "knowledge",
+    "prerequisites": [
+      "Bauplan Luft 📋🟨 im Inventar",
+      "1 freier AP für Lernen-Aktion"
+    ],
+    "description": "Das uralte Wissen der Aviari zum Bau des Luft-Fundaments. Nur mit diesem gelernten Bauplan kann das entsprechende Fundament gebaut werden.",
+    "why": "Ohne gelernte Baupläne können keine Fundamente gebaut werden! Ihr braucht alle 4 Baupläne um Phase 2 zu erreichen.",
+    "usage": "**Bauplan finden:**\nErkunde Felder bis du einen Bauplan 📋 findest. Sammle ihn auf (1 AP).\n\n**Bauplan lernen:**\n1. Stelle dich auf ein Feld mit anderen Helden (empfohlen, da alle am Feld lernen!)\n2. Öffne das **Aktions-Menü**\n3. Wähle **'📚 Lernen'**\n4. Wähle den Bauplan\n\n⚠️ **Wichtig:** Der Bauplan wird VERBRAUCHT, aber **ALLE Helden am Feld** lernen ihn dauerhaft!"
+  }
+}

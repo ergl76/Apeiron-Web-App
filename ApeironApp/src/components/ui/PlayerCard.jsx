@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import SkillTooltipModal from './SkillTooltipModal';
+import skillDescriptions from '../../config/skillDescriptions.json';
 
 /**
  * PlayerCard - Single Player Card for Swipeable Carousel
@@ -27,6 +29,9 @@ const PlayerCard = ({
   shouldPlayerSkipTurn
 }) => {
   if (!player || !hero) return null;
+
+  // State for skill tooltip modal
+  const [selectedSkill, setSelectedSkill] = useState(null);
 
   const heroColor = hero.color;
 
@@ -266,13 +271,18 @@ const PlayerCard = ({
                     return (
                       <span
                         key={skill}
+                        onClick={() => setSelectedSkill(skill)}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         style={{
                           backgroundColor: 'rgba(251, 191, 36, 0.3)',
                           border: '1px solid #fbbf24',
                           padding: '4px 8px',
                           borderRadius: '6px',
                           fontSize: '1.2rem',
-                          fontWeight: 'bold'
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                         }}
                         title={skill.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       >
@@ -318,13 +328,18 @@ const PlayerCard = ({
                     return (
                       <span
                         key={skill}
+                        onClick={() => setSelectedSkill(skill)}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         style={{
                           backgroundColor: 'rgba(167, 139, 250, 0.3)',
                           border: '1px solid #a78bfa',
                           padding: '4px 8px',
                           borderRadius: '6px',
                           fontSize: '0.75rem',
-                          fontWeight: 'bold'
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                         }}
                         title={skill.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       >
@@ -486,6 +501,15 @@ const PlayerCard = ({
             }
           }
         `}</style>
+      )}
+
+      {/* Skill Tooltip Modal */}
+      {selectedSkill && skillDescriptions[selectedSkill] && (
+        <SkillTooltipModal
+          skillData={skillDescriptions[selectedSkill]}
+          isOpen={!!selectedSkill}
+          onClose={() => setSelectedSkill(null)}
+        />
       )}
     </>
   );
