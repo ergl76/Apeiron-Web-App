@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import SkillTooltipModal from './SkillTooltipModal';
+import ItemTooltipModal from './ItemTooltipModal';
 import skillDescriptions from '../../config/skillDescriptions.json';
 
 /**
@@ -32,6 +33,9 @@ const PlayerCard = ({
 
   // State for skill tooltip modal
   const [selectedSkill, setSelectedSkill] = useState(null);
+
+  // State for item tooltip modal
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const heroColor = hero.color;
 
@@ -175,9 +179,58 @@ const PlayerCard = ({
               const item = player.inventory[slotIndex];
               const isEmpty = !item;
 
+              // Get item display info
+              const getItemInfo = () => {
+                if (isEmpty) return { name: `Slot ${slotIndex + 1} (leer)`, icon: null };
+
+                const itemNames = {
+                  'kristall': 'Kristall',
+                  'artefakt_terra': 'Hammer der Erbauerin',
+                  'artefakt_ignis': 'Herz des Feuers',
+                  'artefakt_lyra': 'Kelch der Reinigung',
+                  'artefakt_corvus': 'Auge des Spähers',
+                  'element_fragment_erde': 'Erd-Fragment',
+                  'element_fragment_wasser': 'Wasser-Fragment',
+                  'element_fragment_feuer': 'Feuer-Fragment',
+                  'element_fragment_luft': 'Luft-Fragment',
+                  'bauplan_erde': 'Bauplan: Erde',
+                  'bauplan_wasser': 'Bauplan: Wasser',
+                  'bauplan_feuer': 'Bauplan: Feuer',
+                  'bauplan_luft': 'Bauplan: Luft'
+                };
+
+                const itemIcons = {
+                  'kristall': '💎',
+                  'artefakt_terra': '🔨',
+                  'artefakt_ignis': '🔥',
+                  'artefakt_lyra': '🏺',
+                  'artefakt_corvus': '👁️',
+                  'element_fragment_erde': '🟩',
+                  'element_fragment_wasser': '🟦',
+                  'element_fragment_feuer': '🟥',
+                  'element_fragment_luft': '🟨',
+                  'bauplan_erde': '📋',
+                  'bauplan_wasser': '📋',
+                  'bauplan_feuer': '📋',
+                  'bauplan_luft': '📋'
+                };
+
+                return {
+                  name: itemNames[item] || item,
+                  icon: itemIcons[item] || '📦'
+                };
+              };
+
+              const itemInfo = getItemInfo();
+
               return (
                 <div
                   key={slotIndex}
+                  onClick={() => {
+                    if (!isEmpty) {
+                      setSelectedItem(itemInfo);
+                    }
+                  }}
                   style={{
                     width: '48px',
                     height: '48px',
@@ -188,21 +241,23 @@ const PlayerCard = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '1.5rem',
-                    position: 'relative'
+                    position: 'relative',
+                    cursor: isEmpty ? 'default' : 'pointer',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                   }}
-                  title={
-                    isEmpty ? `Slot ${slotIndex + 1} (leer)` :
-                    item === 'kristall' ? 'Kristall' :
-                    item === 'artefakt_terra' ? 'Hammer der Erbauerin' :
-                    item === 'artefakt_ignis' ? 'Herz des Feuers' :
-                    item === 'artefakt_lyra' ? 'Kelch der Reinigung' :
-                    item === 'artefakt_corvus' ? 'Auge des Spähers' :
-                    item === 'element_fragment_erde' ? 'Erd-Fragment' :
-                    item === 'element_fragment_wasser' ? 'Wasser-Fragment' :
-                    item === 'element_fragment_feuer' ? 'Feuer-Fragment' :
-                    item === 'element_fragment_luft' ? 'Luft-Fragment' :
-                    item
-                  }
+                  onMouseEnter={(e) => {
+                    if (!isEmpty) {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isEmpty) {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                  title={itemInfo.name}
                 >
                   {isEmpty ? (
                     <div style={{
@@ -509,6 +564,16 @@ const PlayerCard = ({
           skillData={skillDescriptions[selectedSkill]}
           isOpen={!!selectedSkill}
           onClose={() => setSelectedSkill(null)}
+        />
+      )}
+
+      {/* Item Tooltip Modal */}
+      {selectedItem && (
+        <ItemTooltipModal
+          itemName={selectedItem.name}
+          itemIcon={selectedItem.icon}
+          isOpen={!!selectedItem}
+          onClose={() => setSelectedItem(null)}
         />
       )}
     </>
