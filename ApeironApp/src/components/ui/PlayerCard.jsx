@@ -256,9 +256,9 @@ const PlayerCard = ({
                       'grundstein_legen': '🧱',
                       'geroell_beseitigen': '⛏️',
                       'spaehen': '👁️',
-                      'schnell_bewegen': '💨',
+                      'schnell_bewegen': '🦅',
                       'element_aktivieren': '🔥',
-                      'dornen_entfernen': '🌿',
+                      'dornen_entfernen': '🌵',
                       'reinigen': '💧',
                       'fluss_freimachen': '🌊',
                       'lehren': '🎓'
@@ -271,7 +271,7 @@ const PlayerCard = ({
                           border: '1px solid #fbbf24',
                           padding: '4px 8px',
                           borderRadius: '6px',
-                          fontSize: '0.75rem',
+                          fontSize: '1.2rem',
                           fontWeight: 'bold'
                         }}
                         title={skill.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}

@@ -789,7 +789,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
                     obstacle === 'ueberflutung' ? 'Überflutung' : obstacle
                   }
                 >
-                  {obstacle === 'geroell' ? '🪨' : obstacle === 'dornenwald' ? '🌿' : obstacle === 'ueberflutung' ? '🌊' : '🚧'}
+                  {obstacle === 'geroell' ? '🪨' : obstacle === 'dornenwald' ? '🌵' : obstacle === 'ueberflutung' ? '🌊' : '🚧'}
                 </div>
               );
             })}
@@ -6102,7 +6102,7 @@ function GameScreen({ gameData, onNewGame }) {
           ],
           fire: [
             { skill: 'element_aktivieren', name: 'Element aktivieren', emoji: '🔥' },
-            { skill: 'dornen_entfernen', name: 'Dornenwald entfernen', emoji: '🌿' }
+            { skill: 'dornen_entfernen', name: 'Dornenwald entfernen', emoji: '🌵' }
           ],
           water: [
             { skill: 'reinigen', name: 'Heilende Reinigung', emoji: '💧' },

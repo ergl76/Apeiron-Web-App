@@ -18,7 +18,7 @@ interface GameSetupProps {
 // Hero-Informationen aus spielanleitung.md
 const heroInfo = {
   terra: {
-    icon: '🌍',
+    icon: '🌿',
     subtitle: 'Der Fels in der Brandung',
     description: 'Stärke und Loyalität. Unerschütterlicher Anker der Gruppe.',
     skills: [
@@ -32,7 +32,7 @@ const heroInfo = {
     description: 'Impulsiv, leidenschaftlich, voller Optimismus.',
     skills: [
       { icon: '🔥', name: 'Element aktivieren' },
-      { icon: '🌿', name: 'Dornen entfernen' }
+      { icon: '🌵', name: 'Dornen entfernen' }
     ]
   },
   lyra: {
@@ -49,7 +49,7 @@ const heroInfo = {
     subtitle: 'Der stille Beobachter',
     description: 'Scharfsinnig, neugierig, Meister der Beobachtung.',
     skills: [
-      { icon: '💨', name: 'Schnell bewegen' },
+      { icon: '🦅', name: 'Schnell bewegen' },
       { icon: '👁️', name: 'Spähen' }
     ]
   }
@@ -223,10 +223,11 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.25rem',
-                          fontSize: '0.75rem',
+                          fontSize: '0.85rem',
                           color: '#6b7280'
                         }}>
                           <span>{skill.icon}</span>
+                    
                           <span>{skill.name}</span>
                         </div>
                       ))}
