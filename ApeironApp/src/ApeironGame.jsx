@@ -1388,6 +1388,7 @@ function GameScreen({ gameData, onNewGame }) {
   // Radial Action Menu state
   const [showRadialMenu, setShowRadialMenu] = useState(false);
   const [showTowerModal, setShowTowerModal] = useState(false);
+  const [showLightTooltip, setShowLightTooltip] = useState(false);
 
   const [gameState, setGameState] = useState(() => {
     const phase1TileDeck = Object.entries(tilesConfig.phase1).flatMap(([tileId, config]) => {
@@ -7832,93 +7833,182 @@ function GameScreen({ gameData, onNewGame }) {
               boardContainerRef={boardContainerRef}
             />
 
-            {/* Tower Status Button - FIXED position unten-mitte */}
-            <button
-              onClick={() => setShowTowerModal(true)}
-              style={{
-                position: 'fixed',
-                bottom: isMobile ? '16px' : '24px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: isMobile ? '72px' : '80px',
-                height: isMobile ? '72px' : '80px',
-                borderRadius: '12px',
-                background: (() => {
-                  const foundations = gameState.tower?.foundations?.length || 0;
-                  const elements = gameState.tower?.activatedElements?.length || 0;
+            {/* Fixed Bottom Buttons - Light & Tower Status */}
+            <div style={{
+              position: 'fixed',
+              bottom: isMobile ? '16px' : '24px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '40px',
+              zIndex: 1000
+            }}>
+              {/* Light Display Button */}
+              <button
+                onClick={() => {
+                  setShowLightTooltip(!showLightTooltip);
+                  // Auto-hide nach 1.3 Sekunden
+                  if (!showLightTooltip) {
+                    setTimeout(() => setShowLightTooltip(false), 1300);
+                  }
+                }}
+                style={{
+                  width: isMobile ? '72px' : '80px',
+                  height: isMobile ? '72px' : '80px',
+                  borderRadius: '12px',
+                  background: (() => {
+                    const percentage = (gameState.light / gameRules.light.maxValue) * 100;
 
-                  // VICTORY: Alle 4 Elemente aktiviert - Regenbogen!
-                  if (elements === 4) {
-                    return 'linear-gradient(135deg, #22c55e 0%, #3b82f6 25%, #ef4444 50%, #a78bfa 75%, #22c55e 100%)';
-                  }
-                  // Phase 2: Multi-Color-Hints
-                  if (foundations === 4 && elements > 0) {
-                    const activated = gameState.tower.activatedElements;
-                    const colors = [];
-                    if (activated.includes('erde')) colors.push('#22c55e');
-                    if (activated.includes('wasser')) colors.push('#3b82f6');
-                    if (activated.includes('feuer')) colors.push('#ef4444');
-                    if (activated.includes('luft')) colors.push('#a78bfa');
-                    return `linear-gradient(135deg, #ca8a04, ${colors.join(', ')})`;
-                  }
-                  // Phase 2 Start: Gold → Rot
-                  if (foundations === 4) {
-                    return 'linear-gradient(135deg, #ca8a04, #ef4444)';
-                  }
-                  // Phase 1: Gold (1-3 Fundamente)
-                  if (foundations > 0) {
-                    return 'linear-gradient(135deg, #ca8a04, #fbbf24)';
-                  }
-                  // Leer: Grau
-                  return 'linear-gradient(135deg, #78716c, #a8a29e)';
-                })(),
-                border: '3px solid rgba(255, 255, 255, 0.3)',
-                color: 'white',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '2px',
-                boxShadow: (() => {
-                  const elements = gameState.tower?.activatedElements?.length || 0;
-                  if (elements === 4) {
-                    return '0 4px 20px rgba(34, 197, 94, 0.8), 0 0 30px rgba(59, 130, 246, 0.6)';
-                  }
-                  return '0 4px 12px rgba(202, 138, 4, 0.6), 0 0 20px rgba(251, 191, 36, 0.4)';
-                })(),
-                transition: 'all 0.3s ease',
-                zIndex: 1000,
-                animation: (() => {
-                  const foundations = gameState.tower?.foundations?.length || 0;
-                  const elements = gameState.tower?.activatedElements?.length || 0;
-                  if (elements === 4) return 'pulseTowerButton 1s ease-in-out infinite';
-                  if (foundations === 4) return 'pulseTowerButton 1.5s ease-in-out infinite';
-                  if (foundations > 0) return 'pulseTowerButton 2s ease-in-out infinite';
-                  return 'pulseTowerButton 2.5s ease-in-out infinite';
-                })()
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateX(-50%) scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
-              }}
-              title="Turm-Status anzeigen"
-            >
-              <div style={{ fontSize: isMobile ? '20px' : '24px' }}>🏛️</div>
-              <div style={{
-                fontSize: isMobile ? '9px' : '10px',
-                lineHeight: '1',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1px'
-              }}>
-                <div>🏗️ {gameState.tower?.foundations?.length || 0}/4</div>
-                <div>⚡ {gameState.tower?.activatedElements?.length || 0}/4</div>
-              </div>
-            </button>
+                    // 100-80%: Strahlende Hoffnung (Weiß → Gold)
+                    if (percentage > 80) {
+                      return 'linear-gradient(135deg, #ffffff, #fbbf24)';
+                    }
+                    // 80-50%: Schwindende Hoffnung (Gold → Rosa)
+                    if (percentage > 50) {
+                      return 'linear-gradient(135deg, #fbbf24, #f0e6d2)';
+                    }
+                    // 50-35%: Erste Blutschatten (Rosa → Rot)
+                    if (percentage > 35) {
+                      return 'linear-gradient(135deg, #b8a8a8, #ef4444)';
+                    }
+                    // 35-0%: Todeshauch (Rot → Dunkelrot)
+                    return 'linear-gradient(135deg, #ef4444, #7f1d1d)';
+                  })(),
+                  border: '3px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2px',
+                  boxShadow: (() => {
+                    const percentage = (gameState.light / gameRules.light.maxValue) * 100;
+                    const color = percentage > 50 ? 'rgba(251, 191, 36, 0.6)' : 'rgba(239, 68, 68, 0.6)';
+                    return `0 4px 12px ${color}, 0 0 20px ${color}`;
+                  })(),
+                  transition: 'all 0.3s ease',
+                  animation: 'pulseLightButton 2s ease-in-out infinite'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                title="Licht-Status anzeigen"
+              >
+                <div style={{ fontSize: isMobile ? '20px' : '24px' }}>💡</div>
+                <div style={{
+                  fontSize: isMobile ? '9px' : '10px',
+                  lineHeight: '1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1px',
+                  color: (() => {
+                    const percentage = (gameState.light / gameRules.light.maxValue) * 100;
+                    // Dunkler Text für hellen Hintergrund, heller Text für dunklen Hintergrund
+                    return percentage > 50 ? '#1f2937' : '#ffffff';
+                  })(),
+                  textShadow: (() => {
+                    const percentage = (gameState.light / gameRules.light.maxValue) * 100;
+                    // Schatten für bessere Lesbarkeit
+                    return percentage > 50
+                      ? '0 1px 2px rgba(0, 0, 0, 0.3)'
+                      : '0 1px 2px rgba(0, 0, 0, 0.8)';
+                  })(),
+                  fontWeight: 'bold'
+                }}>
+                  <div>{gameState.light}/{gameRules.light.maxValue}</div>
+                  <div>R {gameState.round}</div>
+                </div>
+              </button>
+
+              {/* Tower Status Button */}
+              <button
+                onClick={() => setShowTowerModal(true)}
+                style={{
+                  width: isMobile ? '72px' : '80px',
+                  height: isMobile ? '72px' : '80px',
+                  borderRadius: '12px',
+                  background: (() => {
+                    const foundations = gameState.tower?.foundations?.length || 0;
+                    const elements = gameState.tower?.activatedElements?.length || 0;
+
+                    // VICTORY: Alle 4 Elemente aktiviert - Regenbogen!
+                    if (elements === 4) {
+                      return 'linear-gradient(135deg, #22c55e 0%, #3b82f6 25%, #ef4444 50%, #a78bfa 75%, #22c55e 100%)';
+                    }
+                    // Phase 2: Multi-Color-Hints
+                    if (foundations === 4 && elements > 0) {
+                      const activated = gameState.tower.activatedElements;
+                      const colors = [];
+                      if (activated.includes('erde')) colors.push('#22c55e');
+                      if (activated.includes('wasser')) colors.push('#3b82f6');
+                      if (activated.includes('feuer')) colors.push('#ef4444');
+                      if (activated.includes('luft')) colors.push('#a78bfa');
+                      return `linear-gradient(135deg, #ca8a04, ${colors.join(', ')})`;
+                    }
+                    // Phase 2 Start: Gold → Rot
+                    if (foundations === 4) {
+                      return 'linear-gradient(135deg, #ca8a04, #ef4444)';
+                    }
+                    // Phase 1: Gold (1-3 Fundamente)
+                    if (foundations > 0) {
+                      return 'linear-gradient(135deg, #ca8a04, #fbbf24)';
+                    }
+                    // Leer: Grau
+                    return 'linear-gradient(135deg, #78716c, #a8a29e)';
+                  })(),
+                  border: '3px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2px',
+                  boxShadow: (() => {
+                    const elements = gameState.tower?.activatedElements?.length || 0;
+                    if (elements === 4) {
+                      return '0 4px 20px rgba(34, 197, 94, 0.8), 0 0 30px rgba(59, 130, 246, 0.6)';
+                    }
+                    return '0 4px 12px rgba(202, 138, 4, 0.6), 0 0 20px rgba(251, 191, 36, 0.4)';
+                  })(),
+                  transition: 'all 0.3s ease',
+                  animation: (() => {
+                    const foundations = gameState.tower?.foundations?.length || 0;
+                    const elements = gameState.tower?.activatedElements?.length || 0;
+                    if (elements === 4) return 'pulseTowerButton 1s ease-in-out infinite';
+                    if (foundations === 4) return 'pulseTowerButton 1.5s ease-in-out infinite';
+                    if (foundations > 0) return 'pulseTowerButton 2s ease-in-out infinite';
+                    return 'pulseTowerButton 2.5s ease-in-out infinite';
+                  })()
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                title="Turm-Status anzeigen"
+              >
+                <div style={{ fontSize: isMobile ? '20px' : '24px' }}>🏛️</div>
+                <div style={{
+                  fontSize: isMobile ? '9px' : '10px',
+                  lineHeight: '1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1px'
+                }}>
+                  <div>🏗️ {gameState.tower?.foundations?.length || 0}/4</div>
+                  <div>⚡ {gameState.tower?.activatedElements?.length || 0}/4</div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -7999,6 +8089,73 @@ function GameScreen({ gameData, onNewGame }) {
         />
       )}
 
+      {/* Light Tooltip - Identical to VerticalLightMeter tooltip */}
+      {showLightTooltip && (() => {
+        const percentage = (gameState.light / gameRules.light.maxValue) * 100;
+
+        // Dynamic light color based on percentage (matching VerticalLightMeter)
+        const getLightColor = () => {
+          if (percentage > 80) return '#ffffff';      // Strahlend (100-80%)
+          if (percentage > 65) return '#fff5cc';      // Dämmerlicht (80-65%)
+          if (percentage > 50) return '#d4a5a5';      // Zwielicht (65-50%)
+          if (percentage > 35) return '#a84444';      // Blutschatten (50-35%)
+          if (percentage > 15) return '#8b2020';      // Todeshauch (35-15%)
+          return '#cc0000';                           // Letzter Herzschlag (15-0%)
+        };
+
+        const lightColor = getLightColor();
+
+        return (
+          <div
+            onClick={() => setShowLightTooltip(false)}
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
+              backdropFilter: 'blur(10px)',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: `2px solid ${lightColor}`,
+              boxShadow: `0 4px 20px rgba(0, 0, 0, 0.5), 0 0 20px ${lightColor}40`,
+              zIndex: 10000,
+              cursor: 'pointer',
+              animation: 'fadeInTooltip 0.2s ease-out'
+            }}
+          >
+            <div style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: lightColor,
+              textAlign: 'center',
+              marginBottom: '4px',
+              textShadow: `0 0 10px ${lightColor}`
+            }}>
+              💡 {gameState.light}/{gameRules.light.maxValue}
+            </div>
+            <div style={{
+              fontSize: '11px',
+              color: '#d1d5db',
+              textAlign: 'center',
+              marginBottom: '6px'
+            }}>
+              Runde {gameState.round}
+            </div>
+            <div style={{
+              fontSize: '11px',
+              fontWeight: 'bold',
+              color: lightColor,
+              textAlign: 'center'
+            }}>
+              {percentage > 66 && '✨ Licht strahlt hell'}
+              {percentage <= 66 && percentage > 33 && '⚠️ Licht schwindet'}
+              {percentage <= 33 && '🔥 KRITISCH!'}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* CSS Animations for Modals */}
       <style>{`
         @keyframes pulseTowerButton {
@@ -8007,6 +8164,28 @@ function GameScreen({ gameData, onNewGame }) {
           }
           50% {
             box-shadow: 0 6px 16px rgba(202, 138, 4, 0.8), 0 0 30px rgba(251, 191, 36, 0.6);
+          }
+        }
+
+        @keyframes pulseLightButton {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.95;
+          }
+          50% {
+            transform: scale(1.05);
+            opacity: 1;
+          }
+        }
+
+        @keyframes fadeInTooltip {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
           }
         }
       `}</style>
