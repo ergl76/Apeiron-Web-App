@@ -5515,32 +5515,40 @@ function GameScreen({ gameData, onNewGame }) {
                 justifyContent: 'center'
               }}>
                 {gameState.cardDrawState === 'event_shown' && gameState.cardDrawQueue.length > 0 ? (
-                  // Event needs card draw - show "Draw Card" button
+                  // Event needs card draw - show "JETZT ERMITTELN" button
                   <button
                     onClick={() => {
                       const cardType = gameState.cardDrawQueue[0].type;
-                      console.log(`🎴 User clicked to draw ${cardType} card`);
+                      console.log(`🎴 User clicked to start ${cardType} card draw animation`);
                       setGameState(prev => ({
                         ...prev,
-                        cardDrawState: 'drawing' // Switch to card draw modal
+                        cardDrawState: 'drawing' // Switch to card draw animation
                       }));
                     }}
                     style={{
-                      backgroundColor: gameState.cardDrawQueue[0].type === 'direction' ? '#3b82f6' : '#ca8a04',
+                      background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                       color: 'white',
-                      padding: '12px 32px',
-                      borderRadius: '8px',
-                      border: 'none',
+                      padding: '14px 40px',
+                      borderRadius: '12px',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
                       cursor: 'pointer',
-                      fontSize: '1rem',
+                      fontSize: '1.1rem',
                       fontWeight: 'bold',
-                      boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-                      transition: 'all 0.2s ease-in-out'
+                      letterSpacing: '0.5px',
+                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4), 0 0 20px rgba(59, 130, 246, 0.2)',
+                      transition: 'all 0.2s ease-in-out',
+                      textTransform: 'uppercase'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1) translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4), 0 0 20px rgba(59, 130, 246, 0.2)';
+                    }}
                   >
-                    🎴 {gameState.cardDrawQueue[0].type === 'direction' ? 'Himmelsrichtung ziehen' : 'Heldenkarte ziehen'}
+                    ⚡ Jetzt ermitteln
                   </button>
                 ) : (
                   // No card draw needed - show normal "Continue" button
@@ -5561,10 +5569,19 @@ function GameScreen({ gameData, onNewGame }) {
                       border: 'none',
                       cursor: 'pointer',
                       fontSize: '1rem',
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s ease-in-out'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#2563eb';
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#3b82f6';
+                      e.currentTarget.style.transform = 'scale(1)';
                     }}
                   >
-                    Bestätigen
+                    ✅ Bestätigen
                   </button>
                 )}
               </div>
