@@ -2900,15 +2900,23 @@ function GameScreen({ gameData, onNewGame }) {
               // Add resources to fields adjacent to crater
               const adjacentPositions = ['3,4', '5,4', '4,3', '4,5'];
               adjacentPositions.forEach(pos => {
-                if (newState.board[pos] || pos.match(/^\d+,\d+$/)) {
-                  if (!newState.board[pos].resources) {
-                    newState.board[pos].resources = [];
-                  }
-                  const amount = effect.value || 1;
-                  for (let i = 0; i < amount; i++) {
-                    newState.board[pos].resources.push(effect.resource);
-                  }
+                // Ensure tile exists (create if undiscovered)
+                if (!newState.board[pos]) {
+                  newState.board[pos] = { revealed: false, resources: [], obstacles: [] };
                 }
+
+                // Immutable update: Create new tile object with resources
+                const currentResources = newState.board[pos].resources || [];
+                const amount = effect.value || 1;
+                const newResources = [...currentResources];
+                for (let i = 0; i < amount; i++) {
+                  newResources.push(effect.resource);
+                }
+
+                newState.board[pos] = {
+                  ...newState.board[pos],
+                  resources: newResources
+                };
               });
             }
             break;
