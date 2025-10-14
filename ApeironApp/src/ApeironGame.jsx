@@ -1506,7 +1506,6 @@ function GameScreen({ gameData, onNewGame }) {
       drawnCards: {}, // Store drawn card results {direction: 'north', hero: 'terra', etc.}
       cardDrawState: 'none', // 'none' | 'event_shown' | 'drawing' | 'result_shown'
       gameStartTime: Date.now(), // Track game start for duration calculation
-      totalMoves: 0, // Track total number of moves (DEPRECATED - use totalTurns)
       totalApSpent: 0, // Track total AP spent
       // NEW: Phase-separated statistics for Victory/Defeat modals
       totalTurns: 0, // Total number of complete hero turns (Turn = all APs of one hero)
@@ -1556,20 +1555,6 @@ function GameScreen({ gameData, onNewGame }) {
     }
   }, [gameState.cardDrawQueue.length, gameState.cardDrawState, gameState.drawnCards, gameState.herzDerFinsternis]);
 
-  // NOTE: Event effects are now applied DIRECTLY in the card-draw onClick handler
-  // This useEffect is NO LONGER USED but kept for reference/backup
-  // The direct approach prevents React StrictMode double-execution issues
-  /*
-  useEffect(() => {
-    if (gameState.currentEvent &&
-        gameState.cardDrawQueue.length === 0 &&
-        gameState.isEventTriggering &&
-        Object.keys(gameState.drawnCards).length > 0) {
-      // Effect application happens in onClick handler now
-    }
-  }, [gameState.cardDrawQueue.length, gameState.currentEvent, gameState.drawnCards, gameState.isEventTriggering]);
-  */
-
   // Check for DEFEAT condition whenever light changes
   useEffect(() => {
     if (gameState.light === 0 && !gameState.defeatModal.show && !gameState.victoryModal.show) {
@@ -1583,7 +1568,6 @@ function GameScreen({ gameData, onNewGame }) {
         activatedElements: gameState.tower.activatedElements || [],
         remainingLight: 0,
         playerNames: gameState.players.map(p => p.name),
-        totalMoves: gameState.totalMoves, // DEPRECATED - use totalTurns
         totalApSpent: gameState.totalApSpent,
         durationMinutes: Math.floor(gameDurationMs / 60000),
         durationSeconds: Math.floor((gameDurationMs % 60000) / 1000),
@@ -1612,31 +1596,6 @@ function GameScreen({ gameData, onNewGame }) {
       }));
     }
   }, [gameState.light]);
-
-  // DISABLED: Handle round completion events with useEffect to prevent loops
-  // NOTE: Events are now triggered directly in handleAutoTurnTransition
-  /*
-  useEffect(() => {
-    console.log(`🔍 useEffect ROUND CHECK: roundCompleted=${gameState.roundCompleted}, round=${gameState.round}, isEventTriggering=${gameState.isEventTriggering}`);
-
-    // Only trigger when roundCompleted becomes true
-    if (gameState.roundCompleted && !gameState.isEventTriggering && !gameState.currentEvent) {
-      console.log('🎯 useEffect detected round completion - triggering event');
-
-      // Reset flag and trigger event
-      setGameState(prev => ({
-        ...prev,
-        roundCompleted: false,
-        isEventTriggering: true
-      }));
-
-      // Trigger event directly
-      triggerRandomEvent();
-    } else if (gameState.round > 1) {
-      console.log(`❌ useEffect: NO event triggered. roundCompleted=${gameState.roundCompleted}, round=${gameState.round}`);
-    }
-  }, [gameState.roundCompleted]); // Only depend on roundCompleted flag
-  */
 
   // ========================================
   // HELPER: Reset Discovery Tracking
@@ -1783,7 +1742,6 @@ function GameScreen({ gameData, onNewGame }) {
 
         return {
           ...prev,
-          totalMoves: prev.totalMoves + 1,
           totalApSpent: prev.totalApSpent + apCost,
           ...newStats,
           board: {
@@ -1880,7 +1838,6 @@ function GameScreen({ gameData, onNewGame }) {
 
         return {
           ...prev,
-          totalMoves: prev.totalMoves + 1,
           totalApSpent: prev.totalApSpent + totalApCost,
           ...newStats,
           players: updatedPlayers || newPlayers,
@@ -3809,7 +3766,6 @@ function GameScreen({ gameData, onNewGame }) {
           activatedElements: newTower.activatedElements,
           remainingLight: prev.light + lightBonus,
           playerNames: prev.players.map(p => p.name),
-          totalMoves: prev.totalMoves, // DEPRECATED - use totalTurns
           totalApSpent: prev.totalApSpent,
           durationMinutes: Math.floor(gameDurationMs / 60000),
           durationSeconds: Math.floor((gameDurationMs % 60000) / 1000),
@@ -4176,83 +4132,7 @@ function GameScreen({ gameData, onNewGame }) {
   // ========================================
   // handleScout, handleScoutingSelection, confirmScouting, cancelScouting
   // wurden entfernt - Smart Scouting via consecutive discovery clicks implementiert
-
-  // Removed handleFastMove function - integrated into normal movement
-  const handleFastMove_OLD = (direction) => {
-    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-
-    // Check prerequisites and movement prevention
-    if (!currentPlayer.learnedSkills.includes('schnell_bewegen') || currentPlayer.ap < 1) return;
-    if (currentPlayer.effects?.some(e => e.type === 'prevent_movement' && e.expiresInRound > gameState.round)) return;
-
-    // Calculate 2-field movement in specified direction
-    const [x, y] = currentPlayer.position.split(',').map(Number);
-    let newPosition;
-
-    switch (direction) {
-      case 'north':
-        newPosition = `${x},${y-2}`;
-        break;
-      case 'east':
-        newPosition = `${x+2},${y}`;
-        break;
-      case 'south':
-        newPosition = `${x},${y+2}`;
-        break;
-      case 'west':
-        newPosition = `${x-2},${y}`;
-        break;
-      default:
-        return;
-    }
-
-    // Check if target position is valid (within bounds and accessible)
-    const [newX, newY] = newPosition.split(',').map(Number);
-    if (newX < 0 || newX > 8 || newY < 0 || newY > 8) return; // Out of bounds
-
-    const targetTile = gameState.board[newPosition];
-    if (!targetTile) return; // Target field not yet discovered
-    if (targetTile.obstacles && targetTile.obstacles.length > 0) return; // Target field has obstacles
-
-    // Check if path is clear (both intermediate and target fields)
-    const [midX, midY] = direction === 'north' ? [x, y-1] :
-                        direction === 'east' ? [x+1, y] :
-                        direction === 'south' ? [x, y+1] :
-                        [x-1, y]; // west
-    const midPosition = `${midX},${midY}`;
-    const midTile = gameState.board[midPosition];
-    if (!midTile || (midTile.obstacles && midTile.obstacles.length > 0)) return; // Path blocked
-
-    // Perform the fast movement
-    setGameState(prev => {
-      const newPlayers = prev.players.map((player, index) =>
-        index === prev.currentPlayerIndex
-          ? { ...player, position: newPosition, ap: player.ap - 1 }
-          : player
-      );
-
-      const { nextPlayerIndex, newRound, actionBlockers, lightDecrement, roundCompleted, updatedPlayers, darknessSpreads } = handleAutoTurnTransition(newPlayers, prev.currentPlayerIndex, prev.round, prev);
-
-      // Apply darkness spread if needed (can be multiple positions)
-      const updatedDarkTiles = darknessSpreads.length > 0
-        ? [...(prev.herzDerFinsternis.darkTiles || []), ...darknessSpreads]
-        : prev.herzDerFinsternis.darkTiles || [];
-
-      return {
-        ...prev,
-        players: updatedPlayers || newPlayers,
-        currentPlayerIndex: nextPlayerIndex,
-        round: newRound,
-        actionBlockers: actionBlockers,
-        light: Math.max(0, prev.light - lightDecrement),
-        roundCompleted: roundCompleted || false,
-        herzDerFinsternis: {
-          ...prev.herzDerFinsternis,
-          darkTiles: updatedDarkTiles
-        }
-      };
-    });
-  };
+  // handleFastMove_OLD wurde entfernt - schnell_bewegen via handleTileClick integriert (Zeile ~1821)
 
   const handleLearnCombined = () => {
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
