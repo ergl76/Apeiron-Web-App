@@ -7,6 +7,9 @@ import HeroAvatar from './components/ui/HeroAvatar';
 import UnifiedModal from './components/ui/UnifiedModal';
 import RadialActionMenu from './components/ui/RadialActionMenu';
 import TowerStatusModal from './components/ui/TowerStatusModal';
+import EffectBadge from './components/ui/EffectBadge';
+import CounterInfo from './components/ui/CounterInfo';
+import EventCardAnimation from './components/ui/EventCardAnimation';
 
 // MODULE-LEVEL LOCKS: Prevent React StrictMode from executing handlers twice
 // These MUST be outside the component to work across simultaneous calls

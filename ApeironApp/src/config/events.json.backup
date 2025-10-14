@@ -8,14 +8,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt sofort um 1 zusätzlichen Punkt.",
         "description": "Unheilvolle Stimmen hallen über die Insel und nähren die wachsende Finsternis.",
-        "effectCategory": "light_change",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht -1",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - das Licht kann nicht wiederhergestellt werden."
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -30,16 +22,6 @@
         "type": "negative",
         "effectText": "In der nächsten Runde dürfen keine neuen Felder aufgedeckt werden.",
         "description": "Ein undurchdringlicher Nebel legt sich über die Insel und raubt euch die Orientierung.",
-        "effectCategory": "action_block",
-        "effectIcon": "⛔",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Entdecken blockiert",
-        "counterInfo": {
-          "possible": true,
-          "text": "Corvus kann mit seiner Fähigkeit **Spähen** trotzdem Felder aufdecken.",
-          "heroIcon": "🦅",
-          "abilityName": "Spähen"
-        },
         "effects": [
           {
             "type": "block_action",
@@ -54,18 +36,7 @@
         "symbol": "🪨",
         "type": "negative",
         "effectText": "Platziere ein Geröll-Hindernis auf einem zufälligen Feld angrenzend zum Krater.",
-        "description": "Die Berge erzittern und Geröll poltert zum Zentrum.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🪨",
-        "effectTarget": "Feld angrenzend zum Krater",
-        "effectAction": "Geröll-Hindernis",
-        "cardDrawInstruction": "Ziehe eine **Himmelsrichtungskarte**, um zu ermitteln, auf welcher Seite des Kraters sich das Geröll niederprasselt!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Terra kann das Hindernis mit ihrer Fähigkeit **Geröll beseitigen** entfernen.",
-          "heroIcon": "🌿",
-          "abilityName": "Geröll beseitigen"
-        },
+        "description": "Die Berge erzittern und Geröll poltert zum Zentrum. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
@@ -80,18 +51,7 @@
         "symbol": "🌿",
         "type": "negative",
         "effectText": "Platziere ein Dornenwald-Hindernis auf einem zufälligen Feld angrenzend zum Krater.",
-        "description": "Über Nacht wuchern dornige Ranken aus dem Waldboden.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🌿",
-        "effectTarget": "Feld angrenzend zum Krater",
-        "effectAction": "Dornenwald-Hindernis",
-        "cardDrawInstruction": "Ziehe eine **Himmelsrichtungskarte**, um zu ermitteln, wo die Dornen aus dem Boden schießen!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Ignis kann das Hindernis mit seiner Fähigkeit **Dornenwald entfernen** beseitigen.",
-          "heroIcon": "🔥",
-          "abilityName": "Dornenwald entfernen"
-        },
+        "description": "Über Nacht wuchern dornige Ranken aus dem Waldboden. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
@@ -106,18 +66,7 @@
         "symbol": "🌊",
         "type": "negative",
         "effectText": "Platziere ein Überflutungs-Hindernis auf einem zufälligen Feld angrenzend zum Krater.",
-        "description": "Heftige Regenfälle lassen die Flüsse über die Ufer treten.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🌊",
-        "effectTarget": "Feld angrenzend zum Krater",
-        "effectAction": "Überflutungs-Hindernis",
-        "cardDrawInstruction": "Ziehe eine **Himmelsrichtungskarte**, um zu ermitteln, wo die Wasser den Weg versperren!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Überflutung trockenlegen** das Gebiet wieder passierbar machen.",
-          "heroIcon": "💧",
-          "abilityName": "Überflutung trockenlegen"
-        },
+        "description": "Heftige Regenfälle lassen die Flüsse über die Ufer treten. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
@@ -133,16 +82,6 @@
         "type": "negative",
         "effectText": "Der Held, der am weitesten vom Krater entfernt ist, hat in der nächsten Runde nur 2 AP. Sind mehrere Helden gleich weit entfernt, betrifft es jeden von ihnen.",
         "description": "Die Last der Verantwortung wiegt schwer auf euren Schultern.",
-        "effectCategory": "ap_modification",
-        "effectIcon": "⚡",
-        "effectTarget": "Held am weitesten vom Krater entfernt",
-        "effectAction": "Aktionspunkte -1 (nächste Runde)",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** den Effekt aufheben.",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
         "effects": [
           {
             "type": "reduce_ap",
@@ -159,14 +98,6 @@
         "type": "negative",
         "effectText": "Der Held mit den meisten Kristallen muss einen auf seinem aktuellen Feld ablegen. Haben mehrere Helden gleich viele Kristalle, betrifft es jeden von ihnen.",
         "description": "In der Eile stolpert ein Held und verliert kostbare Ressourcen.",
-        "effectCategory": "item_drop",
-        "effectIcon": "💎",
-        "effectTarget": "Held mit den meisten Kristallen",
-        "effectAction": "1 Kristall ablegen",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - der Kristall liegt nun auf dem Feld und kann wieder aufgesammelt werden."
-        },
         "effects": [
           {
             "type": "drop_resource",
@@ -182,14 +113,6 @@
         "type": "negative",
         "effectText": "In der nächsten Runde ist keine Kommunikation zwischen den Spielern erlaubt.",
         "description": "Meinungsverschiedenheiten spalten die Gruppe.",
-        "effectCategory": "action_block",
-        "effectIcon": "🔇",
-        "effectTarget": "Alle Spieler (nächste Runde)",
-        "effectAction": "Kommunikation blockiert",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - schweigen ist manchmal unvermeidbar."
-        },
         "effects": [
           {
             "type": "disable_communication",
@@ -204,14 +127,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt sofort um 2 Punkte.",
         "description": "Eine unnatürliche Stille senkt sich über die Insel.",
-        "effectCategory": "light_change",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht -2",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Stille verschlingt das Licht."
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -225,16 +140,7 @@
         "symbol": "😴",
         "type": "negative",
         "effectText": "Ein zufällig gewählter Held muss die nächste Runde aussetzen.",
-        "description": "Die andauernde Suche fordert ihren Tribut.",
-        "effectCategory": "action_block",
-        "effectIcon": "😴",
-        "effectTarget": "Zufälliger Held",
-        "effectAction": "Runde aussetzen",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um herauszufinden, welcher Held von Erschöpfung überwältigt wird!",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - Ruhe ist manchmal notwendig."
-        },
+        "description": "Die andauernde Suche fordert ihren Tribut. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "skip_turn",
@@ -249,18 +155,7 @@
         "symbol": "👁️",
         "type": "negative",
         "effectText": "Ein zufällig gewählter Held kann von nun an weder entdecken noch spähen.",
-        "description": "Trugbilder täuschen eure Sinne.",
-        "effectCategory": "action_block",
-        "effectIcon": "👁️",
-        "effectTarget": "Zufälliger Held (permanent)",
-        "effectAction": "Entdecken & Spähen blockiert",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wessen Sinne getäuscht werden!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** die Verwirrung aufheben.",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
+        "description": "Trugbilder täuschen eure Sinne. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "block_action",
@@ -277,14 +172,6 @@
         "type": "negative",
         "effectText": "Alle Helden auf dem Krater müssen je einen Kristall dort ablegen (falls vorhanden).",
         "description": "Die Dunkelheit greift nach euren wertvollsten Schätzen.",
-        "effectCategory": "item_drop",
-        "effectIcon": "💎",
-        "effectTarget": "Alle Helden auf dem Krater",
-        "effectAction": "Je 1 Kristall ablegen",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Schatten sind schneller als eure Reflexe."
-        },
         "effects": [
           {
             "type": "drop_resource",
@@ -299,18 +186,7 @@
         "symbol": "🪨",
         "type": "negative",
         "effectText": "Platziere ein Geröll-Hindernis auf einem zufälligen Feld angrenzend zum Krater.",
-        "description": "Ein massiver Felssturz versperrt wichtige Wege.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🪨",
-        "effectTarget": "Feld angrenzend zum Krater",
-        "effectAction": "Geröll-Hindernis",
-        "cardDrawInstruction": "Ziehe eine **Himmelsrichtungskarte**, um zu ermitteln, wo der Felssturz niedergeht!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Terra kann das Hindernis mit ihrer Fähigkeit **Geröll beseitigen** entfernen.",
-          "heroIcon": "🌿",
-          "abilityName": "Geröll beseitigen"
-        },
+        "description": "Ein massiver Felssturz versperrt wichtige Wege. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
@@ -326,14 +202,6 @@
         "type": "negative",
         "effectText": "Alle Helden haben in der nächsten Runde einen Aktionspunkt weniger.",
         "description": "Ein eisiger Wind lähmt eure Bewegungen.",
-        "effectCategory": "ap_modification",
-        "effectIcon": "⚡",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Aktionspunkte -1",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Kälte durchdringt alle."
-        },
         "effects": [
           {
             "type": "reduce_ap",
@@ -350,14 +218,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt sofort um 1 Punkt.",
         "description": "Ein Schauer läuft euch über den Rücken - die Finsternis naht.",
-        "effectCategory": "light_change",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht -1",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - Vorahnungen können nicht ignoriert werden."
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -372,14 +232,6 @@
         "type": "negative",
         "effectText": "Keiner der Helden kann in der nächsten Runde Spezialfähigkeiten einsetzen.",
         "description": "Die Dunkelheit flüstert verlockende Lügen.",
-        "effectCategory": "skill_block",
-        "effectIcon": "🔒",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Spezialfähigkeiten blockiert",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Verlockung ist zu stark."
-        },
         "effects": [
           {
             "type": "block_skills",
@@ -394,16 +246,7 @@
         "symbol": "🎒",
         "type": "negative",
         "effectText": "Ein zufällig gewählter Held muss alle Gegenstände auf seinem Feld ablegen.",
-        "description": "Ein Rucksack reißt und wertvolle Gegenstände fallen heraus.",
-        "effectCategory": "item_drop",
-        "effectIcon": "🎒",
-        "effectTarget": "Zufälliger Held",
-        "effectAction": "Alle Gegenstände ablegen",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wessen Beutel zerrissen wird!",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Gegenstände können aber wieder aufgesammelt werden."
-        },
+        "description": "Ein Rucksack reißt und wertvolle Gegenstände fallen heraus. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "drop_all_items",
@@ -418,16 +261,6 @@
         "type": "negative",
         "effectText": "Platziere Dornenwald-Hindernisse auf allen Feldern direkt angrenzend zum Krater (N, O, S, W).",
         "description": "Die Natur selbst scheint sich gegen euch zu wenden.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🌿",
-        "effectTarget": "Alle 4 Felder um den Krater",
-        "effectAction": "Dornenwald-Hindernisse",
-        "counterInfo": {
-          "possible": true,
-          "text": "Ignis kann die Hindernisse einzeln mit seiner Fähigkeit **Dornenwald entfernen** beseitigen.",
-          "heroIcon": "🔥",
-          "abilityName": "Dornenwald entfernen"
-        },
         "effects": [
           {
             "type": "add_obstacle",
@@ -443,17 +276,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt sofort um 1 Punkt und ein zufällig gewählter Held hat nun ein AP weniger zur Verfügung",
         "description": "Die Schreie vergangener Helden hallen durch die Nacht.",
-        "effectCategory": "ap_modification",
-        "effectIcon": "⚡",
-        "effectTarget": "Zufälliger Held (permanent) + Team (Licht)",
-        "effectAction": "Licht -1 + AP -1 permanent",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wessen Kraft permanent geschwächt wird!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** den AP-Verlust verhindern (Licht bleibt verloren).",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -473,18 +295,7 @@
         "symbol": "🕷️",
         "type": "negative",
         "effectText": "Ein zufällig gewählter Held kann sich in der nächsten Runde nicht bewegen (andere Aktionen möglich).",
-        "description": "Dunkle Magie umschlingt einen eurer Gefährten.",
-        "effectCategory": "movement_block",
-        "effectIcon": "🚫",
-        "effectTarget": "Zufälliger Held (nächste Runde)",
-        "effectAction": "Bewegung blockiert",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wer von der Falle gefangen wird!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** die Bindung lösen.",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
+        "description": "Dunkle Magie umschlingt einen eurer Gefährten. **Ziehe jetzt eine Heldenkarte, um den betroffenen Helden zu bestimmen!**",
         "effects": [
           {
             "type": "prevent_movement",
@@ -502,10 +313,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um so viele Punkte wie Helden mitspielen.",
         "description": "Ein heller Stern durchbricht die Dunkelheit und spendet Hoffnung.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht +Anzahl Helden",
         "effects": [
           {
             "type": "light_gain",
@@ -520,10 +327,6 @@
         "type": "positive",
         "effectText": "Platziere 2 Kristalle auf dem Krater-Feld.",
         "description": "Zwischen den Felsen glitzert etwas Wertvolles.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💎",
-        "effectTarget": "Krater-Feld",
-        "effectAction": "2 Kristalle hinzufügen",
         "effects": [
           {
             "type": "add_resource",
@@ -540,11 +343,6 @@
         "type": "positive",
         "effectText": "Ein zufällig gewählter Held erhält in der nächsten Runde 2 zusätzliche AP.",
         "description": "Ein günstiger Wind treibt euch voran.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "⚡",
-        "effectTarget": "Zufälliger Held (nächste Runde)",
-        "effectAction": "Aktionspunkte +2",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wer vom Rückenwind profitiert!",
         "effects": [
           {
             "type": "bonus_ap",
@@ -561,10 +359,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um so viele Punkte wie Helden mitspielen.",
         "description": "Plötzlich wird euch der Weg klar.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht +Anzahl Helden",
         "effects": [
           {
             "type": "light_gain",
@@ -579,10 +373,6 @@
         "type": "positive",
         "effectText": "Alle Helden erhalten in der nächsten Runde einen zusätzlichen Aktionspunkt.",
         "description": "Eure Verbundenheit gibt euch neue Kraft.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "⚡",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Aktionspunkte +1",
         "effects": [
           {
             "type": "bonus_ap",
@@ -599,10 +389,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um 2 Punkte.",
         "description": "Ein warmer Lichtstrahl durchbricht die Wolken.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht +2",
         "effects": [
           {
             "type": "light_gain",
@@ -617,10 +403,6 @@
         "type": "positive",
         "effectText": "Platziere je 1 Kristall auf allen Feldern direkt angrenzend zum Krater.",
         "description": "Ihr entdeckt einen alten Vorratsbeutel der Erbauer.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💎",
-        "effectTarget": "Alle 4 Felder um den Krater",
-        "effectAction": "Je 1 Kristall hinzufügen",
         "effects": [
           {
             "type": "add_resource",
@@ -637,11 +419,6 @@
         "type": "positive",
         "effectText": "Ein zufällig gewählter Held hat in der nächsten Runde einen Aktionspunkt mehr.",
         "description": "Die Zeichen stehen gut für eure Mission.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "⚡",
-        "effectTarget": "Zufälliger Held (nächste Runde)",
-        "effectAction": "Aktionspunkte +1",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wer vom günstigen Omen profitiert!",
         "effects": [
           {
             "type": "bonus_ap",
@@ -658,10 +435,6 @@
         "type": "positive",
         "effectText": "Alle negativen Effekte auf allen Helden werden sofort aufgehoben.",
         "description": "Die Ursubstanz selbst scheint euch zu unterstützen.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "✨",
-        "effectTarget": "Alle Helden",
-        "effectAction": "Alle negativen Effekte entfernen",
         "effects": [
           {
             "type": "remove_all_negative_effects",
@@ -676,10 +449,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um 4 Punkte.",
         "description": "Ein uraltes Leuchtfeuer erwacht zu neuem Leben.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht +4",
         "effects": [
           {
             "type": "light_gain",
@@ -698,14 +467,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt sofort um 3 Punkte.",
         "description": "Die Sphäre der Dunkelheit pulsiert vor Wut über euren Fortschritt.",
-        "effectCategory": "light_change",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht -3",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - der Zorn der Sphäre ist unaufhaltsam."
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -720,14 +481,6 @@
         "type": "negative",
         "effectText": "Die Finsternis breitet sich sofort auf 2 zusätzliche Felder aus (gemäß normalen Regeln).",
         "description": "Eine Woge aus purer Dunkelheit rollt über die Insel.",
-        "effectCategory": "darkness_spread",
-        "effectIcon": "💀",
-        "effectTarget": "2 Felder (Spiral-Algorithmus)",
-        "effectAction": "Finsternis ausbreiten",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - aber Element-Aktivierung kann Finsternis zurückdrängen."
-        },
         "effects": [
           {
             "type": "spread_darkness",
@@ -742,14 +495,6 @@
         "type": "negative",
         "effectText": "Alle Helden, die ein Element-Fragment tragen, müssen es auf ihrem Feld ablegen.",
         "description": "Schattenhafte Klauen greifen nach den heiligen Fragmenten.",
-        "effectCategory": "item_drop",
-        "effectIcon": "🟦",
-        "effectTarget": "Alle Helden mit Fragmenten",
-        "effectAction": "Element-Fragmente ablegen",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Fragmente können aber wieder aufgesammelt werden."
-        },
         "effects": [
           {
             "type": "drop_resource",
@@ -765,16 +510,6 @@
         "type": "negative",
         "effectText": "Alle Helden haben in der nächsten Runde nur 2 Aktionspunkte.",
         "description": "Die andauernde Schlacht gegen die Finsternis zehrt an euren Kräften.",
-        "effectCategory": "ap_modification",
-        "effectIcon": "⚡",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Aktionspunkte auf 2 gesetzt",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** einzelne Helden davon befreien.",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
         "effects": [
           {
             "type": "set_ap",
@@ -791,17 +526,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt um 2 und ein zufällig gewählter Held setzt die nächste Runde aus.",
         "description": "Der Anblick der wachsenden Finsternis lässt euch verzweifeln.",
-        "effectCategory": "action_block",
-        "effectIcon": "😴",
-        "effectTarget": "Zufälliger Held + Team (Licht)",
-        "effectAction": "Licht -2 + Runde aussetzen",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wer von Hoffnungslosigkeit überwältigt wird!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** das Aussetzen verhindern (Licht bleibt verloren).",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -821,16 +545,6 @@
         "type": "negative",
         "effectText": "Platziere Geröll-Hindernisse auf dem Tor der Weisheit und allen direkt angrenzenden Feldern.",
         "description": "Die Erde bebt und versperrt wichtige Zugänge.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🪨",
-        "effectTarget": "Tor der Weisheit + angrenzende Felder",
-        "effectAction": "Geröll-Hindernisse",
-        "counterInfo": {
-          "possible": true,
-          "text": "Terra kann die Hindernisse einzeln mit ihrer Fähigkeit **Geröll beseitigen** entfernen.",
-          "heroIcon": "🌿",
-          "abilityName": "Geröll beseitigen"
-        },
         "effects": [
           {
             "type": "add_obstacle",
@@ -846,16 +560,6 @@
         "type": "negative",
         "effectText": "Platziere Dornenwald-Hindernisse auf allen Feldern in einem Ring um den Krater (2 Felder Abstand).",
         "description": "Ein Dornenwald, geboren aus Hass, verschlingt die Insel.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🌿",
-        "effectTarget": "Ring um Krater (2 Felder Abstand)",
-        "effectAction": "Dornenwald-Hindernisse",
-        "counterInfo": {
-          "possible": true,
-          "text": "Ignis kann die Hindernisse einzeln mit seiner Fähigkeit **Dornenwald entfernen** beseitigen.",
-          "heroIcon": "🔥",
-          "abilityName": "Dornenwald entfernen"
-        },
         "effects": [
           {
             "type": "add_obstacle",
@@ -871,16 +575,6 @@
         "type": "negative",
         "effectText": "Platziere Überflutungs-Hindernisse auf den 4 Feldern diagonal zum Krater (NO, SO, SW, NW).",
         "description": "Die Tränen der gefallenen Helden lassen Flüsse anschwellen.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🌊",
-        "effectTarget": "4 diagonale Felder zum Krater",
-        "effectAction": "Überflutungs-Hindernisse",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Überflutung trockenlegen** die Gebiete wieder passierbar machen.",
-          "heroIcon": "💧",
-          "abilityName": "Überflutung trockenlegen"
-        },
         "effects": [
           {
             "type": "add_obstacle",
@@ -896,14 +590,6 @@
         "type": "negative",
         "effectText": "Alle Helden können in der nächsten Runde keine Spezialfähigkeiten nutzen.",
         "description": "Dunkle Magie blockiert eure angeborenen Talente.",
-        "effectCategory": "skill_block",
-        "effectIcon": "🔒",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Spezialfähigkeiten blockiert",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - der Zauber ist zu mächtig."
-        },
         "effects": [
           {
             "type": "block_skills",
@@ -919,14 +605,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt um 2 und die Finsternis breitet sich auf 1 zusätzliches Feld aus.",
         "description": "Ein Sturm aus reiner Finsternis fegt über Elyria.",
-        "effectCategory": "darkness_spread",
-        "effectIcon": "💀",
-        "effectTarget": "Team (Licht) + 1 Feld (Finsternis)",
-        "effectAction": "Licht -2 + Finsternis ausbreiten",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - Element-Aktivierung kann Finsternis zurückdrängen."
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -945,14 +623,6 @@
         "type": "negative",
         "effectText": "Jeder Held muss alle seine Kristalle auf seinem aktuellen Feld ablegen.",
         "description": "Die Kristalle in euren Taschen werden zu schwerer Last.",
-        "effectCategory": "item_drop",
-        "effectIcon": "💎",
-        "effectTarget": "Alle Helden",
-        "effectAction": "Alle Kristalle ablegen",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Kristalle können aber wieder aufgesammelt werden."
-        },
         "effects": [
           {
             "type": "drop_all_resources",
@@ -968,16 +638,6 @@
         "type": "negative",
         "effectText": "Alle Helden können sich in der nächsten Runde nicht bewegen (andere Aktionen möglich).",
         "description": "Die Macht der Finsternis lähmt eure Körper.",
-        "effectCategory": "movement_block",
-        "effectIcon": "🚫",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Bewegung blockiert",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** einzelne Helden befreien.",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
         "effects": [
           {
             "type": "prevent_movement",
@@ -993,14 +653,6 @@
         "type": "negative",
         "effectText": "Alle Helden, die Element-Fragmente tragen, müssen eines davon ablegen.",
         "description": "Die Elemente selbst scheinen sich gegen euch zu wenden.",
-        "effectCategory": "item_drop",
-        "effectIcon": "🟦",
-        "effectTarget": "Alle Helden mit Fragmenten",
-        "effectAction": "1 Element-Fragment ablegen",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Fragmente können aber wieder aufgesammelt werden."
-        },
         "effects": [
           {
             "type": "drop_resource",
@@ -1017,16 +669,6 @@
         "type": "negative",
         "effectText": "Die Finsternis breitet sich auf 2 zusätzliche Felder aus (gemäß normalen Regeln).",
         "description": "Die Landschaft selbst wird von Finsternis korrumpiert.",
-        "effectCategory": "darkness_spread",
-        "effectIcon": "💀",
-        "effectTarget": "2 Felder (Spiral-Algorithmus)",
-        "effectAction": "Finsternis ausbreiten",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann die Felder einzeln mit ihrer Fähigkeit **Heilende Reinigung** säubern.",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
         "effects": [
           {
             "type": "spread_darkness",
@@ -1041,16 +683,6 @@
         "type": "negative",
         "effectText": "In der nächsten Runde: Keine Kommunikation erlaubt und alle Helden haben -1 AP.",
         "description": "Die Finsternis verwirrt eure Sinne vollständig.",
-        "effectCategory": "action_block",
-        "effectIcon": "🔇",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Kommunikation blockiert + AP -1",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** den AP-Verlust einzeln aufheben (Kommunikation bleibt blockiert).",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
         "effects": [
           {
             "type": "disable_communication",
@@ -1071,14 +703,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt sofort um 4 Punkte.",
         "description": "Die Dunkelheit fordert ein schweres Opfer.",
-        "effectCategory": "light_change",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht -4",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - das Opfer ist erbracht."
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -1093,14 +717,6 @@
         "type": "negative",
         "effectText": "In der nächsten Runde können Fähigkeiten nicht gelehrt oder gelernt werden.",
         "description": "Die Verbindung zwischen den Helden reißt.",
-        "effectCategory": "action_block",
-        "effectIcon": "⛔",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Lehren & Lernen blockiert",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - die Verbindung muss sich von selbst heilen."
-        },
         "effects": [
           {
             "type": "block_action",
@@ -1115,18 +731,7 @@
         "symbol": "🌊",
         "type": "negative",
         "effectText": "Platziere Überflutungen auf allen Apeiron-Quellen in einer zufälligen Himmelsrichtung.",
-        "description": "Eine gewaltige Welle aus Dunkelheit überflutet die Insel.",
-        "effectCategory": "obstacle_placement",
-        "effectIcon": "🌊",
-        "effectTarget": "Apeiron-Quellen (eine Richtung)",
-        "effectAction": "Überflutungs-Hindernisse",
-        "cardDrawInstruction": "Ziehe eine **Himmelsrichtungskarte**, um zu ermitteln, aus welcher Richtung der Tsunami kommt!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Überflutung trockenlegen** die Quellen einzeln wieder passierbar machen.",
-          "heroIcon": "💧",
-          "abilityName": "Überflutung trockenlegen"
-        },
+        "description": "Eine gewaltige Welle aus Dunkelheit überflutet die Insel. **Ziehe jetzt eine Himmelsrichtungskarte, um die betroffene Richtung zu bestimmen!**",
         "effects": [
           {
             "type": "add_obstacle",
@@ -1142,17 +747,6 @@
         "type": "negative",
         "effectText": "Das Licht sinkt um 2, alle Helden haben in der nächsten Runde -1 AP und ein zufällig gewählter Spieler setzt aus.",
         "description": "Die Sphäre spürt ihre drohende Niederlage und schlägt wild um sich.",
-        "effectCategory": "ap_modification",
-        "effectIcon": "⚡",
-        "effectTarget": "Alle Helden + zufälliger Held",
-        "effectAction": "Licht -2 + AP -1 + Aussetzen",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wer zusätzlich zum AP-Verlust aussetzen muss!",
-        "counterInfo": {
-          "possible": true,
-          "text": "Lyra kann mit ihrer Fähigkeit **Heilende Reinigung** AP-Verlust und Aussetzen bei einzelnen Helden aufheben (Licht bleibt verloren).",
-          "heroIcon": "💧",
-          "abilityName": "Heilende Reinigung"
-        },
         "effects": [
           {
             "type": "light_loss",
@@ -1178,14 +772,6 @@
         "type": "negative",
         "effectText": "Die Finsternis breitet sich sofort auf 3 zusätzliche Felder aus.",
         "description": "Das Herz der Finsternis schlägt schneller und stärker.",
-        "effectCategory": "darkness_spread",
-        "effectIcon": "💀",
-        "effectTarget": "3 Felder (Spiral-Algorithmus)",
-        "effectAction": "Finsternis ausbreiten",
-        "counterInfo": {
-          "possible": false,
-          "text": "Kein Konter möglich - aber Element-Aktivierung kann Finsternis zurückdrängen."
-        },
         "effects": [
           {
             "type": "spread_darkness",
@@ -1202,10 +788,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um 4 Punkte.",
         "description": "Die Ursubstanz selbst greift ein und drängt die Dunkelheit zurück.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht +4",
         "effects": [
           {
             "type": "light_gain",
@@ -1220,10 +802,6 @@
         "type": "positive",
         "effectText": "Entferne alle Dornenwald-Hindernisse vom Spielfeld und reinige 2 Finsternis-Felder (die dem Krater nächsten).",
         "description": "Ein heiliges Feuer brennt über die Insel und vernichtet die Verderbnis.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "🔥",
-        "effectTarget": "Alle Dornen + 2 Finsternis-Felder",
-        "effectAction": "Hindernisse & Finsternis entfernen",
         "effects": [
           {
             "type": "remove_obstacles",
@@ -1243,10 +821,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um 2 und alle negativen Effekte auf allen Helden werden aufgehoben.",
         "description": "Eine Woge aus purem Licht rollt über Elyria.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "✨",
-        "effectTarget": "Alle Helden + Team (Licht)",
-        "effectAction": "Licht +2 + Effekte entfernen",
         "effects": [
           {
             "type": "light_gain",
@@ -1265,10 +839,6 @@
         "type": "positive",
         "effectText": "Platziere 3 Kristalle auf dem Krater und alle Helden haben in der nächsten Runde +2 AP.",
         "description": "Die Geister der alten Erbauer manifestieren sich und helfen.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💎",
-        "effectTarget": "Krater-Feld + alle Helden",
-        "effectAction": "3 Kristalle + AP +2",
         "effects": [
           {
             "type": "add_resource",
@@ -1291,10 +861,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um so viele Punkte wie Helden mitspielen × 2.",
         "description": "Die vier Elemente vereinen sich für einen Moment in perfekter Balance.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht +Anzahl Helden × 2",
         "effects": [
           {
             "type": "light_gain",
@@ -1309,10 +875,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um 3 Punkte.",
         "description": "Die Sterne formen ein uraltes Schutzsymbol am Himmel.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "💡",
-        "effectTarget": "Gesamtes Team",
-        "effectAction": "Licht +3",
         "effects": [
           {
             "type": "light_gain",
@@ -1327,11 +889,6 @@
         "type": "positive",
         "effectText": "Ein zufällig gewählter Held erhält in der nächsten Runde 2 zusätzliche AP.",
         "description": "Ein Held findet plötzlich die Lösung für ein altes Rätsel.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "⚡",
-        "effectTarget": "Zufälliger Held (nächste Runde)",
-        "effectAction": "Aktionspunkte +2",
-        "cardDrawInstruction": "Ziehe eine **Heldenkarte**, um zu ermitteln, wer den Durchbruch erlebt!",
         "effects": [
           {
             "type": "bonus_ap",
@@ -1348,10 +905,6 @@
         "type": "positive",
         "effectText": "Entferne alle Geröll-, Dornenwald- und Überflutungs-Hindernisse vom Spielfeld.",
         "description": "Ein reinigender Sturm fegt alle Hindernisse fort.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "🌪️",
-        "effectTarget": "Alle Hindernisse",
-        "effectAction": "Alle Hindernisse entfernen",
         "effects": [
           {
             "type": "remove_all_obstacles"
@@ -1365,10 +918,6 @@
         "type": "positive",
         "effectText": "Alle Helden haben in der nächsten Runde +2 Aktionspunkte.",
         "description": "Eure Verbundenheit manifestiert sich als sichtbare Macht.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "⚡",
-        "effectTarget": "Alle Helden (nächste Runde)",
-        "effectAction": "Aktionspunkte +2",
         "effects": [
           {
             "type": "bonus_ap",
@@ -1385,10 +934,6 @@
         "type": "positive",
         "effectText": "Das Licht steigt um 5 Punkte und reinigt alle Finsternis-Felder angrenzend zum Krater.",
         "description": "Das Licht siegt über die Dunkelheit in einer epischen Schlacht.",
-        "effectCategory": "positive_bonus",
-        "effectIcon": "☀️",
-        "effectTarget": "Team (Licht) + Krater-Felder",
-        "effectAction": "Licht +5 + Finsternis säubern",
         "effects": [
           {
             "type": "light_gain",
