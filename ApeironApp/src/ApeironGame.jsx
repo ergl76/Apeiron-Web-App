@@ -4876,8 +4876,121 @@ function GameScreen({ gameData, onNewGame }) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#1a202c', color: '#e2e8f0' }}>
 
-      {/* Card Draw Modal - only show when in 'drawing' or 'result_shown' state */}
-      {gameState.cardDrawQueue && gameState.cardDrawQueue.length > 0 && (gameState.cardDrawState === 'drawing' || gameState.cardDrawState === 'result_shown') && (
+      {/* Card Draw Animation Modal - NEW with EventCardAnimation Component */}
+      {gameState.cardDrawQueue && gameState.cardDrawQueue.length > 0 && gameState.cardDrawState === 'drawing' && (() => {
+        const currentCard = gameState.cardDrawQueue[0];
+
+        // Draw random result immediately when animation starts
+        const randomIndex = Math.floor(Math.random() * currentCard.options.length);
+        const result = currentCard.options[randomIndex];
+
+        // Handle animation completion (called automatically after 3s)
+        const handleAnimationComplete = (drawnResult) => {
+          console.log(`🎴 Animation complete - Result: ${drawnResult}`);
+
+          // CRITICAL: Prevent React StrictMode from handling this twice
+          if (currentlyConfirmingCardDraw) {
+            console.log('🔒 BLOCKED: Card confirmation already in progress - duplicate StrictMode call');
+            return;
+          }
+
+          currentlyConfirmingCardDraw = true;
+
+          setGameState(prev => {
+            // Save drawn card
+            let newDrawnCards = { ...prev.drawnCards };
+            newDrawnCards[currentCard.type] = drawnResult;
+            console.log(`📝 Drawn cards so far:`, newDrawnCards);
+
+            // Remove first item from queue
+            const newQueue = prev.cardDrawQueue.slice(1);
+            console.log(`📋 Remaining queue after confirmation: ${newQueue.length}`);
+
+            // Check if more cards need to be drawn
+            if (newQueue.length > 0) {
+              console.log(`📋 More cards to draw - returning to event modal`);
+              setTimeout(() => { currentlyConfirmingCardDraw = false; }, 100);
+              return {
+                ...prev,
+                drawnCards: newDrawnCards,
+                cardDrawQueue: newQueue,
+                cardDrawState: 'event_shown' // Go back to event to draw next card
+              };
+            } else {
+              console.log('🎯 All cards drawn - applying effects NOW');
+
+              // CRITICAL: Use module-level lock INSIDE setState
+              const eventId = prev.currentEvent?.id;
+
+              // SYNCHRONOUS check of module-level lock
+              if (currentlyApplyingEventId === eventId) {
+                console.log(`🔒 BLOCKED: Effect already applied for ${eventId} - duplicate StrictMode call`);
+                setTimeout(() => { currentlyConfirmingCardDraw = false; }, 200);
+                return prev;
+              }
+
+              const eventToApply = prev.currentEvent;
+              const currentPurpose = currentCard?.purpose;
+
+              if (eventToApply && prev.isEventTriggering) {
+                // Set lock IMMEDIATELY before applying effect
+                currentlyApplyingEventId = eventId;
+
+                console.log(`🎯 DIRECT: Applying effect for event ${eventToApply.id}`);
+
+                // Apply the effect with drawn cards
+                const stateAfterEffect = applyEventEffect(eventToApply, prev);
+
+                // Release both locks
+                setTimeout(() => {
+                  currentlyConfirmingCardDraw = false;
+                  currentlyApplyingEventId = null;
+                  console.log(`🔓 Released locks for event ${eventId}`);
+                }, 200);
+
+                // BUGFIX: Only clear drawnCards for EVENT purposes, not for Tor/Herz
+                const shouldClearDrawnCards = currentPurpose !== 'tor_der_weisheit' &&
+                                               currentPurpose !== 'herz_der_finsternis';
+
+                console.log(`🎴 drawnCards ${shouldClearDrawnCards ? 'CLEARED' : 'KEPT'} (purpose: ${currentPurpose || 'event'})`);
+
+                // Return state with effect applied AND modal closed
+                return {
+                  ...stateAfterEffect,
+                  cardDrawQueue: newQueue,
+                  cardDrawState: 'none',
+                  drawnCards: shouldClearDrawnCards ? {} : prev.drawnCards,
+                  isEventTriggering: false,
+                  currentEvent: {
+                    ...eventToApply,
+                    effectApplied: true
+                  }
+                };
+              } else {
+                console.log('⏭️ No event to apply - keeping drawnCards for special placement (Tor/Herz)');
+                setTimeout(() => { currentlyConfirmingCardDraw = false; }, 200);
+                return {
+                  ...prev,
+                  cardDrawQueue: newQueue,
+                  cardDrawState: 'none'
+                };
+              }
+            }
+          });
+        };
+
+        return (
+          <EventCardAnimation
+            cardType={currentCard.type}
+            result={result}
+            players={gameState.players}
+            onComplete={handleAnimationComplete}
+          />
+        );
+      })()}
+
+      {/* OLD Card Draw Modal - DEPRECATED - Replaced by EventCardAnimation above */}
+      {false && gameState.cardDrawQueue && gameState.cardDrawQueue.length > 0 && (gameState.cardDrawState === 'drawing' || gameState.cardDrawState === 'result_shown') && (
         <div style={{
           position: 'fixed',
           top: 0,
