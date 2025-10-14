@@ -44,9 +44,8 @@ const RadialActionMenu = ({ currentPlayer, gameState, handlers, onClose, adjacen
   // Helper: Kann Spieler heilen?
   const canCleanse = () => {
     const hasSkill = currentPlayer.learnedSkills.includes('reinigen');
-    const hasDarkness = adjacentDarkness.length > 0;
     const hasEffects = heroesWithNegativeEffects.length > 0;
-    return hasSkill && (hasDarkness || hasEffects) && currentPlayer.ap >= 1;
+    return hasSkill && hasEffects && currentPlayer.ap >= 1;
   };
 
   // Helper: Kann Spieler Fundament bauen? (LOCATION: Krater Phase 1)

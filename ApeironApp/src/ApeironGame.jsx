@@ -8045,17 +8045,8 @@ function GameScreen({ gameData, onNewGame }) {
               }));
             },
             onCleanse: () => {
-              // Heilende Reinigung - Prüfe ob Finsternis oder Effekte
-              const adjacentDarkness = getAdjacentDarkness();
-              const heroesWithEffects = getHeroesWithNegativeEffects();
-
-              if (adjacentDarkness.length > 0) {
-                // Erste Finsternis entfernen
-                handleHeilendeReinigung(adjacentDarkness[0].position);
-              } else if (heroesWithEffects.length > 0) {
-                // Effekte von Helden entfernen
-                handleHeilendeReinigungEffekte();
-              }
+              // Heilende Reinigung - Nur für negative Effekte
+              handleHeilendeReinigungEffekte();
             },
             // NOTE: onRemoveObstacle entfernt - Neue UX: direkter Click auf Hindernis am Spielfeld
             // Location-basierte Aktionen (öffnen Selection-Modals)
@@ -8073,7 +8064,6 @@ function GameScreen({ gameData, onNewGame }) {
             },
             onPassGate: handleTorDurchschreiten
           }}
-          adjacentDarkness={getAdjacentDarkness()}
           heroesWithNegativeEffects={getHeroesWithNegativeEffects()}
           onClose={() => setShowRadialMenu(false)}
         />
