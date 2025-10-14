@@ -20,77 +20,6 @@ let isGameActive = false; // Track if game is running (for browser navigation pr
 let obstacleRemovalHandler = null; // Handler for obstacle removal (set in component)
 let darknessRemovalHandler = null; // Handler for darkness cleansing (set in component)
 
-// Konter-Informationen aus ereigniskarten.md
-const eventCounters = {
-  // Phase 1 Negative
-  "fluestern_der_schatten": "Kein Konter möglich",
-  "dichter_nebel": "Corvus' Fähigkeit 'Spähen' funktioniert weiterhin",
-  "erdrutsch_am_krater": "Terra kann das Hindernis mit 'Geröll beseitigen' entfernen",
-  "dornenplage_im_osten": "Ignis kann das Hindernis mit 'Dornenwald entfernen' beseitigen",
-  "sturzflut_im_westen": "Lyra kann mit 'Überflutung trockenlegen' das Gebiet wieder passierbar machen",
-  "schwere_buerde": "Lyra kann mit 'Heilende Reinigung' den Effekt aufheben",
-  "kristallverlust": "Kein Konter möglich",
-  "zwietracht": "Kein Konter möglich",
-  "truegerische_stille": "Kein Konter möglich",
-  "erschoepfung": "Kein Konter möglich",
-  "verwirrende_vision": "Lyra kann mit 'Heilende Reinigung' den Effekt aufheben",
-  "gierige_schatten": "Kein Konter möglich",
-  "blockade_im_sueden": "Terra kann das Hindernis mit 'Geröll beseitigen' entfernen",
-  "laehmende_kaelte": "Kein Konter möglich",
-  "dunkle_vorahnung": "Kein Konter möglich",
-  "verlockung_der_schatten": "Kein Konter möglich",
-  "zerrissener_beutel": "Kein Konter möglich",
-  "wuchernde_wildnis": "Ignis kann die Hindernisse einzeln mit 'Dornenwald entfernen' beseitigen",
-  "echo_der_verzweiflung": "Teilweise - Lyra kann den AP-Verlust mit 'Heilende Reinigung' verhindern",
-  "falle_der_finsternis": "Lyra kann mit 'Heilende Reinigung' die Bindung lösen",
-
-  // Phase 1 Positive
-  "sternschnuppe": "-",
-  "gluecksfund": "-",
-  "rueckenwind": "-",
-  "moment_der_klarheit": "-",
-  "gemeinsame_staerke": "-",
-  "hoffnungsschimmer": "-",
-  "versteckter_schatz": "-",
-  "guenstiges_omen": "-",
-  "apeirons_segen": "-",
-  "leuchtfeuer": "-",
-
-  // Phase 2 Negative
-  "zorn_der_sphaere": "Kein Konter möglich",
-  "welle_der_finsternis": "Kein Konter möglich",
-  "fragment_diebstahl": "Kein Konter möglich",
-  "totale_erschoepfung": "Lyra kann mit 'Heilende Reinigung' einzelne Helden davon befreien",
-  "verlorene_hoffnung": "Teilweise - Lyra kann das Aussetzen mit 'Heilende Reinigung' verhindern",
-  "dreifache_blockade": "Terra kann die Hindernisse einzeln mit 'Geröll beseitigen' entfernen",
-  "dornen_der_verzweiflung": "Ignis kann die Hindernisse einzeln mit 'Dornenwald entfernen' beseitigen",
-  "sintflut_der_traenen": "Lyra kann mit 'Überflutung trockenlegen' die Gebiete wieder passierbar machen",
-  "boeser_zauber": "Kein Konter möglich",
-  "schattensturm": "Kein Konter möglich",
-  "kristall_fluch": "Kein Konter möglich",
-  "paralyse": "Lyra kann mit 'Heilende Reinigung' einzelne Helden befreien",
-  "verrat_der_elemente": "Kein Konter möglich",
-  "dunkle_metamorphose": "Lyra kann die Felder einzeln mit 'Heilende Reinigung' säubern",
-  "verlust_der_orientierung": "Teilweise - Lyra kann den AP-Verlust einzeln aufheben",
-  "opfer_der_schatten": "Kein Konter möglich",
-  "gebrochene_verbindung": "Kein Konter möglich",
-  "tsunami_der_finsternis": "Lyra kann Überflutungen einzeln trockenlegen",
-  "letztes_aufbaeumen": "Teilweise - Lyra kann AP-Verlust und Aussetzen bei einzelnen Helden aufheben",
-  "herz_der_finsternis_pulsiert": "Kein Konter möglich",
-
-  // Phase 2 Positive
-  "apeirons_intervention": "-",
-  "reinigendes_feuer": "-",
-  "welle_der_hoffnung": "-",
-  "geschenk_der_ahnen": "-",
-  "elementare_harmonie": "-",
-  "sternenkonstellation": "-",
-  "durchbruch": "-",
-  "laeuterung": "-",
-  "vereinte_kraft": "-",
-  "triumph_des_lichts": "-"
-};
-
 // Direction translations (EN → DE)
 const directionNames = {
   north: 'Norden',
@@ -5371,54 +5300,51 @@ function GameScreen({ gameData, onNewGame }) {
                 {gameState.currentEvent.description}
               </p>
 
-              {/* Effekt-Information */}
-              <div style={{
-                backgroundColor: 'rgba(0,0,0, 0.2)',
-                border: '1px solid #4b5563',
-                borderRadius: '8px',
-                padding: '0.75rem',
-                marginTop: '1rem'
-              }}>
-                <h4 style={{
-                  color: '#facc15',
-                  fontSize: '0.875rem',
-                  fontWeight: 'bold',
-                  marginBottom: '0.25rem'
-                }}>
-                  Effekt:
-                </h4>
-                <p style={{
-                  color: '#e5e7eb',
-                  fontSize: '0.875rem',
-                  margin: 0
-                }}>{gameState.currentEvent.resolvedEffectText || gameState.currentEvent.effectText}</p>
-              </div>
+              {/* Effect Badge - zeigt visuelle Kategorie und Effekt */}
+              <EffectBadge
+                category={gameState.currentEvent.effectCategory}
+                icon={gameState.currentEvent.effectIcon}
+                target={gameState.currentEvent.effectTarget}
+                action={gameState.currentEvent.effectAction}
+              />
 
-              {/* Konter-Information */}
-              {eventCounters[gameState.currentEvent.id] && eventCounters[gameState.currentEvent.id] !== '-' && (
-                <div key={`counter-${gameState.currentEvent.id}`} style={{
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid #3b82f6',
-                  borderRadius: '8px',
-                  padding: '0.75rem',
-                  marginTop: '1rem'
+              {/* Card Draw Instruction - falls Kartenziehen erforderlich */}
+              {gameState.cardDrawState === 'event_shown' &&
+               gameState.cardDrawQueue.length > 0 &&
+               gameState.currentEvent.cardDrawInstruction && (
+                <div style={{
+                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                  border: '2px solid #3b82f6',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  marginTop: '1rem',
+                  textAlign: 'center'
                 }}>
-                  <h4 style={{
-                    color: '#3b82f6',
-                    fontSize: '0.875rem',
-                    fontWeight: 'bold',
-                    marginBottom: '0.25rem'
+                  <div style={{
+                    fontSize: '1.5rem',
+                    marginBottom: '0.5rem'
                   }}>
-                    Möglicher Konter:
-                  </h4>
+                    🎴
+                  </div>
                   <p style={{
-                    color: '#e5e7eb',
-                    fontSize: '0.875rem',
+                    color: '#93c5fd',
+                    fontSize: '0.95rem',
+                    lineHeight: '1.6',
                     margin: 0
                   }}>
-                    {eventCounters[gameState.currentEvent.id]}
+                    {gameState.currentEvent.cardDrawInstruction}
                   </p>
                 </div>
+              )}
+
+              {/* Counter Info - integriert in Story */}
+              {gameState.currentEvent.counterInfo && (
+                <CounterInfo
+                  possible={gameState.currentEvent.counterInfo.possible}
+                  text={gameState.currentEvent.counterInfo.text}
+                  heroIcon={gameState.currentEvent.counterInfo.heroIcon}
+                  abilityName={gameState.currentEvent.counterInfo.abilityName}
+                />
               )}
             </div>
 
