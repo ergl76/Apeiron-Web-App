@@ -18,6 +18,92 @@ import React from 'react';
 const TowerStatusModal = ({ tower, players, phase, onClose }) => {
   const elements = ['erde', 'wasser', 'feuer', 'luft'];
 
+  // Responsive Helper-Funktion für multimodale Darstellung
+  const getResponsiveValues = () => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    // Drei Stufen: Mobile, Tablet/Notebook, Desktop
+    if (width < 640) {
+      // Mobile - unverändert
+      return {
+        padding: '16px 12px',
+        headerMargin: '1rem',
+        sectionMargin: '1rem',
+        elementHeight: '56px',
+        elementGap: '8px',
+        symbolSize: '1.75rem',
+        nameSize: '0.875rem',
+        badgeSize: '0.65rem',
+        badgePadding: '3px 8px',
+        statPadding: '10px',
+        statNumberSize: '1.5rem',
+        statLabelSize: '0.75rem',
+        footerMargin: '0.75rem',
+        maxHeight: '90vh', // Mehr Platz auf Mobile
+        iconSize: '2rem',
+        titleSize: '1.25rem',
+        titleSpacing: '1px',
+        phasePadding: '4px 12px',
+        phaseSize: '0.75rem',
+        progressPadding: '8px',
+        progressHeight: '12px'
+      };
+    } else if (width < 1024 || height < 800) {
+      // Tablet/Notebook - kompakte Variante
+      return {
+        padding: '20px 16px',
+        headerMargin: '1rem',
+        sectionMargin: '1rem',
+        elementHeight: '60px',
+        elementGap: '8px',
+        symbolSize: '2rem',
+        nameSize: '1rem',
+        badgeSize: '0.7rem',
+        badgePadding: '3px 8px',
+        statPadding: '12px',
+        statNumberSize: '1.75rem',
+        statLabelSize: '0.8rem',
+        footerMargin: '0.75rem',
+        maxHeight: '88vh', // Etwas mehr Platz für Notebooks
+        iconSize: '2.5rem',
+        titleSize: '1.5rem',
+        titleSpacing: '1.5px',
+        phasePadding: '5px 14px',
+        phaseSize: '0.8rem',
+        progressPadding: '10px',
+        progressHeight: '12px'
+      };
+    } else {
+      // Desktop - aktuelle Werte
+      return {
+        padding: '32px',
+        headerMargin: '1.5rem',
+        sectionMargin: '1.5rem',
+        elementHeight: '72px',
+        elementGap: '12px',
+        symbolSize: '2.5rem',
+        nameSize: '1.125rem',
+        badgeSize: '0.75rem',
+        badgePadding: '4px 10px',
+        statPadding: '16px',
+        statNumberSize: '2rem',
+        statLabelSize: '0.875rem',
+        footerMargin: '1rem',
+        maxHeight: '85vh',
+        iconSize: '3rem',
+        titleSize: '1.75rem',
+        titleSpacing: '2px',
+        phasePadding: '6px 16px',
+        phaseSize: '0.85rem',
+        progressPadding: '12px',
+        progressHeight: '12px'
+      };
+    }
+  };
+
+  const responsive = getResponsiveValues();
+
   // Element-Konfiguration
   const elementConfig = {
     erde: {
@@ -73,34 +159,68 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
         style={{
           background: 'linear-gradient(135deg, #0f0f0f, #1a1200, #1a0f00)',
           borderRadius: '16px',
-          padding: window.innerWidth < 640 ? '16px 12px' : '32px',
+          padding: responsive.padding,
           maxWidth: '600px',
-          maxHeight: '85vh',
+          maxHeight: responsive.maxHeight,
           overflowY: 'auto',
           width: 'calc(100% - 32px)',
           border: '3px solid #fbbf24',
           boxShadow: '0 0 80px rgba(251, 191, 36, 0.6)',
-          animation: 'towerModalIn 0.4s ease-out'
+          animation: 'towerModalIn 0.4s ease-out',
+          position: 'relative'
         }}
       >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: 'white',
+            fontSize: '18px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            zIndex: 10
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            e.currentTarget.style.transform = 'scale(1.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          ✕
+        </button>
+
         {/* Header */}
         <div style={{
           textAlign: 'center',
-          marginBottom: window.innerWidth < 640 ? '1rem' : '1.5rem'
+          marginBottom: responsive.headerMargin
         }}>
           <div style={{
-            fontSize: window.innerWidth < 640 ? '2rem' : '3rem',
+            fontSize: responsive.iconSize,
             marginBottom: '0.25rem'
           }}>
             🏛️
           </div>
           <h2 style={{
-            fontSize: window.innerWidth < 640 ? '1.25rem' : '1.75rem',
+            fontSize: responsive.titleSize,
             fontWeight: 'bold',
             color: '#fbbf24',
             marginBottom: '0.5rem',
             textTransform: 'uppercase',
-            letterSpacing: window.innerWidth < 640 ? '1px' : '2px'
+            letterSpacing: responsive.titleSpacing
           }}>
             TURM DER ELEMENTE
           </h2>
@@ -111,8 +231,8 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
             backgroundColor: phase === 1 ? 'rgba(202, 138, 4, 0.2)' : 'rgba(239, 68, 68, 0.2)',
             border: `2px solid ${phase === 1 ? '#fbbf24' : '#ef4444'}`,
             borderRadius: '20px',
-            padding: window.innerWidth < 640 ? '4px 12px' : '6px 16px',
-            fontSize: window.innerWidth < 640 ? '0.75rem' : '0.85rem',
+            padding: responsive.phasePadding,
+            fontSize: responsive.phaseSize,
             color: phase === 1 ? '#fbbf24' : '#fca5a5',
             fontWeight: 'bold'
           }}>
@@ -122,10 +242,10 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
 
         {/* Progress Bar */}
         <div style={{
-          marginBottom: window.innerWidth < 640 ? '1rem' : '1.5rem',
+          marginBottom: responsive.sectionMargin,
           backgroundColor: '#374151',
           borderRadius: '12px',
-          padding: window.innerWidth < 640 ? '8px' : '12px',
+          padding: responsive.progressPadding,
           border: '2px solid #4b5563'
         }}>
           <div style={{
@@ -141,7 +261,7 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
           </div>
           <div style={{
             width: '100%',
-            height: '12px',
+            height: responsive.progressHeight,
             backgroundColor: '#1f2937',
             borderRadius: '6px',
             overflow: 'hidden',
@@ -163,9 +283,9 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
         <div style={{
           display: 'flex',
           flexDirection: 'column-reverse',
-          gap: window.innerWidth < 640 ? '8px' : '12px',
+          gap: responsive.elementGap,
           alignItems: 'center',
-          marginBottom: window.innerWidth < 640 ? '1rem' : '1.5rem'
+          marginBottom: responsive.sectionMargin
         }}>
           {elements.map((element, index) => {
             const hasFoundation = tower?.foundations?.includes(element);
@@ -242,13 +362,13 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
                 key={element}
                 style={{
                   width: '100%',
-                  height: window.innerWidth < 640 ? '56px' : '72px',
+                  height: responsive.elementHeight,
                   borderRadius: '8px',
                   border: window.innerWidth < 640 ? '2px solid' : '3px solid',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: window.innerWidth < 640 ? '8px' : '12px',
+                  gap: responsive.elementGap,
                   transition: 'all 0.5s ease',
                   position: 'relative',
                   animation: `towerRise 0.5s ease-out ${index * 0.1}s both`,
@@ -264,7 +384,7 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
               >
                 {/* Element Symbol */}
                 <div style={{
-                  fontSize: window.innerWidth < 640 ? '1.75rem' : '2.5rem',
+                  fontSize: responsive.symbolSize,
                   filter: isActivated ? 'drop-shadow(0 0 8px rgba(255,255,255,0.8))' : 'none',
                   animation: isActivated ? 'glow 2s infinite' : 'none'
                 }}>
@@ -273,7 +393,7 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
 
                 {/* Element Name */}
                 <div style={{
-                  fontSize: window.innerWidth < 640 ? '0.875rem' : '1.125rem',
+                  fontSize: responsive.nameSize,
                   fontWeight: 'bold',
                   textTransform: 'uppercase',
                   letterSpacing: window.innerWidth < 640 ? '0.5px' : '1px'
@@ -285,7 +405,7 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
                 <div style={{
                   position: 'absolute',
                   right: window.innerWidth < 640 ? '8px' : '12px',
-                  fontSize: window.innerWidth < 640 ? '0.65rem' : '0.75rem',
+                  fontSize: responsive.badgeSize,
                   fontWeight: 'bold',
                   backgroundColor:
                     isActivated ? '#22c55e' :
@@ -297,7 +417,7 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
                     isActivated || hasFoundation || blueprintLearned ? '#1f2937' :
                     blueprintDiscovered ? '#d1d5db' :
                     'white',
-                  padding: window.innerWidth < 640 ? '3px 8px' : '4px 10px',
+                  padding: responsive.badgePadding,
                   borderRadius: '12px'
                 }}>
                   {isActivated ? '✅ AKTIV' :
@@ -315,18 +435,18 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: window.innerWidth < 640 ? '8px' : '12px',
-          marginBottom: window.innerWidth < 640 ? '0.75rem' : '1rem'
+          gap: responsive.elementGap,
+          marginBottom: responsive.footerMargin
         }}>
           <div style={{
             backgroundColor: '#374151',
             borderRadius: '8px',
             border: '2px solid #4b5563',
-            padding: window.innerWidth < 640 ? '10px' : '16px',
+            padding: responsive.statPadding,
             textAlign: 'center'
           }}>
             <div style={{
-              fontSize: window.innerWidth < 640 ? '1.5rem' : '2rem',
+              fontSize: responsive.statNumberSize,
               fontWeight: 'bold',
               color: '#fbbf24',
               marginBottom: '2px'
@@ -334,7 +454,7 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
               {tower?.foundations?.length || 0}/4
             </div>
             <div style={{
-              fontSize: window.innerWidth < 640 ? '0.75rem' : '0.875rem',
+              fontSize: responsive.statLabelSize,
               color: '#9ca3af'
             }}>
               Fundamente
@@ -344,11 +464,11 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
             backgroundColor: '#374151',
             borderRadius: '8px',
             border: '2px solid #4b5563',
-            padding: window.innerWidth < 640 ? '10px' : '16px',
+            padding: responsive.statPadding,
             textAlign: 'center'
           }}>
             <div style={{
-              fontSize: window.innerWidth < 640 ? '1.5rem' : '2rem',
+              fontSize: responsive.statNumberSize,
               fontWeight: 'bold',
               color: '#22c55e',
               marginBottom: '2px'
@@ -356,7 +476,7 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
               {tower?.activatedElements?.length || 0}/4
             </div>
             <div style={{
-              fontSize: window.innerWidth < 640 ? '0.75rem' : '0.875rem',
+              fontSize: responsive.statLabelSize,
               color: '#9ca3af'
             }}>
               Aktiviert
@@ -364,30 +484,6 @@ const TowerStatusModal = ({ tower, players, phase, onClose }) => {
           </div>
         </div>
 
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          style={{
-            width: '100%',
-            padding: window.innerWidth < 640 ? '10px' : '12px',
-            backgroundColor: '#374151',
-            border: '2px solid #4b5563',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: window.innerWidth < 640 ? '0.9rem' : '1rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#4b5563';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#374151';
-          }}
-        >
-          Schließen
-        </button>
 
         {/* CSS Animations */}
         <style>{`

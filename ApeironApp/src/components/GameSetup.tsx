@@ -145,7 +145,6 @@ const GameSetup: React.FC<GameSetupProps> = ({ heroes, onStartGame }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto' }}>
             {Object.values(heroes).map(hero => {
               const isSelected = selectedCharacters.includes(hero.id);
-              const isDisabled = false; // No longer need to disable based on player count
               const info = heroInfo[hero.id as keyof typeof heroInfo];
 
               return (

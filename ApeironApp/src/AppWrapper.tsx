@@ -1,8 +1,24 @@
 import React, { useState } from 'react';
 import GameSetup from './components/GameSetup';
-import GameScreen from './ApeironGame.jsx';
+import GameScreen from './ApeironGame.tsx';
 
-const heroes = {
+interface Hero {
+  id: string;
+  name: string;
+  element: string;
+  description: string;
+  color: string;
+  image: string;
+  innateSkills: string[];
+}
+
+interface GameData {
+  playerCount: number;
+  difficulty: string;
+  selectedCharacters: string[];
+}
+
+const heroes: Record<string, Hero> = {
   terra: {
     id: 'terra',
     name: 'Terra',
@@ -42,9 +58,9 @@ const heroes = {
 };
 
 function AppWrapper() {
-  const [gameData, setGameData] = useState(null);
+  const [gameData, setGameData] = useState<GameData | null>(null);
 
-  const handleStartGame = (playerCount, difficulty, selectedCharacters) => {
+  const handleStartGame = (playerCount: number, difficulty: string, selectedCharacters: string[]) => {
     setGameData({
       playerCount,
       difficulty,

@@ -11,6 +11,128 @@ import EffectBadge from './components/ui/EffectBadge';
 import CounterInfo from './components/ui/CounterInfo';
 import EventCardAnimation from './components/ui/EventCardAnimation';
 
+// TypeScript Interfaces
+interface Hero {
+  id: string;
+  name: string;
+  element: string;
+  description: string;
+  color: string;
+  image: string;
+}
+
+interface GameData {
+  playerCount: number;
+  difficulty: string;
+  selectedCharacters: string[];
+}
+
+interface Player {
+  id: string;
+  name: string;
+  position: string;
+  ap: number;
+  maxAp: number;
+  inventory: string[];
+  maxInventory: number;
+  learnedSkills: string[];
+  element: string;
+  isMaster: boolean;
+  artifactSkills: string[];
+}
+
+interface GameState {
+  round: number;
+  phase: number;
+  light: number;
+  currentPlayerIndex: number;
+  players: Player[];
+  board: Record<string, any>;
+  tower: {
+    foundations: string[];
+    activatedElements: string[];
+  };
+  torDerWeisheit: {
+    triggered: boolean;
+    position: string | null;
+    lightLossAtTrigger: number;
+  };
+  herzDerFinsternis: {
+    triggered: boolean;
+    position: string | null;
+    darkTiles: string[];
+  };
+  herzDerFinsternisModal: {
+    show: boolean;
+    position: string | null;
+    chosenDirection: string | null;
+    awaitingCardDraw: boolean;
+  };
+  torDerWeisheitModal: {
+    show: boolean;
+    position: string | null;
+    chosenDirection: string | null;
+    awaitingCardDraw: boolean;
+  };
+  victoryModal: {
+    show: boolean;
+    stats: any;
+  };
+  defeatModal: {
+    show: boolean;
+    stats: any;
+  };
+  foundationSuccessModal: {
+    show: boolean;
+    foundationType: string | null;
+    count: number;
+    lightBonus: number;
+  };
+  elementSuccessModal: {
+    show: boolean;
+    elementType: string | null;
+    count: number;
+    bonus: any;
+  };
+  foundationSelectionModal: {
+    show: boolean;
+  };
+  elementSelectionModal: {
+    show: boolean;
+  };
+  teachSkillSelectionModal: {
+    show: boolean;
+  };
+  isTransitioning: boolean;
+  currentEvent: any;
+  eventDeck: string[];
+  discoveryTracking: {
+    firstDiscoveryPosition: string | null;
+    firstDiscoveryActive: boolean;
+  };
+  tileDeck: string[];
+  actionBlockers: any[];
+  isEventTriggering: boolean;
+  roundCompleted: boolean;
+  phaseTransitionModal: {
+    show: boolean;
+    foundationBonus: number;
+    phaseCompletionBonus: number;
+    totalBonus: number;
+  };
+  cardDrawQueue: any[];
+  drawnCards: Record<string, any>;
+  cardDrawState: string;
+  gameStartTime: number;
+  totalApSpent: number;
+  totalTurns: number;
+  phase1TotalTurns: number;
+  phase2TotalTurns: number;
+  phase1TotalApSpent: number;
+  phase2TotalApSpent: number;
+  phase1Stats: any;
+}
+
 // MODULE-LEVEL LOCKS: Prevent React StrictMode from executing handlers twice
 // These MUST be outside the component to work across simultaneous calls
 let currentlyApplyingEventId = null;
@@ -64,13 +186,17 @@ const heroes = {
   }
 };
 
-function GameSetup({ onStartGame }) {
+interface GameSetupProps {
+  onStartGame: (playerCount: number, difficulty: string, selectedCharacters: string[]) => void;
+}
+
+function GameSetup({ onStartGame }: GameSetupProps) {
   const [playerCount, setPlayerCount] = useState(4);
   const [difficulty, setDifficulty] = useState('normal');
-  const [selectedCharacters, setSelectedCharacters] = useState([]);
+  const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
   const [showStartModal, setShowStartModal] = useState(false);
 
-  const handleCharacterSelect = (heroId) => {
+  const handleCharacterSelect = (heroId: string) => {
     if (selectedCharacters.includes(heroId)) {
       setSelectedCharacters(prev => prev.filter(id => id !== heroId));
     } else if (selectedCharacters.length < playerCount) {
@@ -80,8 +206,8 @@ function GameSetup({ onStartGame }) {
 
   const canStartGame = selectedCharacters.length === playerCount;
 
-  const cardStyle = (hero, isSelected, isDisabled) => ({
-    position: 'relative',
+  const cardStyle = (hero: Hero, isSelected: boolean, isDisabled: boolean) => ({
+    position: 'relative' as const,
     backgroundColor: '#374151',
     borderRadius: '12px',
     padding: '16px',
@@ -431,7 +557,7 @@ function GameSetup({ onStartGame }) {
                 flexWrap: 'wrap'
               }}>
                 {selectedCharacters.map(heroId => {
-                  const hero = heroes[heroId];
+                  const hero = heroes[heroId as keyof typeof heroes];
                   const raceMap = {
                     'terra': '🐂 Minotaurin',
                     'lyra': '🧜‍♀️ Sirene',
@@ -458,7 +584,7 @@ function GameSetup({ onStartGame }) {
                         color: '#fbbf24',
                         fontSize: '0.85rem'
                       }}>
-                        {raceMap[heroId]}
+                        {raceMap[heroId as keyof typeof raceMap]}
                       </div>
                     </div>
                   );
@@ -526,8 +652,9 @@ function GameSetup({ onStartGame }) {
                 e.target.style.boxShadow = '0 6px 16px rgba(234, 179, 8, 0.5)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 12px rgba(234, 179, 8, 0.4)';
+                const target = e.target as HTMLElement;
+                target.style.transform = 'translateY(0)';
+                target.style.boxShadow = '0 4px 12px rgba(234, 179, 8, 0.4)';
               }}
             >
               ⭐ DIE REISE BEGINNT
@@ -540,17 +667,24 @@ function GameSetup({ onStartGame }) {
 }
 
 // Game Board Component
-function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
+interface GameBoardProps {
+  gameState: GameState;
+  onTileClick: (position: string) => void;
+  onHeroClick: (heroId: string) => void;
+  boardContainerRef: React.RefObject<HTMLDivElement>;
+}
+
+function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }: GameBoardProps) {
   const boardSize = 9;
   
-  const renderTile = (x, y) => {
+  const renderTile = (x: number, y: number) => {
     const position = `${x},${y}`;
     const isKrater = position === '4,4';
     const tile = gameState.board[position];
     
     // Find heroes on this tile
     // eslint-disable-next-line no-unused-vars
-    const heroesOnTile = gameState.players.filter(player => player.position === position);
+    const heroesOnTile = gameState.players.filter((player: Player) => player.position === position);
     
     // Check if discoverable (adjacent to current player's position)
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
@@ -589,7 +723,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
       <div
         key={position}
         onClick={() => onTileClick(position)}
-        style={tileStyle}
+        style={tileStyle as React.CSSProperties}
       >
         {/* Krater */}
         {isKrater && (
@@ -607,7 +741,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
                 justifyContent: 'center',
                 gap: '1px'
               }}>
-                {gameState.tower.foundations.map((foundation, index) => {
+                {gameState.tower.foundations.map((foundation: string, index: number) => {
                   const foundationSymbols = {
                     'erde': '🗿',
                     'feuer': '🔥',
@@ -624,7 +758,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
                       }}
                       title={`${foundation.charAt(0).toUpperCase() + foundation.slice(1)}-Fundament`}
                     >
-                      {foundationSymbols[foundation] || '⚪'}
+                      {foundationSymbols[foundation as keyof typeof foundationSymbols] || '⚪'}
                     </div>
                   );
                 })}
@@ -669,7 +803,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
             zIndex: 10 // Above darkness overlay (z-index: 5)
           }}>
             {/* Obstacles (left side) */}
-            {tile?.obstacles?.map((obstacle, idx) => {
+            {tile?.obstacles?.map((obstacle: string, idx: number) => {
               // Check if current player is ADJACENT (not on same tile)
               const currentPlayer = gameState.players[gameState.currentPlayerIndex];
               const [tileX, tileY] = position.split(',').map(Number);
@@ -683,7 +817,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
                 'dornenwald': 'dornen_entfernen',
                 'ueberflutung': 'fluss_freimachen'
               };
-              const requiredSkill = skillMap[obstacle];
+              const requiredSkill = skillMap[obstacle as keyof typeof skillMap];
               const hasSkill = currentPlayer.learnedSkills.includes(requiredSkill);
               const hasAp = currentPlayer.ap >= 1;
               const canRemove = isAdjacent && hasSkill && hasAp;
@@ -727,7 +861,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
             })}
 
             {/* Items (right side) */}
-            {tile?.resources?.map((resource, index) => {
+            {tile?.resources?.map((resource: string, index: number) => {
               // Dynamic sizing based on total item count
               const itemCount = tile.resources.length;
               const fontSize = itemCount === 1 ? '20px' :
@@ -783,9 +917,9 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
             zIndex: 20,
             pointerEvents: 'none' // Container blockiert keine Events - nur einzelne Heroes
           }}>
-            {heroesOnTile.map(hero => {
+            {heroesOnTile.map((hero: Player) => {
               const isActivePlayer = gameState.currentPlayerIndex === gameState.players.indexOf(hero);
-              const heroColor = heroes[hero.id].color;
+              const heroColor = heroes[hero.id as keyof typeof heroes].color;
 
               return (
                 <div
@@ -1028,7 +1162,7 @@ function GameBoard({ gameState, onTileClick, onHeroClick, boardContainerRef }) {
 }
 
 // Helper functions
-const isAdjacentToCurrentPlayer = (x, y, playerPosition) => {
+const isAdjacentToCurrentPlayer = (x: number, y: number, playerPosition: string) => {
   const [playerX, playerY] = playerPosition.split(',').map(Number);
   
   // Only horizontal and vertical directions (no diagonals)
@@ -1048,7 +1182,7 @@ const isAdjacentToCurrentPlayer = (x, y, playerPosition) => {
   });
 };
 
-const canMoveToPosition = (fromPosition, toPosition, playerId, players) => {
+const canMoveToPosition = (fromPosition: string, toPosition: string, playerId: string, players: Player[]) => {
   const [fromX, fromY] = fromPosition.split(',').map(Number);
   const [toX, toY] = toPosition.split(',').map(Number);
 
@@ -1060,7 +1194,7 @@ const canMoveToPosition = (fromPosition, toPosition, playerId, players) => {
   if (manhattanDistance === 0) return false; // Same position
 
   // Check if player has schnell_bewegen skill
-  const currentPlayer = players.find(p => p.id === playerId);
+  const currentPlayer = players.find((p: Player) => p.id === playerId);
   const hasQuickMove = currentPlayer?.learnedSkills.includes('schnell_bewegen');
 
   // Normal movement: 1 field horizontal OR vertical (no diagonal)
@@ -1072,7 +1206,7 @@ const canMoveToPosition = (fromPosition, toPosition, playerId, players) => {
   return false;
 };
 
-const getTileColor = (tileId) => {
+const getTileColor = (tileId: string) => {
   const colors = {
     wiese_kristall: 'linear-gradient(135deg, #4ade80, #16a34a)', // Green gradient
     hoehle_kristall: 'linear-gradient(135deg, #6b7280, #374151)', // Gray gradient
@@ -1095,10 +1229,10 @@ const getTileColor = (tileId) => {
     element_fragment_feuer: 'linear-gradient(135deg, #dc2626, #991b1b)', // Deep red gradient
     element_fragment_luft: 'linear-gradient(135deg, #9333ea, #6b21a8)' // Deep purple gradient
   };
-  return colors[tileId] || 'linear-gradient(135deg, #4b5563, #374151)';
+  return colors[tileId as keyof typeof colors] || 'linear-gradient(135deg, #4b5563, #374151)';
 };
 
-const getTileSymbol = (tileId) => {
+const getTileSymbol = (tileId: string) => {
   const symbols = {
     wiese_kristall: '💎',
     hoehle_kristall: '💎',
@@ -1122,10 +1256,10 @@ const getTileSymbol = (tileId) => {
     element_fragment_feuer: '🟥', // Red (Ignis)
     element_fragment_luft: '🟨' // Yellow (Corvus)
   };
-  return symbols[tileId] || '🔍';
+  return symbols[tileId as keyof typeof symbols] || '🔍';
 };
 
-const getTileName = (tileId) => {
+const getTileName = (tileId: string) => {
   const names = {
     wiese_kristall: 'Wiese',
     hoehle_kristall: 'Höhle',
@@ -1149,10 +1283,10 @@ const getTileName = (tileId) => {
     element_fragment_feuer: 'Feuer-Fragment',
     element_fragment_luft: 'Luft-Fragment'
   };
-  return names[tileId] || tileId;
+  return names[tileId as keyof typeof names] || tileId;
 };
 
-const getTileResources = (tileId) => {
+const getTileResources = (tileId: string) => {
   const resourceTiles = {
     wiese_kristall: ['kristall'],
     hoehle_kristall: ['kristall'],
@@ -1171,10 +1305,15 @@ const getTileResources = (tileId) => {
     element_fragment_feuer: ['element_fragment_feuer'],
     element_fragment_luft: ['element_fragment_luft']
   };
-  return resourceTiles[tileId] || [];
+  return resourceTiles[tileId as keyof typeof resourceTiles] || [];
 };
 
-function GameScreen({ gameData, onNewGame }) {
+interface GameScreenProps {
+  gameData: GameData;
+  onNewGame: () => void;
+}
+
+function GameScreen({ gameData, onNewGame }: GameScreenProps) {
   // Short-term flag to prevent cascade of round completions (100ms window)
   const roundCompletionInProgress = useRef(false);
   // Cache the correct round completion result to share with cascaded calls
@@ -1203,7 +1342,7 @@ function GameScreen({ gameData, onNewGame }) {
     isGameActive = true;
 
     // Desktop: Prevent refresh (F5, Ctrl+R, Cmd+R)
-    const handleBeforeUnload = (e) => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isGameActive) {
         e.preventDefault();
         // Chrome requires returnValue to be set
@@ -1226,7 +1365,7 @@ function GameScreen({ gameData, onNewGame }) {
     let touchStartY = 0;
     let touchStartX = 0;
 
-    const handleTouchStart = (e) => {
+    const handleTouchStart = (e: TouchEvent) => {
       if (!isGameActive) return;
 
       touchStartY = e.touches[0].pageY;
@@ -1243,7 +1382,7 @@ function GameScreen({ gameData, onNewGame }) {
       }
     };
 
-    const handleTouchMove = (e) => {
+    const handleTouchMove = (e: TouchEvent) => {
       if (!isGameActive) return;
 
       const touchY = e.touches[0].pageY;
@@ -1275,7 +1414,7 @@ function GameScreen({ gameData, onNewGame }) {
     };
 
     // Mobile: Prevent scroll-bounce and overscroll on document
-    const handleTouchEnd = (e) => {
+    const handleTouchEnd = (e: TouchEvent) => {
       if (!isGameActive) return;
 
       // Reset if we're at top of page to prevent bounce-back refresh
@@ -1345,19 +1484,19 @@ function GameScreen({ gameData, onNewGame }) {
       phase: 1,
       light: gameRules.light.startValue,
       currentPlayerIndex: 0,
-      players: gameData.selectedCharacters.map((heroId, index) => ({
+      players: gameData.selectedCharacters.map((heroId: string, index: number) => ({
         id: heroId,
-        name: heroes[heroId].name,
+        name: heroes[heroId as keyof typeof heroes].name,
         position: '4,4',
         ap: gameRules.actionPoints.perTurn,
         maxAp: gameRules.actionPoints.maxPerTurn,
         inventory: [],
         maxInventory: gameRules.inventory.maxSlots,
-        learnedSkills: heroes[heroId].element === 'earth' ? ['grundstein_legen', 'geroell_beseitigen', 'aufdecken'] :
-                      heroes[heroId].element === 'fire' ? ['element_aktivieren', 'dornen_entfernen', 'aufdecken'] :
-                      heroes[heroId].element === 'water' ? ['reinigen', 'fluss_freimachen', 'aufdecken'] :
+        learnedSkills: heroes[heroId as keyof typeof heroes].element === 'earth' ? ['grundstein_legen', 'geroell_beseitigen', 'aufdecken'] :
+                      heroes[heroId as keyof typeof heroes].element === 'fire' ? ['element_aktivieren', 'dornen_entfernen', 'aufdecken'] :
+                      heroes[heroId as keyof typeof heroes].element === 'water' ? ['reinigen', 'fluss_freimachen', 'aufdecken'] :
                       ['spaehen', 'schnell_bewegen', 'aufdecken'], // air/corvus
-        element: heroes[heroId].element,
+        element: heroes[heroId as keyof typeof heroes].element,
         isMaster: false,
         artifactSkills: [] // Track skills learned via artifacts (cannot be taught)
       })),
