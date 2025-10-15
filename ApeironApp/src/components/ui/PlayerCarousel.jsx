@@ -1,6 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
+import { useCustomSwipeable } from '../../hooks/useCustomSwipeable';
 import PlayerCard from './PlayerCard';
+
+// Error boundary component for handling swipe errors
+const SwipeErrorBoundary = ({ children }) => {
+  const [hasError, setHasError] = useState(false);
+  
+  useEffect(() => {
+    const handleError = (error) => {
+      console.error('Swipeable error:', error);
+      setHasError(true);
+    };
+    
+    // Add global error listener for swipeable errors
+    window.addEventListener('error', handleError);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+    };
+  }, []);
+  
+  if (hasError) {
+    return (
+      <div style={{
+        padding: '20px',
+        textAlign: 'center',
+        color: '#ef4444',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        borderRadius: '10px',
+        margin: '20px 0'
+      }}>
+        <p>Swipe-Funktion vorübergehend nicht verfügbar.</p>
+        <p>Bitte verwenden Sie die Pfeilbuttons zur Navigation.</p>
+      </div>
+    );
+  }
+  
+  return children;
+};
 
 /**
  * PlayerCarousel - Swipeable Player Navigation Carousel
@@ -56,18 +94,35 @@ const PlayerCarousel = ({
     setSelectedIndex(index);
   };
 
-  // Swipe handlers
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => handleNext(),
-    onSwipedRight: () => handlePrev(),
-    onSwiping: () => setIsDragging(true),
-    onSwiped: () => setIsDragging(false),
-    preventScrollOnSwipe: true,
-    trackMouse: true,  // Enable mouse drag on desktop
-    delta: 10,
-    swipeDuration: 500,
-    touchEventOptions: { passive: false }
-  });
+  // Swipe handlers with error handling and fallback
+  let swipeHandlers = {};
+  let customSwipeHandlers = {};
+  let useCustomSwipe = false;
+
+  try {
+    swipeHandlers = useSwipeable({
+      onSwipedLeft: () => handleNext(),
+      onSwipedRight: () => handlePrev(),
+      onSwiping: () => setIsDragging(true),
+      onSwiped: () => setIsDragging(false),
+      preventScrollOnSwipe: true,
+      trackMouse: true,  // Enable mouse drag on desktop
+      delta: 10,
+      swipeDuration: 500,
+      touchEventOptions: { passive: false }
+    });
+  } catch (error) {
+    console.error('Error initializing react-swipeable, using custom implementation:', error);
+    useCustomSwipe = true;
+    customSwipeHandlers = useCustomSwipeable({
+      onSwipedLeft: () => handleNext(),
+      onSwipedRight: () => handlePrev(),
+      onSwiping: () => setIsDragging(true),
+      onSwiped: () => setIsDragging(false),
+      preventScrollOnSwipe: true,
+      delta: 10
+    });
+  }
 
   if (!players || players.length === 0) return null;
 
@@ -79,52 +134,54 @@ const PlayerCarousel = ({
       overflow: 'visible'  // Allow peek-preview to show
     }}>
       {/* Swipeable Container */}
-      <div {...swipeHandlers} style={{
-        position: 'relative',
-        width: '100%',
-        userSelect: 'none',
-        WebkitTapHighlightColor: 'transparent'
-      }}>
-        {/* Cards Track - each card wrapper is 95% wide for peek-preview */}
-        <div style={{
-          display: 'flex',
-          transform: `translateX(calc(-2.5% - ${selectedIndex * 95}%))`,  // Center first card with -2.5% offset
-          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          willChange: 'transform'
+      <SwipeErrorBoundary>
+        <div {...(useCustomSwipe ? customSwipeHandlers : swipeHandlers)} style={{
+          position: 'relative',
+          width: '100%',
+          userSelect: 'none',
+          WebkitTapHighlightColor: 'transparent'
         }}>
-          {players.map((player, index) => {
-            const hero = heroes[player.id];
-            const isActive = index === selectedIndex;
-            const isCurrentPlayer = index === currentPlayerIndex;
+          {/* Cards Track - each card wrapper is 95% wide for peek-preview */}
+          <div style={{
+            display: 'flex',
+            transform: `translateX(calc(-2.5% - ${selectedIndex * 95}%))`,  // Center first card with -2.5% offset
+            transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform'
+          }}>
+            {players.map((player, index) => {
+              const hero = heroes[player.id];
+              const isActive = index === selectedIndex;
+              const isCurrentPlayer = index === currentPlayerIndex;
 
-            return (
-              <div
-                key={player.id}
-                style={{
-                  flex: '0 0 95%',  // Each wrapper is 95% wide - creates 5% peek
-                  display: 'flex',
-                  justifyContent: 'center',  // Center the card
-                  alignItems: 'flex-start',
-                  boxSizing: 'border-box'
-                }}
-              >
-                {/* Card at 90% of wrapper width */}
-                <div style={{ width: '90%' }}>
-                  <PlayerCard
-                    player={player}
-                    hero={hero}
-                    isActive={isActive}
-                    isCurrentPlayer={isCurrentPlayer}
-                    currentRound={currentRound}
-                    actionBlockers={actionBlockers}
-                    shouldPlayerSkipTurn={shouldPlayerSkipTurn}
-                  />
+              return (
+                <div
+                  key={player.id}
+                  style={{
+                    flex: '0 0 95%',  // Each wrapper is 95% wide - creates 5% peek
+                    display: 'flex',
+                    justifyContent: 'center',  // Center the card
+                    alignItems: 'flex-start',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  {/* Card at 90% of wrapper width */}
+                  <div style={{ width: '90%' }}>
+                    <PlayerCard
+                      player={player}
+                      hero={hero}
+                      isActive={isActive}
+                      isCurrentPlayer={isCurrentPlayer}
+                      currentRound={currentRound}
+                      actionBlockers={actionBlockers}
+                      shouldPlayerSkipTurn={shouldPlayerSkipTurn}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </SwipeErrorBoundary>
 
       {/* Arrow Buttons (Desktop) */}
       {!isMobile && players.length > 1 && (
